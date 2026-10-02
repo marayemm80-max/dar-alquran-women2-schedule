@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>نظام إدارة جدول حصص دار القرآن نساء ٢</title>
+
+<style>
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family:Tahoma,Arial,sans-serif;
+  background:#f4f7f6;
+  color:#26352f;
+}
+header{
+  background:linear-gradient(135deg,#164f3c,#26745a);
+  color:white;
+  padding:28px 35px;
+  box-shadow:0 3px 12px #0002;
+}
+header h1{margin:0;font-size:28px}
+header p{margin:8px 0 0;opacity:.9}
+
+nav{
+  background:white;
+  padding:12px 25px;
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  box-shadow:0 2px 8px #0001;
+}
+nav button{
+  border:0;
+  background:#eef5f2;
+  padding:11px 17px;
+  border-radius:9px;
+  cursor:pointer;
+  font-size:15px;
+}
+nav button:hover{background:#dcece6}
+
+.container{
+  max-width:1250px;
+  margin:auto;
+  padding:28px;
+}
+
+.welcome{
+  background:white;
+  padding:25px;
+  border-radius:15px;
+  margin-bottom:25px;
+  border-right:6px solid #26745a;
+  box-shadow:0 3px 12px #0001;
+}
+
+.cards{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+  gap:18px;
+}
+.card{
+  background:white;
+  padding:24px;
+  border-radius:15px;
+  box-shadow:0 3px 12px #0001;
+  cursor:pointer;
+  transition:.2s;
+}
+.card:hover{
+  transform:translateY(-3px);
+  box-shadow:0 6px 18px #0002;
+}
+.card .icon{font-size:35px}
+.card h3{margin:12px 0 5px;color:#18533f}
+.card p{color:#68766f;font-size:14px}
+
+.section{
+  display:none;
+  background:white;
+  margin-top:25px;
+  padding:25px;
+  border-radius:15px;
+  box-shadow:0 3px 12px #0001;
+}
+.section.active{display:block}
+
+input,select{
+  padding:11px;
+  border:1px solid #ccd8d3;
+  border-radius:8px;
+  margin:5px;
+  min-width:180px;
+}
+.action{
+  background:#216a51;
+  color:white;
+  border:0;
+  padding:11px 18px;
+  border-radius:8px;
+  cursor:pointer;
+}
+.action:hover{background:#174e3b}
+
+table{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:20px;
+}
+th{
+  background:#216a51;
+  color:white;
+}
+th,td{
+  border:1px solid #d7dfdc;
+  padding:11px;
+  text-align:center;
+}
+tr:nth-child(even){background:#f7faf9}
+
+.print-box{
+  background:#f4f8f6;
+  padding:18px;
+  border-radius:12px;
+  margin-top:15px;
+}
+
+footer{
+  text-align:center;
+  padding:25px;
+  color:#77847f;
+}
+
+@media print{
+  nav,.no-print,.cards,.welcome{display:none!important}
+  body{background:white}
+  .section{box-shadow:none}
+}
+</style>
+</head>
+
+<body>
+
+<header>
+<h1>نظام إدارة جدول حصص دار القرآن نساء ٢</h1>
+<p>إدارة الجداول والمعلمات والمواد والإداريات والطباعة</p>
+</header>
+
+<nav class="no-print">
+<button onclick="home()">الرئيسية</button>
+<button onclick="show('schedule')">الجدول الدراسي</button>
+<button onclick="show('teachers')">المعلمات</button>
+<button onclick="show('subjects')">المواد</button>
+<button onclick="show('admins')">الإداريات</button>
+<button onclick="show('printing')">مركز الطباعة</button>
+</nav>
+
+<div class="container">
+
+<div id="home">
+<div class="welcome">
+<h2>مرحباً بكم</h2>
+<p>لوحة التحكم الرئيسية لإدارة جدول حصص دار القرآن نساء ٢.</p>
+</div>
+
+<div class="cards">
+
+<div class="card" onclick="show('schedule')">
+<div class="icon">📅</div>
+<h3>الجدول الدراسي</h3>
+<p>إضافة وتعديل وتبديل الحصص.</p>
+</div>
+
+<div class="card" onclick="show('teachers')">
+<div class="icon">👩‍🏫</div>
+<h3>المعلمات</h3>
+<p>إدارة أسماء المعلمات ونصاب الحصص.</p>
+</div>
+
+<div class="card" onclick="show('subjects')">
+<div class="icon">📚</div>
+<h3>المواد</h3>
+<p>إضافة المواد وتعديلها.</p>
+</div>
+
+<div class="card" onclick="show('admins')">
+<div class="icon">👩‍💼</div>
+<h3>الإداريات</h3>
+<p>إدارة أسماء الإداريات.</p>
+</div>
+
+<div class="card" onclick="show('printing')">
+<div class="icon">🖨️</div>
+<h3>مركز الطباعة</h3>
+<p>طباعة الجدول العام أو جدول كل معلمة أو مادة.</p>
+</div>
+
+<div class="card">
+<div class="icon">🔐</div>
+<h3>الصلاحيات</h3>
+<p>تهيئة صلاحيات المسؤول والموظفات.</p>
+</div>
+
+</div>
+</div>
+
+<div id="teachers" class="section">
+<h2>👩‍🏫 إدارة المعلمات</h2>
+<input id="teacherName" placeholder="اسم المعلمة">
+<button class="action" onclick="addTeacher()">إضافة معلمة</button>
+<table>
+<thead><tr><th>م</th><th>اسم المعلمة</th><th>إجراء</th></tr></thead>
+<tbody id="teacherList"></tbody>
+</table>
+</div>
+
+<div id="subjects" class="section">
+<h2>📚 إدارة المواد</h2>
+<input id="subjectName" placeholder="اسم المادة">
+<button class="action" onclick="addSubject()">إضافة مادة</button>
+<table>
+<thead><tr><th>م</th><th>المادة</th><th>إجراء</th></tr></thead>
+<tbody id="subjectList"></tbody>
+</table>
+</div>
+
+<div id="admins" class="section">
+<h2>👩‍💼 الإداريات</h2>
+<input id="adminName" placeholder="اسم الإدارية">
+<button class="action" onclick="addAdmin()">إضافة إدارية</button>
+<table>
+<thead><tr><th>م</th><th>اسم الإدارية</th><th>إجراء</th></tr></thead>
+<tbody id="adminList"></tbody>
+</table>
+</div>
+
+<div id="schedule" class="section">
+<h2>📅 الجدول الدراسي</h2>
+
+<div class="no-print">
+<select id="day">
+<option>الأحد</option>
+<option>الاثنين</option>
+<option>الثلاثاء</option>
+<option>الأربعاء</option>
+<option>الخميس</option>
+</select>
+
+<select id="period">
+<option>الحصة الأولى</option>
+<option>الحصة الثانية</option>
+<option>الحصة الثالثة</option>
+<option>الحصة الرابعة</option>
+<option>الحصة الخامسة</option>
+<option>الحصة السادسة</option>
+</select>
+
+<select id="scheduleTeacher">
+<option value="">اختر المعلمة</option>
+</select>
+
+<select id="scheduleSubject">
+<option value="">اختر المادة</option>
+</select>
+
+<button class="action" onclick="addLesson()">إضافة الحصة</button>
+</div>
+
+<table>
+<thead>
+<tr>
+<th>اليوم</th>
+<th>الحصة</th>
+<th>المعلمة</th>
+<th>المادة</th>
+<th class="no-print">الإجراء</th>
+</tr>
+</thead>
+<tbody id="scheduleList"></tbody>
+</table>
+</div>
+
+<div id="printing" class="section">
+<h2>🖨️ مركز الطباعة</h2>
+
+<div class="print-box no-print">
+<h3>طباعة جدول معلمة</h3>
+<select id="printTeacher">
+<option value="">اختر المعلمة</option>
+</select>
+<button class="action" onclick="printTeacherSchedule()">عرض وطباعة</button>
+</div>
+
+<div class="print-box no-print">
+<h3>طباعة جدول مادة</h3>
+<select id="printSubject">
+<option value="">اختر المادة</option>
+</select>
+<button class="action" onclick="printSubjectSchedule()">عرض وطباعة</button>
+</div>
+
+<div class="print-box no-print">
+<h3>الجدول الكامل</h3>
+<button class="action" onclick="printAll()">طباعة الجدول الكامل</button>
+</div>
+
+<div id="printResult"></div>
+</div>
+
+</div>
+
+<footer>
+نظام إدارة جدول حصص دار القرآن نساء ٢
+</footer>
+
+<script>
+let teachers=JSON.parse(localStorage.getItem("teachers")||"[]");
+let subjects=JSON.parse(localStorage.getItem("subjects")||"[]");
+let admins=JSON.parse(localStorage.getItem("admins")||"[]");
+let lessons=JSON.parse(localStorage.getItem("lessons")||"[]");
+
+function save(){
+ localStorage.setItem("teachers",JSON.stringify(teachers));
+ localStorage.setItem("subjects",JSON.stringify(subjects));
+ localStorage.setItem("admins",JSON.stringify(admins));
+ localStorage.setItem("lessons",JSON.stringify(lessons));
+ render();
+}
+
+function home(){
+ document.querySelectorAll(".section").forEach(x=>x.classList.remove("active"));
+ document.getElementById("home").style.display="block";
+}
+
+function show(id){
+ document.getElementById("home").style.display="none";
+ document.querySelectorAll(".section").forEach(x=>x.classList.remove("active"));
+ document.getElementById(id).classList.add("active");
+}
+
+function addTeacher(){
+ let v=teacherName.value.trim();
+ if(!v)return;
+ teachers.push(v);teacherName.value="";save();
+}
+function addSubject(){
+ let v=subjectName.value.trim();
+ if(!v)return;
+ subjects.push(v);subjectName.value="";save();
+}
+function addAdmin(){
+ let v=adminName.value.trim();
+ if(!v)return;
+ admins.push(v);adminName.value="";save();
+}
+
+function addLesson(){
+ let t=scheduleTeacher.value,s=scheduleSubject.value;
+ if(!t||!s){alert("اختر المعلمة والمادة");return;}
+ lessons.push({day:day.value,period:period.value,teacher:t,subject:s});
+ save();
+}
+
+function del(type,i){
+ if(type=="teacher")teachers.splice(i,1);
+ if(type=="subject")subjects.splice(i,1);
+ if(type=="admin")admins.splice(i,1);
+ if(type=="lesson")lessons.splice(i,1);
+ save();
+}
+
+function render(){
+ teacherList.innerHTML=teachers.map((x,i)=>`<tr><td>${i+1}</td><td>${x}</td><td><button onclick="del('teacher',${i})">حذف</button></td></tr>`).join("");
+ subjectList.innerHTML=subjects.map((x,i)=>`<tr><td>${i+1}</td><td>${x}</td><td><button onclick="del('subject',${i})">حذف</button></td></tr>`).join("");
+ adminList.innerHTML=admins.map((x,i)=>`<tr><td>${i+1}</td><td>${x}</td><td><button onclick="del('admin',${i})">حذف</button></td></tr>`).join("");
+
+ let topts='<option value="">اختر المعلمة</option>'+teachers.map(x=>`<option>${x}</option>`).join("");
+ scheduleTeacher.innerHTML=topts;
+ printTeacher.innerHTML=topts;
+
+ let sopts='<option value="">اختر المادة</option>'+subjects.map(x=>`<option>${x}</option>`).join("");
+ scheduleSubject.innerHTML=sopts;
+ printSubject.innerHTML=sopts;
+
+ scheduleList.innerHTML=lessons.map((x,i)=>`
+ <tr><td>${x.day}</td><td>${x.period}</td><td>${x.teacher}</td><td>${x.subject}</td>
+ <td class="no-print"><button onclick="del('lesson',${i})">حذف</button></td></tr>`).join("");
+}
+
+function makePrint(title,data){
+ printResult.innerHTML=`<h2>${title}</h2>
+ <table><tr><th>اليوم</th><th>الحصة</th><th>المعلمة</th><th>المادة</th></tr>
+ ${data.map(x=>`<tr><td>${x.day}</td><td>${x.period}</td><td>${x.teacher}</td><td>${x.subject}</td></tr>`).join("")}
+ </table>`;
+ setTimeout(()=>window.print(),200);
+}
+
+function printTeacherSchedule(){
+ let x=printTeacher.value;
+ if(!x)return alert("اختر المعلمة");
+ makePrint("جدول المعلمة: "+x,lessons.filter(l=>l.teacher==x));
+}
+
+function printSubjectSchedule(){
+ let x=printSubject.value;
+ if(!x)return alert("اختر المادة");
+ makePrint("جدول مادة: "+x,lessons.filter(l=>l.subject==x));
+}
+
+function printAll(){
+ makePrint("الجدول الدراسي الكامل",lessons);
+}
+
+render();
+</script>
+
+</body>
+</html>
