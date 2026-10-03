@@ -477,8 +477,9 @@ function deletePermission(i){
   localStorage.setItem("permissions", JSON.stringify(permissions));
   renderPermissions();
 } renderPermissions(); 
+localStorage.removeItem("currentUser");
 $("app").style.display="none";
-$("login").style.display="grid";
+$("loginScreen").style.display="flex";
 </script>
 
 </body>
