@@ -480,6 +480,19 @@ function deletePermission(i){
 localStorage.removeItem("currentUser");
 $("app").style.display="none";
 $("loginScreen").style.display="flex";
+function dologin(){
+  const user = document.getElementById("loginUser").value.trim();
+  const pass = document.getElementById("loginPass").value;
+
+  if(user === "admin" && pass === "1234"){
+    document.getElementById("loginScreen").style.display = "none";
+    document.getElementById("app").style.display = "grid";
+    localStorage.setItem("loggedIn", "yes");
+    home();
+  } else {
+    document.getElementById("loginError").textContent = "اسم المستخدم أو كلمة المرور غير صحيحة";
+  }
+}
 </script>
 
 </body>
