@@ -479,7 +479,7 @@ function deletePermission(i){
 } renderPermissions(); 
 localStorage.removeItem("currentUser");
 
-$("loginScreen").style.display="flex";
+document.getElementById("loginScreen").style.display="flex";
 function dologin(){
   const user = document.getElementById("loginUser").value.trim();
   const pass = document.getElementById("loginPass").value;
