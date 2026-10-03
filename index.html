@@ -478,7 +478,7 @@ function deletePermission(i){
   renderPermissions();
 } renderPermissions(); 
 localStorage.removeItem("currentUser");
-$("app").style.display="none";
+
 $("loginScreen").style.display="flex";
 function dologin(){
   const user = document.getElementById("loginUser").value.trim();
