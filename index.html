@@ -326,7 +326,7 @@ footer{
     <h3>إضافة مستخدم</h3>
 
     <input id="permissionName" placeholder="اسم المستخدم">
-
+<input id="permissionPass" type="password" placeholder="كلمة المرور">
     <select id="permissionRole">
       <option value="view">مشاهدة فقط</option>
       <option value="edit">تعديل وإضافة</option>
@@ -443,15 +443,19 @@ function printAll(){
 //render();
 function addPermission(){
   const name = document.getElementById("permissionName").value.trim();
+  const pass = document.getElementById("permissionPass").value;
   const role = document.getElementById("permissionRole").value;
 
   if(!name){
     alert("اكتب اسم المستخدم");
     return;
   }
-
+if(!pass){
+  alert("اكتب كلمة المرور");
+  return;
+}
   let permissions = JSON.parse(localStorage.getItem("permissions") || "[]");
-  permissions.push({name:name, role:role});
+ permissions.push({name:name, pass:pass, role:role});
   localStorage.setItem("permissions", JSON.stringify(permissions));
 
   document.getElementById("permissionName").value = "";
