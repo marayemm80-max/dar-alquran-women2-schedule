@@ -486,8 +486,7 @@ function dologin(){
 
   if(user === "admin" && pass === "1234"){
     document.getElementById("loginScreen").style.display = "none";
-    document.getElementById("app").style.display = "grid";
-    localStorage.setItem("loggedIn", "yes");
+  
     home();
   } else {
     document.getElementById("loginError").textContent = "اسم المستخدم أو كلمة المرور غير صحيحة";
