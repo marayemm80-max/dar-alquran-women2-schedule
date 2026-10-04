@@ -481,11 +481,31 @@ function deletePermission(i){
   permissions.splice(i,1);
   localStorage.setItem("permissions", JSON.stringify(permissions));
   renderPermissions();
-} renderPermissions(); 
-localStorage.removeItem("currentUser");
+}
 
-document.getElementById("loginScreen").style.display="flex";
-<script>
+function applyRole(){
+  const account = JSON.parse(localStorage.getItem("currentUser") || "null");
+  if(!account) return;
+  const role = account.role || "view";
+  const permissionsCard = document.querySelector('.card[onclick="show(\'permissions\')"]');
+  if(permissionsCard) permissionsCard.style.display = role === "admin" ? "block" : "none";
+  const editingControls = document.querySelectorAll('.action, button[onclick^="del("]');
+  editingControls.forEach(btn => {
+    if(btn.id === "logoutBtn") return;
+    if(role === "view") btn.style.display = "none";
+  });
+}
+
+function initApp(){
+  render();
+  renderPermissions();
+  const loggedIn = localStorage.getItem("loggedIn") === "yes";
+  const account = JSON.parse(localStorage.getItem("currentUser") || "null");
+  document.getElementById("loginScreen").style.display = (loggedIn && account) ? "none" : "flex";
+  if(loggedIn && account) applyRole();
+}
+
+initApp();
 function doLogin(){
   const user = document.getElementById("loginUser").value.trim();
   const pass = document.getElementById("loginPass").value;
@@ -503,8 +523,8 @@ function doLogin(){
     localStorage.setItem("currentUser", JSON.stringify(account));
     localStorage.setItem("loggedIn", "yes");
     document.getElementById("loginScreen").style.display = "none";
-  
     document.getElementById("loginError").textContent = "";
+    applyRole();
   } else {
     document.getElementById("loginError").textContent =
       "اسم المستخدم أو كلمة المرور غير صحيحة";
