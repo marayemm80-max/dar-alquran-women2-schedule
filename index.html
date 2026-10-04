@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>نظام إدارة جدول حصص دار القرآن نساء ٢</title>
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
 <style>
 *{box-sizing:border-box}
 body{margin:0;font-family:Tahoma,Arial,sans-serif;background:#f4f7f6;color:#222}
@@ -501,16 +501,80 @@ function fillTeacherSelectors(){
   pt.value=pv2;
 }
 
-function exportRows(rr,filename){
-  if(typeof XLSX==="undefined"){ alert("تعذر تحميل أداة Excel. تأكد من اتصال الإنترنت."); return; }
-  const data=[["م","الاسم","القسم","نوع الارتباط",...DAYS.flatMap(d=>PERIODS.map(p=>d+" - "+p)),"إجمالي النصاب"]];
-  rr.forEach((r,i)=>data.push([i+1,r.name,r.dept,r.connection,...(r.slots||Array(20).fill("")),r.total]));
-  const ws=XLSX.utils.aoa_to_sheet(data);
-  const wb=XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb,ws,"جدول النصاب");
-  XLSX.writeFile(wb,filename);
-}
+async function exportRows(rr,filename){
+  if(typeof ExcelJS==="undefined"){ alert("تعذر تحميل أداة Excel. تأكد من اتصال الإنترنت."); return; }
+  const wb=new ExcelJS.Workbook();
+  wb.creator="نظام إدارة جدول حصص دار القرآن نساء ٢";
+  const ws=wb.addWorksheet("جدول النصاب",{views:[{rightToLeft:true,state:"frozen",ySplit:4,xSplit:4}]});
+  ws.pageSetup={orientation:"landscape",fitToPage:true,fitToWidth:1,fitToHeight:0,paperSize:9,margins:{left:0.2,right:0.2,top:0.3,bottom:0.3,header:0.1,footer:0.1}};
+  ws.mergeCells("A1:Y1");
+  const title=ws.getCell("A1");
+  title.value="جدول نصاب حصص معلمات مركز دار قرآن غرب عبدالله المبارك نساء (2) للعام الدراسي 2026م";
+  title.font={bold:true,size:16,color:{argb:"FFFFFFFF"}};
+  title.fill={type:"pattern",pattern:"solid",fgColor:{argb:"FF17583F"}};
+  title.alignment={horizontal:"center",vertical:"middle"};
+  ws.getRow(1).height=28;
 
+  ws.mergeCells("A2:A4"); ws.getCell("A2").value="م";
+  ws.mergeCells("B2:B4"); ws.getCell("B2").value="الاسم";
+  ws.mergeCells("C2:C4"); ws.getCell("C2").value="القسم";
+  ws.mergeCells("D2:D4"); ws.getCell("D2").value="نوع الارتباط";
+  ws.mergeCells("E2:X2"); ws.getCell("E2").value="أيام الأسبوع";
+  ws.mergeCells("Y2:Y4"); ws.getCell("Y2").value="إجمالي\nنصاب الحصص";
+
+  const fills=["FFF3DFC9","FFC7D8EA","FFCFE4C8","FFEAD0DF","FFD7D7D7"];
+  let col=5;
+  DAYS.forEach((day,di)=>{
+    ws.mergeCells(3,col,3,col+3);
+    ws.getCell(3,col).value=day;
+    for(let c=col;c<col+4;c++) ws.getCell(3,c).fill={type:"pattern",pattern:"solid",fgColor:{argb:fills[di]}};
+    PERIODS.forEach((per,pi)=>{
+      const cell=ws.getCell(4,col+pi); cell.value=per;
+      cell.fill={type:"pattern",pattern:"solid",fgColor:{argb:fills[di]}};
+    });
+    col+=4;
+  });
+
+  ["A2","B2","C2","D2","E2","Y2"].forEach(a=>ws.getCell(a).fill={type:"pattern",pattern:"solid",fgColor:{argb:"FFEFEFEF"}});
+  for(let r=2;r<=4;r++) for(let c=1;c<=25;c++){
+    const cell=ws.getCell(r,c);
+    cell.font={bold:true,size:10};
+    cell.alignment={horizontal:"center",vertical:"middle",wrapText:true};
+    cell.border={top:{style:"thin"},left:{style:"thin"},bottom:{style:"thin"},right:{style:"thin"}};
+  }
+  ws.getRow(2).height=23; ws.getRow(3).height=22; ws.getRow(4).height=22;
+
+  rr.forEach((r,i)=>{
+    const vals=[i+1,r.name,r.dept,r.connection,...(r.slots||Array(20).fill("")),r.total];
+    const row=ws.addRow(vals);
+    row.height=31;
+    row.eachCell({includeEmpty:true},(cell,c)=>{
+      cell.alignment={horizontal:"center",vertical:"middle",wrapText:true};
+      cell.font={size:9};
+      cell.border={top:{style:"thin",color:{argb:"FF666666"}},left:{style:"thin",color:{argb:"FF666666"}},bottom:{style:"thin",color:{argb:"FF666666"}},right:{style:"thin",color:{argb:"FF666666"}}};
+      if(c>=5 && c<=24){
+        const di=Math.floor((c-5)/4);
+        cell.fill={type:"pattern",pattern:"solid",fgColor:{argb:fills[di]}};
+      }else{
+        cell.fill={type:"pattern",pattern:"solid",fgColor:{argb:"FFFFFFFF"}};
+      }
+    });
+  });
+
+  ws.getColumn(1).width=5;
+  ws.getColumn(2).width=28;
+  ws.getColumn(3).width=18;
+  ws.getColumn(4).width=14;
+  for(let c=5;c<=24;c++) ws.getColumn(c).width=13;
+  ws.getColumn(25).width=11;
+  ws.autoFilter={from:{row:4,column:1},to:{row:4,column:25}};
+
+  const buffer=await wb.xlsx.writeBuffer();
+  const blob=new Blob([buffer],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob); a.download=filename; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
 function exportXlsx(){
   const q=exportTeacher.value;
   if(q==="") exportRows(rows,"جدول_نصاب_المعلمات_2026.xlsx");
