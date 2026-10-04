@@ -485,6 +485,7 @@ function deletePermission(i){
 localStorage.removeItem("currentUser");
 
 document.getElementById("loginScreen").style.display="flex";
+<script>
 function doLogin(){
   const user = document.getElementById("loginUser").value.trim();
   const pass = document.getElementById("loginPass").value;
@@ -502,7 +503,8 @@ function doLogin(){
     localStorage.setItem("currentUser", JSON.stringify(account));
     localStorage.setItem("loggedIn", "yes");
     document.getElementById("loginScreen").style.display = "none";
-    document.getElementById("app").style.display = "grid";
+    const app = document.getElementById("app");
+    if (app) app.style.display = "grid";
     document.getElementById("loginError").textContent = "";
   } else {
     document.getElementById("loginError").textContent =
@@ -515,6 +517,6 @@ function logout(){
   localStorage.removeItem("loggedIn");
   window.location.reload();
 }
-
+</script>
 </body>
 </html>
