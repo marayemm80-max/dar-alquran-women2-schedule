@@ -594,33 +594,62 @@ async function exportRows(rr,filename){
 }
 
 async function exportPdf(){
-  if(!window.jspdf || !window.jspdf.jsPDF){ alert("تعذر تحميل أداة PDF. تأكد من اتصال الإنترنت."); return; }
-  const {jsPDF}=window.jspdf;
-  const doc=new jsPDF({orientation:"landscape",unit:"pt",format:"a3"});
-  doc.setFontSize(14);
-  doc.text("جدول نصاب حصص معلمات مركز دار قرآن غرب عبدالله المبارك نساء (2) للعام الدراسي 2026م", doc.internal.pageSize.getWidth()/2, 30,{align:"center"});
-  const head1=[["م","الاسم","القسم","نوع الارتباط",...DAYS.flatMap(d=>PERIODS.map(p=>d+" - "+p)),"إجمالي النصاب"]];
-  const body=rows.map((r,i)=>[i+1,r.name,r.dept,r.connection,...(r.slots||Array(20).fill("")),r.total]);
-  const dayFills=[[243,223,201],[199,216,234],[207,228,200],[234,208,223],[215,215,215]];
-  doc.autoTable({
-    head:head1,body,
-    startY:42,
-    theme:"grid",
-    styles:{fontSize:5.5,cellPadding:1.5,halign:"center",valign:"middle",overflow:"linebreak"},
-    headStyles:{fillColor:[239,239,239],textColor:[0,0,0],fontStyle:"bold"},
-    columnStyles:{0:{cellWidth:20},1:{cellWidth:95},2:{cellWidth:52},3:{cellWidth:46},24:{cellWidth:38}},
-    didParseCell:function(data){
-      const c=data.column.index;
-      if(c>=4 && c<=23){
-        const di=Math.floor((c-4)/4);
-        data.cell.styles.fillColor=dayFills[di];
+  const selected = (typeof exportTeacher !== "undefined" && exportTeacher.value !== "") ? Number(exportTeacher.value) : null;
+  const sourceRows = selected===null ? rows : [rows[selected]];
+  const chunks = selected===null ? [sourceRows.slice(0,20),sourceRows.slice(20,52),sourceRows.slice(52)] : [sourceRows];
+  const dayClasses=["sun","mon","tue","wed","thu"];
+  const safe = v => String(v??"").replace(/[&<>\"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+  function tableHtml(rr, offset){
+    let h='<table class="pdfgrid"><thead>';
+    h+='<tr><th rowspan="3" class="meta num">م</th><th rowspan="3" class="meta name">الاسم</th><th rowspan="3" class="meta dept">القسم</th><th rowspan="3" class="meta conn">نوع الارتباط</th><th colspan="20" class="meta">أيام الأسبوع</th><th rowspan="3" class="meta total">إجمالي<br>نصاب الحصص</th></tr>';
+    h+='<tr>';
+    DAYS.forEach((d,i)=>h+=`<th colspan="4" class="${dayClasses[i]}">${safe(d)}</th>`);
+    h+='</tr><tr>';
+    DAYS.forEach((d,i)=>PERIODS.forEach(p=>h+=`<th class="period ${dayClasses[i]}">${safe(p)}</th>`));
+    h+='</tr></thead><tbody>';
+    rr.forEach((r,ri)=>{
+      h+=`<tr><td>${offset+ri+1}</td><td class="namecell">${safe(r.name)}</td><td>${safe(r.dept)}</td><td>${safe(r.connection)}</td>`;
+      const slots=Array.isArray(r.slots)?r.slots:Array(20).fill("");
+      for(let si=0;si<20;si++){
+        const di=Math.floor(si/4);
+        h+=`<td class="${dayClasses[di]}">${safe(slots[si]||"")}</td>`;
       }
-    },
-    margin:{left:18,right:18,top:18,bottom:18},
-    horizontalPageBreak:true,
-    horizontalPageBreakRepeat:[0,1,2,3]
+      h+=`<td>${safe(r.total)}</td></tr>`;
+    });
+    return h+'</tbody></table>';
+  }
+
+  let pages='';
+  let offset=0;
+  chunks.forEach((chunk,i)=>{
+    if(!chunk.length) return;
+    pages += `<section class="page"><div class="title">جدول نصاب حصص معلمات مركز دار قرآن غرب عبدالله المبارك نساء (2) للعام الدراسي 2026م</div>${tableHtml(chunk,offset)}</section>`;
+    offset += chunk.length;
   });
-  doc.save("جدول_نصاب_المعلمات_2026.pdf");
+
+  const w=window.open('', '_blank');
+  if(!w){ alert('تعذر فتح نافذة PDF. اسمح بالنوافذ المنبثقة لهذا الموقع ثم حاول مرة أخرى.'); return; }
+  w.document.open();
+  w.document.write(`<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>جدول نصاب المعلمات 2026</title><style>
+    @page{size:A3 landscape;margin:8mm}
+    *{box-sizing:border-box;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
+    html,body{margin:0;padding:0;background:#fff;color:#111;font-family:Tahoma,"Arial",sans-serif;direction:rtl}
+    .page{page-break-after:always;break-after:page;width:100%}
+    .page:last-child{page-break-after:auto;break-after:auto}
+    .title{background:#17583f;color:#fff;font-weight:700;font-size:18px;text-align:center;padding:9px;margin-bottom:5px;border:1px solid #555}
+    .pdfgrid{border-collapse:collapse;table-layout:fixed;width:100%;font-size:7.2px;direction:rtl}
+    .pdfgrid th,.pdfgrid td{border:1px solid #555;text-align:center;vertical-align:middle;padding:2px 1px;height:24px;line-height:1.25;word-break:normal;overflow-wrap:anywhere}
+    .pdfgrid thead th{font-weight:700}
+    .meta{background:#efefef}
+    .num{width:2.2%}.name{width:11.5%}.dept{width:6.8%}.conn{width:5.5%}.total{width:4.8%}
+    .period{width:3.45%}.namecell{font-size:7.4px;font-weight:600}
+    .sun{background:#f3dfc9}.mon{background:#c7d8ea}.tue{background:#cfe4c8}.wed{background:#ead0df}.thu{background:#d7d7d7}
+    @media screen{body{padding:12px;background:#ddd}.page{background:white;padding:6px;margin:0 auto 14px;max-width:1580px;box-shadow:0 2px 12px #777}}
+  </style></head><body>${pages}<script>
+    window.onload=()=>{setTimeout(()=>window.print(),450)};
+  <\/script></body></html>`);
+  w.document.close();
 }
 function exportXlsx(){
   const q=exportTeacher.value;
