@@ -508,6 +508,8 @@ function doLogin(){
     document.getElementById("loginError").textContent =
       "اسم المستخدم أو كلمة المرور غير صحيحة";
   }
+  }
+  
 function logout(){
   localStorage.removeItem("currentUser");
   localStorage.removeItem("loggedIn");
