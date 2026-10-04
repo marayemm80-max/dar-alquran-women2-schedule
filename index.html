@@ -503,8 +503,7 @@ function doLogin(){
     localStorage.setItem("currentUser", JSON.stringify(account));
     localStorage.setItem("loggedIn", "yes");
     document.getElementById("loginScreen").style.display = "none";
-    const app = document.getElementById("app");
-    if (app) app.style.display = "grid";
+  
     document.getElementById("loginError").textContent = "";
   } else {
     document.getElementById("loginError").textContent =
