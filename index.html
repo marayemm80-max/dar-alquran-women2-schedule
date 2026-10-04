@@ -548,10 +548,18 @@ function logout(){
 const GRID_DAYS=["الخميس","الأربعاء","الثلاثاء","الاثنين","الأحد"];
 const GRID_DAY_CLASSES=["thu","wed","tue","mon","sun"];
 const GRID_PERIODS=["الرابعة","الثالثة","الثانية","الأولى"];
+const DATA_VERSION="2026-final-v5";
 let savedRoster=null;
 try{savedRoster=JSON.parse(localStorage.getItem("rosterRows2026")||"null");}catch(e){savedRoster=null;}
-let rosterRows=(Array.isArray(savedRoster)&&savedRoster.length>0) ? savedRoster : SOURCE_ROWS.map(r=>JSON.parse(JSON.stringify(r)));
-if(!Array.isArray(savedRoster)||savedRoster.length===0){localStorage.setItem("rosterRows2026",JSON.stringify(rosterRows));}
+// عند نشر هذه النسخة لأول مرة: حمّل الجدول الأصلي كاملاً وتجاوز أي بيانات فارغة من النسخ السابقة.
+if(localStorage.getItem("scheduleDataVersion")!==DATA_VERSION){
+  savedRoster=SOURCE_ROWS.map(r=>JSON.parse(JSON.stringify(r)));
+  localStorage.setItem("rosterRows2026",JSON.stringify(savedRoster));
+  localStorage.setItem("scheduleDataVersion",DATA_VERSION);
+}
+let rosterRows=(Array.isArray(savedRoster)&&savedRoster.length===SOURCE_ROWS.length) ? savedRoster : SOURCE_ROWS.map(r=>JSON.parse(JSON.stringify(r)));
+localStorage.setItem("rosterRows2026",JSON.stringify(rosterRows));
+let dragFrom=null; let dragMoved=false;
 function saveRoster(){localStorage.setItem("rosterRows2026",JSON.stringify(rosterRows));renderMasterSchedule();syncTeachersFromRoster();refreshExportTeachers();}
 function syncTeachersFromRoster(){teachers=rosterRows.map(r=>r.name);localStorage.setItem("teachers",JSON.stringify(teachers));}
 function esc(v){return String(v??"").replace(/[&<>\"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
@@ -561,10 +569,24 @@ function renderMasterSchedule(){
  GRID_DAYS.forEach((d,i)=>h+=`<th colspan="4" class="day ${GRID_DAY_CLASSES[i]}">${d}</th>`); h+='</tr><tr>';
  GRID_DAYS.forEach((d,i)=>GRID_PERIODS.forEach(p=>h+=`<th class="${GRID_DAY_CLASSES[i]}">${p}</th>`)); h+='</tr></thead><tbody>';
  rosterRows.forEach((r,ri)=>{h+=`<tr><td>${ri+1}</td><td class="teacher-name">${esc(r.name)}</td><td>${esc(r.dept)}</td><td>${esc(r.connection)}</td>`;
-   (r.slots||Array(20).fill('')).forEach((v,si)=>{let dc=GRID_DAY_CLASSES[Math.floor(si/4)]||'';h+=`<td class="slot ${dc}" onclick="editSlot(${ri},${si})" title="اضغط للتعديل">${esc(v)}</td>`});
+   (r.slots||Array(20).fill('')).forEach((v,si)=>{let dc=GRID_DAY_CLASSES[Math.floor(si/4)]||'';h+=`<td class="slot ${dc}" draggable="${v?'true':'false'}" onclick="if(!dragMoved)editSlot(${ri},${si})" ondragstart="startSlotDrag(event,${ri},${si})" ondragover="event.preventDefault()" ondrop="dropSlot(event,${ri},${si})" ondragend="endSlotDrag()" title="اضغط للتعديل، أو اسحب الحصة إلى خلية أخرى">${esc(v)}</td>`});
    h+=`<td>${esc(r.total)}</td><td class="no-print"><button class="mini-btn edit-btn" onclick="editRosterTeacher(${ri})">✏️ تعديل</button><button class="mini-btn delete-btn" onclick="deleteRosterTeacher(${ri})">حذف</button></td></tr>`;
  }); h+='</tbody>'; t.innerHTML=h;
 }
+
+function startSlotDrag(ev,ri,si){
+  const val=(rosterRows[ri].slots||[])[si]||''; if(!val){ev.preventDefault();return;}
+  dragFrom={ri,si}; dragMoved=true; ev.dataTransfer.effectAllowed='move'; ev.dataTransfer.setData('text/plain',val);
+}
+function dropSlot(ev,ri,si){
+  ev.preventDefault(); if(!dragFrom)return;
+  const a=rosterRows[dragFrom.ri]; const b=rosterRows[ri]; a.slots=a.slots||Array(20).fill(''); b.slots=b.slots||Array(20).fill('');
+  const fromVal=a.slots[dragFrom.si]||''; const targetVal=b.slots[si]||'';
+  // إذا كانت الخلية الهدف مشغولة يتم التبديل بين الحصتين، وإذا كانت فارغة يتم النقل.
+  b.slots[si]=fromVal; a.slots[dragFrom.si]=targetVal; dragFrom=null; saveRoster();
+}
+function endSlotDrag(){dragFrom=null;setTimeout(()=>{dragMoved=false},120);}
+
 function editSlot(ri,si){
  const r=rosterRows[ri], old=(r.slots||[])[si]||''; const v=prompt('تعديل المادة / بيان الحصة:',old); if(v===null)return;
  r.slots=r.slots||Array(20).fill(''); r.slots[si]=v.trim(); const n=r.slots.filter(x=>x && !String(x).startsWith('بالتناوب')).length; if(/^\d+$/.test(String(r.total))) r.total=String(n); saveRoster();
