@@ -548,8 +548,11 @@ function logout(){
 const GRID_DAYS=["الخميس","الأربعاء","الثلاثاء","الاثنين","الأحد"];
 const GRID_DAY_CLASSES=["thu","wed","tue","mon","sun"];
 const GRID_PERIODS=["الرابعة","الثالثة","الثانية","الأولى"];
-let rosterRows=JSON.parse(localStorage.getItem("rosterRows2026")||"null") || SOURCE_ROWS.map(r=>JSON.parse(JSON.stringify(r)));
-function saveRoster(){localStorage.setItem("rosterRows2026",JSON.stringify(rosterRows));renderMasterSchedule();syncTeachersFromRoster();}
+let savedRoster=null;
+try{savedRoster=JSON.parse(localStorage.getItem("rosterRows2026")||"null");}catch(e){savedRoster=null;}
+let rosterRows=(Array.isArray(savedRoster)&&savedRoster.length>0) ? savedRoster : SOURCE_ROWS.map(r=>JSON.parse(JSON.stringify(r)));
+if(!Array.isArray(savedRoster)||savedRoster.length===0){localStorage.setItem("rosterRows2026",JSON.stringify(rosterRows));}
+function saveRoster(){localStorage.setItem("rosterRows2026",JSON.stringify(rosterRows));renderMasterSchedule();syncTeachersFromRoster();refreshExportTeachers();}
 function syncTeachersFromRoster(){teachers=rosterRows.map(r=>r.name);localStorage.setItem("teachers",JSON.stringify(teachers));}
 function esc(v){return String(v??"").replace(/[&<>\"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
 function renderMasterSchedule(){
