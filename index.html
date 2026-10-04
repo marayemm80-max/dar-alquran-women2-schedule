@@ -1,41 +1,654 @@
-<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>جدول نصاب حصص المعلمات 2026</title>
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>نظام إدارة جدول حصص دار القرآن نساء ٢</title>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
-*{box-sizing:border-box}body{margin:0;font-family:Tahoma,Arial,sans-serif;background:#f4f7f6;color:#222}header{background:#17583f;color:#fff;padding:18px 24px}header h1{margin:0;font-size:24px}.toolbar{position:sticky;top:0;z-index:20;background:#fff;padding:10px 14px;display:flex;gap:8px;flex-wrap:wrap;border-bottom:1px solid #ddd}.toolbar button,.toolbar select{padding:9px 13px;border:1px solid #aaa;border-radius:7px;background:#fff;cursor:pointer}.toolbar .primary{background:#17583f;color:#fff;border-color:#17583f}.wrap{padding:14px}.hint{background:#fff8d9;border:1px solid #e4cc65;padding:9px 12px;margin-bottom:10px;border-radius:8px}.scroll{overflow:auto;background:white;border:1px solid #555;max-height:76vh}.grid{border-collapse:collapse;table-layout:fixed;min-width:2250px;width:2250px;font-size:11px}.grid th,.grid td{border:1px solid #555;text-align:center;vertical-align:middle;padding:3px;min-height:28px;height:31px;white-space:normal}.grid thead th{font-weight:700}.meta{background:#efefef}.num{width:42px}.name{width:220px}.dept{width:120px}.conn{width:90px}.total{width:75px}.action{width:105px}.period{width:75px}.sun{background:#f3dfc9}.mon{background:#c7d8ea}.tue{background:#cfe4c8}.wed{background:#ead0df}.thu{background:#d7d7d7}.slot{cursor:pointer;user-select:none}.slot[draggable=true]{cursor:grab}.slot.dragging{outline:3px solid #17583f}.slot.over{outline:3px dashed #333}.edit{background:#fff7c7;cursor:text}.btn{border:0;border-radius:5px;padding:5px 7px;margin:2px;cursor:pointer}.del{background:#b62929;color:#fff}.small{font-size:10px}.modal{display:none;position:fixed;inset:0;background:#0007;z-index:100;align-items:center;justify-content:center}.modal.open{display:flex}.box{background:#fff;padding:18px;border-radius:10px;width:min(500px,92vw)}.box label{display:block;margin:8px 0 3px}.box input{width:100%;padding:9px;border:1px solid #aaa;border-radius:6px}.box .row{display:flex;gap:8px;margin-top:14px}.box button{flex:1;padding:9px}.no-print{}
-@media print{header,.toolbar,.hint,.no-print{display:none!important}.wrap{padding:0}.scroll{overflow:visible;max-height:none;border:0}.grid{min-width:0;width:100%;font-size:6.5px}.grid th,.grid td{padding:1px;height:18px}.name{width:100px}.dept{width:55px}.conn{width:45px}.period{width:32px}}
-</style></head><body><header><h1>جدول نصاب حصص معلمات مركز دار قرآن غرب عبدلاله المبارك نساء (2) للعام الدراسي 2026م</h1></header>
-<div class="toolbar no-print"><button class="primary" onclick="addTeacher()">+ إضافة معلمة</button><button onclick="resetData()">استعادة الجدول الأصلي</button><button onclick="window.print()">طباعة</button><select id="exportTeacher"></select><button onclick="exportXlsx()">تصدير Excel</button></div>
-<div class="wrap"><div class="hint no-print">للتعديل: اضغط على <b>اسم المعلمة أو القسم أو نوع الارتباط أو النصاب</b>. ولتعديل المادة اضغط على خلية الحصة. ويمكنك <b>سحب الحصة وإفلاتها</b> في خلية أخرى.</div><div class="scroll"><table id="tbl" class="grid"></table></div></div>
-<div id="modal" class="modal"><div class="box"><h3 id="modalTitle">تعديل المعلمة</h3><label>الاسم</label><input id="mName"><label>القسم</label><input id="mDept"><label>نوع الارتباط</label><input id="mConn"><label>إجمالي النصاب</label><input id="mTotal"><div class="row"><button class="primary" onclick="saveModal()">حفظ</button><button onclick="closeModal()">إلغاء</button></div></div></div>
-<script>
-const SOURCE_ROWS=[{"n": 1, "name": "ريم ظاهر جاسم الخالدي", "dept": "القرآن الكريم", "connection": "مكلفة", "total": "5", "slots": ["", "", "", "", "", "", "القرآن الكريم 1م2", "القرآن الكريم 5م1", "", "", "", "", "القرآن الكريم 1م2", "", "دورة أجزاء متفرقة", "القرآن الكريم 5م1", "", "", "", ""]}, {"n": 2, "name": "استقلال رخيص الظفيري", "dept": "القرآن الكريم", "connection": "محفظة", "total": "6", "slots": ["", "", "", "", "", "", "", "", "", "", "دورة سورة البقرة الجزء3", "دورة سورة البقرة الجزء3", "", "", "تلاوة 2م", "تجويد 2م", "تلاوة 3م1", "تجويد 3م1", "", ""]}, {"n": 3, "name": "أفنان طلال منصور المضاحكة", "dept": "القرآن الكريم", "connection": "معين", "total": "4", "slots": ["", "", "", "", "", "", "", "", "", "", "", "", "تلاوة 1م1", "تجويد 1م1", "", "", "", "تجويد 1م2", "تلاوة 1م2", ""]}, {"n": 4, "name": "فاطمة غانم المنفي", "dept": "القرآن الكريم", "connection": "معين", "total": "5", "slots": ["", "", "", "", "تصحيح تلاوة", "", "", "", "", "", "", "", "", "تلاوة 5م2", "تجويد 5م2", "", "", "تلاوة 5م1", "تجويد 5م1", ""]}, {"n": 5, "name": "تهاني عبدلاله بطحي المطيري", "dept": "القرآن الكريم", "connection": "معين", "total": "1", "slots": ["", "", "", "", "", "", "", "", "", "", "دورة سورة البقرة الجزء2", "", "", "", "", "", "", "", "", ""]}, {"n": 6, "name": "منيرة عوض ضاحي الشمري", "dept": "القرآن الكريم", "connection": "معين", "total": "3", "slots": ["", "", "", "", "", "القرآن الكريم 5م2", "دورة سورة البقرة الجزء 1", "", "", "", "", "", "", "", "", "", "", "", "القرآن الكريم 5م2", ""]}, {"n": 7, "name": "أصايل طلال مذكر المطيري", "dept": "التفسير", "connection": "معين", "total": "2", "slots": ["", "", "", "", "", "تفسير 3م1", "", "", "", "", "", "", "", "", "", "", "", "", "", "تفسير 3م1"]}, {"n": 8, "name": "أسماء عزيز محمد العنزي", "dept": "التفسير", "connection": "معين", "total": "2", "slots": ["", "", "", "", "تفسير 3م2", "", "", "", "", "", "تفسير 3م2", "", "", "", "", "", "", "", "", ""]}, {"n": 9, "name": "حصة فهد مشعل العتيبي", "dept": "التفسير", "connection": "معين", "total": "2", "slots": ["", "", "", "", "", "", "", "", "", "", "", "", "تفسير 5م1", "", "", "", "", "", "", "تفسير 5م1"]}, {"n": 10, "name": "هاجر بندر عايد النصافي", "dept": "التفسير", "connection": "معين", "total": "2", "slots": ["", "", "", "", "تفسير 1م2", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "تفسير 1م2"]}, {"n": 11, "name": "نادية ناصر عبيد الرشيدي", "dept": "التفسير", "connection": "معين", "total": "2", "slots": ["", "", "", "", "", "", "", "", "", "", "", "", "تفسير 5م1", "", "", "", "", "بالتنواب مع أ.حصة العتيبي", "", "تفسير 5م1"]}, {"n": 12, "name": "نورة حنيظل عجمي حنيظل", "dept": "التفسير", "connection": "معين", "total": "1", "slots": ["", "", "", "", "علوم قرآن 5م2", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""]}, {"n": 13, "name": "مريم صالح وحش المطيري", "dept": "التفسير", "connection": "معين", "total": "2", "slots": ["", "", "", "", "", "", "تفسير3ت", "", "", "", "", "", "", "", "", "", "تفسير3ت", "", "", ""]}, {"n": 14, "name": "لولوة أحمد عبدلاله القنيصي", "dept": "التفسير", "connection": "معين", "total": "1", "slots": ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "علوم قرآن 5م1", "", "", ""]}, {"n": 15, "name": "دلال عوض ضاحي مطر", "dept": "التفسير", "connection": "معين", "total": "2", "slots": ["", "", "", "", "", "", "", "", "تفسير1م1", "", "", "", "", "", "", "", "", "تفسير1م1", "", ""]}, {"n": 16, "name": "هاجر دعيج العجمي", "dept": "التفسير", "connection": "معين", "total": "2", "slots": ["", "", "", "", "", "", "", "", "", "", "", "", "", "تفسير 2م", "", "", "تفسير 2م", "", "", ""]}, {"n": 17, "name": "تهاني يوسف النومس", "dept": "التفسير", "connection": "معين", "total": "2", "slots": ["", "", "", "", "", "", "", "تفسير 5م2", "", "", "", "", "", "", "", "", "", "", "", "تفسير 5م2"]}, {"n": 18, "name": "نورة فهيد المطيري", "dept": "التفسير", "connection": "معين", "total": "1", "slots": ["", "", "", "", "تفسير 1م2", "", "", "", "", "", "", "", "", "", "", "", "", "بالتناوب مع أ.هاجر النصافي", "", "تفسير 1م2"]}, {"n": 19, "name": "سارة حمد عياض اللميع", "dept": "التفسير", "connection": "معين", "total": "إجراءات مجلس طبي", "slots": ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""]}, {"n": 20, "name": "حنان عبدلاله الديحاني", "dept": "التفسير", "connection": "معين", "total": "إجراءات مجلس طبي", "slots": ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""]}, {"n": 21, "name": "مريم محمد علي العتيبي", "dept": "الحديث الشريف", "connection": "معين", "total": "1", "slots": ["", "", "", "", "", "", "", "", "", "", "", "", "", "حديث شريف 5م1", "بالتناوب مع أ.قيروان الديحاني", "", "", "", "", ""]}, {"n": 22, "name": "قيروان سعود مطلق الديحاني", "dept": "الحديث الشريف", "connection": "معين", "total": "1", "slots": ["", "", "", "", "", "", "", "", "", "", "", "", "", "حديث شريف 5م1", "", "", "", "", "", ""]}, {"n": 23, "name": "هدى نهار العصيمي", "dept": "الحديث الشريف", "connection": "معين", "total": "1", "slots": ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "تاريخ السنة 2م", "بالتناوب مع أ.فرح العجمي", ""]}, {"n": 24, "name": "منال علي سند المطيري", "dept": "الحديث الشريف", "connection": "معين", "total": "1", "slots": ["", "", "", "", "", "", "", "", "", "", "", "", "بالتناوب مع أ.شيماء الرشيدي", "", "تاريخ السنة 1م1", "", "", "", "", ""]}, {"n": 25, "name": "نورة سعد دعيس الراجحي", "dept": "الحديث الشريف", "connection": "معين", "total": "1", "slots": ["", "", "", "", "بالتناوب مع أ.جميلة شهاب", "", "حديث شريف 3م1", "", "", "", "", "", "", "", "", "", "", "", "", ""]}, {"n": 26, "name": "نور طلال هزاع العارضي", "dept": "الحديث الشريف", "connection": "معين", "total": "1", "slots": ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "تاريخ السنة 1م2", "", "", "", ""]}, {"n": 27, "name": "دليل سالم جديع العازمي", "dept": "الحديث الشريف", "connection": "معين", "total": "1", "slots": ["", "", "", "", "", "", "", "حديث شريف 3م2", "", "", "", "", "", "", "", "", "", "", "", ""]}, {"n": 28, "name": "مريم فالح حسن الشمري", "dept": "الحديث الشريف", "connection": "معين", "total": "2", "slots": ["", "", "", "", "", "القرآن الكريم 3م2", "", "", "", "", "", "القرآن الكريم 3م2", "", "", "", "", "", "", "", ""]}, {"n": 29, "name": "شيماء مبارك غايب الرشيدي", "dept": "الحديث الشريف", "connection": "معين", "total": "1", "slots": ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "تاريخ السنة 1م1", "", "", "", "", ""]}, {"n": 30, "name": "أمينة خالد طه الأنصاري", "dept": "الحديث الشريف", "connection": "معين", "total": "1", "slots": ["", "", "", "", "", "", "", "", "", "", "", "", "حديث شريف 5م2", "بالتناوب مع أ.دانة العباسي", "", "", "", "", "", ""]}, {"n": 31, "name": "سارة خالد طه الأنصاري", "dept": "الحديث الشريف", "connection": "معين", "total": "2", "slots": ["", "", "", "", "", "القرآن الكريم 2م", "", "", "", "", "", "", "", "", "", "", "", "", "القرآن الكريم 2م", ""]}, {"n": 32, "name": "دانة علي خميس العباسي", "dept": "الحديث الشريف", "connection": "معين", "total": "1", "slots": ["", "", "", "", "", "", "", "", "", "", "", "", "حديث شريف 5م2", "", "", "", "", "", "", ""]}, {"n": 33, "name": "جميلة شهاب فالح حمود", "dept": "الحديث الشريف", "connection": "معين", "total": "1", "slots": ["", "", "", "", "", "", "حديث شريف 3م1", "", "", "", "", "", "", "", "", "", "", "", "", ""]}, {"n": 34, "name": "فرح محمد العجمي", "dept": "الحديث الشريف", "connection": "معين", "total": "1", "slots": ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "تاريخ السنة 2م", "", ""]}, {"n": 35, "name": "موضي فهد العتيبي", "dept": "الحديث الشريف", "connection": "معين", "total": "2", "slots": ["", "", "", "", "", "", "", "", "", "", "القرآن الكريم 1م1", "", "", "", "", "", "القرآن الكريم 1م1", "", "", ""]}, {"n": 36, "name": "سارة الحميدي الحربي", "dept": "الحديث الشريف", "connection": "معين", "total": "1", "slots": ["", "", "", "", "", "", "", "", "", "", "", "", "", "بالتناوب مع أ.نور العارضي", "", "تاريخ السنة 1م2", "", "", "", ""]}, {"n": 37, "name": "العنود مبارك فنيطل الديحاني", "dept": "الحديث الشريف", "connection": "معين", "total": "2", "slots": ["", "", "", "", "فقه 3ت", "", "", "", "", "", "", "فقه 3ت", "", "", "", "", "", "", "", ""]}, {"n": 38, "name": "عهد سعود مرضي الربعي", "dept": "الحديث الشريف", "connection": "معين", "total": "1", "slots": ["", "", "", "", "", "بالتناوب مع أ.دليل العزمي", "", "حديث شريف 3م2", "", "", "", "", "", "", "", "", "", "", "", ""]}, {"n": 39, "name": "عالية فهاد ناصر العجمي", "dept": "الحديث الشريف", "connection": "معين", "total": "إجراءات مجلس طبي", "slots": ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""]}, {"n": 40, "name": "أسرار مفرح مبارك العجمي", "dept": "العقيدة", "connection": "معين", "total": "1", "slots": ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "عقيدة 5م2", "", ""]}, {"n": 41, "name": "شروق حميدي صنت المطيري", "dept": "العقيدة", "connection": "معين", "total": "1", "slots": ["", "", "", "", "", "", "", "", "عقيدة 3م2", "", "", "", "", "", "", "", "", "", "", ""]}, {"n": 42, "name": "سارة محمد الحربي", "dept": "العقيدة", "connection": "معين", "total": "1", "slots": ["", "", "", "", "", "", "دورة سورة البقرة الجزء 1", "", "", "", "", "", "", "", "", "", "", "", "", ""]}, {"n": 43, "name": "أسماء مطلق ناصر الخالدي", "dept": "العقيدة", "connection": "معين", "total": "1", "slots": ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "عقيدة 1م2", "", "", "", "", ""]}, {"n": 44, "name": "ضحى فرحان ثاني جاعد", "dept": "العقيدة", "connection": "معين", "total": "1", "slots": ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "عقيدة 1م1"]}, {"n": 45, "name": "ضحى محسن محمد المطيري", "dept": "العقيدة", "connection": "معين", "total": "1", "slots": ["", "", "", "", "", "", "", "", "", "دورة عقيدة", "", "", "", "", "", "", "", "", "", ""]}, {"n": 46, "name": "سارة بداح مطلق الرشيدي", "dept": "العقيدة", "connection": "معين", "total": "إجراءات مجلس طبي", "slots": ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""]}, {"n": 47, "name": "مشاعل محمد دغيم الرشيدي", "dept": "العقيدة", "connection": "معين", "total": "1", "slots": ["", "", "", "", "", "", "", "", "", "", "", "", "عقيدة 2م", "", "", "", "", "", "", ""]}, {"n": 48, "name": "نوف فالح الأصقة", "dept": "العقيدة", "connection": "معين", "total": "1", "slots": ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "سيرة نبوية 3ت", "", ""]}, {"n": 49, "name": "نورة بندر غانم العتيبي", "dept": "العقيدة", "connection": "معين", "total": "1", "slots": ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "بالتناوب مع أ.ضحى فرحان", "", "عقيدة 1م1"]}, {"n": 50, "name": "رحاب خلف المطيري", "dept": "العقيدة", "connection": "معين", "total": "1", "slots": ["", "", "", "", "", "", "", "", "", "", "", "", "بالتناوب مع أ.أسماء الخالدي", "", "عقيدة 1م2", "", "", "", "", ""]}, {"n": 51, "name": "شيخة عوض العنزي", "dept": "العقيدة", "connection": "معين", "total": "1", "slots": ["", "", "", "", "", "", "عقيدة 5م1", "", "", "", "", "", "", "", "", "", "", "", "", ""]}, {"n": 52, "name": "عائشة عايد الرشيدي", "dept": "العقيدة", "connection": "معين", "total": "1", "slots": ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "عقيدة 3م1", "", "", "", ""]}, {"n": 53, "name": "ألطاف فالح سبيل المطيري", "dept": "السيرة النبوية", "connection": "معين", "total": "1", "slots": ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "سيرة نبوية 3م1", "", "", "", "", ""]}, {"n": 54, "name": "إقبال الفي سعد الرشيدي", "dept": "السيرة النبوية", "connection": "معين", "total": "2", "slots": ["", "", "", "", "", "", "", "القرآن الكريم 3م1", "", "", "", "", "القرآن الكريم 3م1", "", "", "", "", "", "", ""]}, {"n": 55, "name": "أسيل حربي عبدلاله العريمان", "dept": "السيرة النبوية", "connection": "معين", "total": "3", "slots": ["", "", "", "", "", "", "", "القرآن الكريم 3ت", "القرآن الكريم 3ت", "", "", "", "", "", "", "", "", "", "القرآن الكريم 3ت", ""]}, {"n": 56, "name": "عائشة تركي عيسى المطيري", "dept": "السيرة النبوية", "connection": "معين", "total": "1", "slots": ["", "", "", "", "", "", "", "", "", "", "دورة السيرة النبوية", "", "", "", "", "", "", "", "", ""]}, {"n": 57, "name": "أنوار محمد عبدلاله العليم", "dept": "السيرة النبوية", "connection": "معين", "total": "1", "slots": ["", "", "", "", "", "", "", "", "", "", "", "", "بالتناوب مع أ.ألطاف المطيري", "", "سيرة نبوية 3م1", "", "", "", "", ""]}, {"n": 58, "name": "مرام فهد العقيلي", "dept": "السيرة النبوية", "connection": "معين", "total": "1", "slots": ["", "", "", "", "", "", "سيرة نبوية 3م2", "", "", "", "", "", "", "", "", "", "", "", "", ""]}, {"n": 59, "name": "نورة خالد فهد المطيري", "dept": "السيرة النبوية", "connection": "معين", "total": "1", "slots": ["", "", "", "", "بالتناوب مع أ.مرام العقيلي", "", "سيرة نبوية 3م2", "", "", "", "", "", "", "", "", "", "", "", "", ""]}, {"n": 60, "name": "ريم عيسى عبدلاله عبدالعليم", "dept": "السيرة النبوية", "connection": "معين", "total": "1", "slots": ["", "", "", "", "", "سيرة نبوية 1م2", "", "", "", "", "", "", "", "", "", "", "", "", "", ""]}, {"n": 61, "name": "مها فالح الديحاني", "dept": "السيرة النبوية", "connection": "معين", "total": "1", "slots": ["", "", "", "", "", "", "", "", "", "سيرة نبوية 1م1", "", "", "", "", "", "", "", "", "", ""]}, {"n": 62, "name": "روان فواز الرشيدي", "dept": "السيرة النبوية", "connection": "معين", "total": "2", "slots": ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "تلاوة 3م2", "تجويد 3م2", "", ""]}, {"n": 63, "name": "تهاني فالح العتيبي", "dept": "السيرة النبوية", "connection": "معين", "total": "1", "slots": ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "سيرة نبوية 1م2", "بالتناوب مع أ.ريم العليم", "", ""]}, {"n": 64, "name": "نور ناصر المطيري", "dept": "السيرة النبوية", "connection": "معين", "total": "1", "slots": ["", "", "", "", "", "", "سيرة نبوية 2م", "", "", "", "", "", "", "", "", "", "", "", "", ""]}, {"n": 65, "name": "آلاء محمد صابر الأيوبي", "dept": "الفقه", "connection": "معين", "total": "2", "slots": ["", "", "", "", "", "", "", "", "", "", "", "فقه 1م1", "", "", "", "", "", "", "فقه 1م1", ""]}, {"n": 66, "name": "جمانة ثامر عموش المطيري", "dept": "الفقه", "connection": "معين", "total": "1", "slots": ["", "", "", "", "", "", "", "", "", "", "", "دورة الفقه", "", "", "", "", "", "", "", ""]}, {"n": 67, "name": "مريم فالح خالد المطيري", "dept": "الفقه", "connection": "معين", "total": "2", "slots": ["", "", "", "", "", "فقه 5م1", "", "", "", "", "", "", "", "", "فقه 5م1", "", "", "", "", ""]}, {"n": 68, "name": "نوف ماجد حمد المطيري", "dept": "الفقه", "connection": "معين", "total": "2", "slots": ["", "", "", "", "فقه 2م", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "فقه 2م"]}, {"n": 69, "name": "حصة عبدلاله السبيعي", "dept": "الفقه", "connection": "معين", "total": "2", "slots": ["", "", "", "", "", "", "", "", "", "", "", "", "", "فقه3م1", "", "", "", "", "فقه3م1", ""]}, {"n": 70, "name": "هناء خلف شاهر العنزي", "dept": "الفقه", "connection": "معين", "total": "2", "slots": ["", "", "", "", "", "", "فقه 5م2", "", "", "", "", "", "", "", "", "فقه 5م2", "", "", "", ""]}, {"n": 71, "name": "نهى صالح محمد الفجري", "dept": "الفقه", "connection": "معين", "total": "3", "slots": ["", "", "", "", "", "", "", "", "", "", "دورة األسماء الحسنى", "", "", "فقه 1م2", "", "", "فقه 1م2", "", "", ""]}, {"n": 72, "name": "أنوار سليمان محمد الحشان", "dept": "الفقه", "connection": "معين", "total": "2", "slots": ["", "", "", "", "", "", "", "", "", "فقه 3م2", "", "", "", "", "", "", "", "", "", "فقه 3م2"]}, {"n": 73, "name": "مريم سعود المطيري", "dept": "الفقه", "connection": "معين", "total": "2", "slots": ["", "", "", "", "", "فقه 5م1", "بالتناوب مع مريم قالح", "", "", "", "", "", "", "", "فقه 5م1", "", "", "", "", ""]}, {"n": 74, "name": "مرزوقة مرزوق الرشيدي", "dept": "اللغة العربية", "connection": "معين", "total": "4", "slots": ["", "", "", "", "", "عربي 3ت", "", "", "", "عربي 3ت", "عربي 3ت", "", "", "", "", "", "", "", "", "عربي 3ت"]}, {"n": 75, "name": "مها بدر المطيري", "dept": "اللغة العربية", "connection": "معين", "total": "3", "slots": ["", "", "", "", "نحو 3م1", "", "", "نحو 2م", "", "", "", "", "", "", "", "", "", "", "نحو 3م2", ""]}, {"n": 76, "name": "معالي مطلق حسين المطيري", "dept": "اللغة العربية", "connection": "معين", "total": "2", "slots": ["", "", "", "", "", "", "", "نحو 1م2", "", "", "", "", "", "", "", "نحو 1م1", "", "", "", ""]}, {"n": 77, "name": "خزنة ناصر عايد النصافي", "dept": "اللغة العربية", "connection": "معين", "total": "2", "slots": ["", "", "", "", "نحو5م1", "", "", "", "", "", "", "", "", "", "", "", "نحو 5م2", "", "", ""]}];
-const DAYS=["الأحد","الاثنين","الثلاثاء","الأربعاء","الخميس"];
-const CLS=["sun","mon","tue","wed","thu"];
-const PERIODS=["الأولى","الثانية","الثالثة","الرابعة"];
-const KEY='darquran_roster_final_2026_v10';
-let rows; try{rows=JSON.parse(localStorage.getItem(KEY)||'null')}catch(e){rows=null} if(!Array.isArray(rows)||rows.length!==77) rows=structuredClone(SOURCE_ROWS);
-let editing=-1, drag=null;
-function save(){localStorage.setItem(KEY,JSON.stringify(rows));render();}
-function e(s){return String(s??'').replace(/[&<>\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
-function render(){
- let h='<thead><tr><th rowspan="3" class="meta num">م</th><th rowspan="3" class="meta name">الاسم</th><th rowspan="3" class="meta dept">القسم</th><th rowspan="3" class="meta conn">نوع الارتباط</th><th colspan="20" class="meta">أيام الأسبوع</th><th rowspan="3" class="meta total">إجمالي<br>نصاب الحصص</th><th rowspan="3" class="meta action no-print">إجراء</th></tr><tr>';
- DAYS.forEach((d,i)=>h+=`<th colspan="4" class="${CLS[i]}">${d}</th>`); h+='</tr><tr>'; DAYS.forEach((d,i)=>PERIODS.forEach(p=>h+=`<th class="period ${CLS[i]}">${p}</th>`)); h+='</tr></thead><tbody>';
- rows.forEach((r,ri)=>{h+=`<tr><td>${ri+1}</td><td class="edit name" onclick="openModal(${ri})">${e(r.name)}</td><td class="edit" onclick="openModal(${ri})">${e(r.dept)}</td><td class="edit" onclick="openModal(${ri})">${e(r.connection)}</td>`;
-   let slots=r.slots||Array(20).fill(''); for(let si=0;si<20;si++){let v=slots[si]||'',di=Math.floor(si/4);h+=`<td class="slot ${CLS[di]}" draggable="${v?'true':'false'}" data-r="${ri}" data-s="${si}" onclick="editSlot(${ri},${si})" ondragstart="ds(event,${ri},${si})" ondragover="dover(event)" ondragleave="event.currentTarget.classList.remove('over')" ondrop="dd(event,${ri},${si})" ondragend="de(event)">${e(v)}</td>`}
-   h+=`<td class="edit" onclick="openModal(${ri})">${e(r.total)}</td><td class="no-print"><button class="btn" onclick="openModal(${ri})">✏️</button><button class="btn del" onclick="removeTeacher(${ri})">حذف</button></td></tr>`}); h+='</tbody>';document.getElementById('tbl').innerHTML=h;fillExport();
+*{box-sizing:border-box}
+body{margin:0;font-family:Tahoma,Arial,sans-serif;background:#f4f7f6;color:#222}
+header{background:#17583f;color:#fff;padding:18px 24px}
+header h1{margin:0;font-size:24px}
+header p{margin:6px 0 0}
+nav{background:#fff;padding:10px 14px;display:flex;gap:7px;flex-wrap:wrap;border-bottom:1px solid #ddd;position:sticky;top:0;z-index:30}
+nav button{padding:9px 13px;border:1px solid #aaa;border-radius:7px;background:#fff;cursor:pointer}
+nav button:hover{background:#dcece6}
+.container{padding:16px}
+.section{display:none}
+.section.active{display:block}
+.welcome,.card,.panel{background:#fff;border:1px solid #ddd;border-radius:12px;padding:16px;margin-bottom:14px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
+.card{cursor:pointer}
+.card h3{margin:5px 0}
+.icon{font-size:28px}
+.action,.primary{background:#17583f;color:#fff;border:0;border-radius:7px;padding:9px 13px;cursor:pointer}
+.danger{background:#a92525;color:#fff;border:0;border-radius:6px;padding:6px 9px;cursor:pointer}
+input,select{padding:9px;border:1px solid #aaa;border-radius:6px;margin:4px}
+table.simple{width:100%;border-collapse:collapse;background:#fff;margin-top:10px}
+table.simple th,table.simple td{border:1px solid #bbb;padding:8px;text-align:center}
+table.simple th{background:#e7efec}
+.schedule-toolbar{background:#fff;padding:10px;display:flex;gap:8px;flex-wrap:wrap;border:1px solid #ddd;border-radius:10px;margin-bottom:10px}
+.hint{background:#fff8d9;border:1px solid #e4cc65;padding:9px 12px;margin-bottom:10px;border-radius:8px}
+.scroll{overflow:auto;background:#fff;border:1px solid #555;max-height:72vh}
+.grid{border-collapse:collapse;table-layout:fixed;min-width:2250px;width:2250px;font-size:11px}
+.grid th,.grid td{border:1px solid #555;text-align:center;vertical-align:middle;padding:3px;height:31px;white-space:normal}
+.grid thead th{font-weight:700}
+.meta{background:#efefef}
+.num{width:42px}
+.name{width:220px}
+.dept{width:120px}
+.conn{width:90px}
+.total{width:75px}
+.actioncol{width:105px}
+.period{width:75px}
+.sun{background:#f3dfc9}
+.mon{background:#c7d8ea}
+.tue{background:#cfe4c8}
+.wed{background:#ead0df}
+.thu{background:#d7d7d7}
+.slot{cursor:pointer;user-select:none}
+.slot[draggable=true]{cursor:grab}
+.slot.dragging{outline:3px solid #17583f}
+.slot.over{outline:3px dashed #333}
+.edit{background:#fff7c7;cursor:text}
+.modal{display:none;position:fixed;inset:0;background:#0007;z-index:100000;align-items:center;justify-content:center}
+.modal.open{display:flex}
+.modalbox{background:#fff;padding:18px;border-radius:12px;width:min(520px,92vw)}
+.modalbox label{display:block;margin:8px 0 3px}
+.modalbox input,.modalbox select{width:100%;margin:0}
+.modalrow{display:flex;gap:8px;margin-top:14px}
+.modalrow button{flex:1;padding:10px}
+.badge{display:inline-block;padding:3px 7px;border-radius:10px;background:#e8efec;font-size:12px}
+#loginScreen{position:fixed;inset:0;background:#f4f7f6;z-index:99999;display:flex;align-items:center;justify-content:center}
+.loginbox{background:#fff;padding:35px;border-radius:15px;width:360px;box-shadow:0 4px 20px #999;text-align:center}
+.loginbox input{width:100%;padding:12px;margin:8px 0}
+footer{text-align:center;padding:18px;color:#666}
+@media print{
+ header,nav,.no-print,.cards,.welcome,footer{display:none!important}
+ .container{padding:0}
+ .section{display:none!important}
+ #schedule.section{display:block!important}
+ .scroll{overflow:visible;max-height:none;border:0}
+ .grid{min-width:0;width:100%;font-size:6.3px}
+ .grid th,.grid td{padding:1px;height:18px}
+ .name{width:100px} .dept{width:55px} .conn{width:45px} .period{width:32px}
 }
-function editSlot(ri,si){if(drag)return;let old=rows[ri].slots[si]||'';let v=prompt('المادة / بيان الحصة:',old);if(v===null)return;rows[ri].slots[si]=v.trim();save();}
-function ds(ev,r,s){drag={r,s};ev.currentTarget.classList.add('dragging');ev.dataTransfer.effectAllowed='move';ev.dataTransfer.setData('text/plain','x')}
-function dover(ev){ev.preventDefault();ev.currentTarget.classList.add('over')}
-function dd(ev,r,s){ev.preventDefault();ev.currentTarget.classList.remove('over');if(!drag)return;let a=rows[drag.r].slots,b=rows[r].slots;[a[drag.s],b[s]]=[b[s],a[drag.s]];drag=null;save()}
-function de(ev){ev.currentTarget.classList.remove('dragging');setTimeout(()=>drag=null,50)}
-function openModal(i){editing=i;let r=rows[i];mName.value=r.name;mDept.value=r.dept;mConn.value=r.connection;mTotal.value=r.total;modal.classList.add('open')}
-function closeModal(){modal.classList.remove('open');editing=-1}
-function saveModal(){if(editing<0)return;let r=rows[editing];r.name=mName.value.trim();r.dept=mDept.value.trim();r.connection=mConn.value.trim();r.total=mTotal.value.trim();closeModal();save()}
-function addTeacher(){rows.push({n:rows.length+1,name:'معلمة جديدة',dept:'',connection:'معين',total:'0',slots:Array(20).fill('')});save();openModal(rows.length-1)}
-function removeTeacher(i){if(confirm('حذف هذه المعلمة من الجدول؟')){rows.splice(i,1);save()}}
-function resetData(){if(confirm('استعادة الجدول الأصلي وإلغاء تعديلات هذه النسخة؟')){rows=structuredClone(SOURCE_ROWS);save()}}
-function fillExport(){let s=document.getElementById('exportTeacher'),v=s.value;s.innerHTML='<option value="">الجدول الكامل</option>'+rows.map((r,i)=>`<option value="${i}">${e(r.name)}</option>`).join('');s.value=v}
-function exportXlsx(){if(typeof XLSX==='undefined'){alert('تعذر تحميل أداة Excel. تأكد من اتصال الإنترنت.');return}let q=exportTeacher.value,rr=q===''?rows:[rows[Number(q)]];let a=[['م','الاسم','القسم','نوع الارتباط',...DAYS.flatMap(d=>PERIODS.map(p=>d+' - '+p)),'إجمالي النصاب']];rr.forEach((r,i)=>a.push([i+1,r.name,r.dept,r.connection,...r.slots,r.total]));let ws=XLSX.utils.aoa_to_sheet(a),wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'جدول النصاب');XLSX.writeFile(wb,q===''?'جدول_نصاب_المعلمات_2026.xlsx':`جدول_${rr[0].name}.xlsx`)}
-render();
-</script></body></html>
+</style>
+</head>
+<body>
+
+<div id="loginScreen">
+  <div class="loginbox">
+    <h2>تسجيل الدخول</h2>
+    <p>نظام إدارة جدول حصص دار القرآن نساء ٢</p>
+    <input id="loginUser" placeholder="اسم المستخدم" autocomplete="username">
+    <input id="loginPass" type="password" placeholder="كلمة المرور" autocomplete="current-password">
+    <button class="action" style="width:100%;padding:12px" onclick="doLogin()">دخول</button>
+    <p id="loginError" style="color:#b00020"></p>
+    <small>المسؤول الافتراضي: admin</small>
+  </div>
+</div>
+
+<header>
+  <h1>نظام إدارة جدول حصص دار القرآن نساء ٢</h1>
+  <p>إدارة الجداول والمعلمات والمواد والإداريات والطباعة والصلاحيات</p>
+</header>
+
+<nav class="no-print">
+  <button onclick="home()">الرئيسية</button>
+  <button onclick="show('schedule')">الجدول الدراسي</button>
+  <button onclick="show('teachers')">المعلمات</button>
+  <button onclick="show('subjects')">المواد</button>
+  <button onclick="show('admins')">الإداريات</button>
+  <button onclick="show('printing')">مركز الطباعة</button>
+  <button id="permissionsNav" onclick="show('permissions')">الصلاحيات</button>
+  <button id="logoutBtn" onclick="logout()">🚪 تسجيل الخروج</button>
+</nav>
+
+<div class="container">
+
+<section id="home">
+  <div class="welcome">
+    <h2>مرحباً بكم</h2>
+    <p>لوحة التحكم الرئيسية لإدارة جدول حصص دار القرآن نساء ٢.</p>
+    <p>المستخدم الحالي: <b id="currentUserLabel"></b> <span id="currentRoleLabel" class="badge"></span></p>
+  </div>
+  <div class="cards">
+    <div class="card" onclick="show('schedule')"><div class="icon">📅</div><h3>الجدول الدراسي</h3><p>عرض وتعديل وسحب وتبديل الحصص.</p></div>
+    <div class="card" onclick="show('teachers')"><div class="icon">👩‍🏫</div><h3>المعلمات</h3><p>إدارة أسماء المعلمات وبياناتهن.</p></div>
+    <div class="card" onclick="show('subjects')"><div class="icon">📚</div><h3>المواد</h3><p>إضافة المواد وتعديلها وحذفها.</p></div>
+    <div class="card" onclick="show('admins')"><div class="icon">👩‍💼</div><h3>الإداريات</h3><p>إدارة أسماء الإداريات.</p></div>
+    <div class="card" onclick="show('printing')"><div class="icon">🖨️</div><h3>مركز الطباعة</h3><p>طباعة الجدول وتصديره إلى Excel.</p></div>
+    <div id="permissionsCard" class="card" onclick="show('permissions')"><div class="icon">🔐</div><h3>الصلاحيات</h3><p>إدارة المستخدمين وكلمات المرور والصلاحيات.</p></div>
+  </div>
+</section>
+
+<section id="schedule" class="section">
+  <h2>📅 الجدول الدراسي</h2>
+  <div class="schedule-toolbar no-print">
+    <button class="action edit-control" onclick="addTeacherFromSchedule()">+ إضافة معلمة</button>
+    <button class="edit-control" onclick="resetSchedule()">استعادة الجدول الأصلي</button>
+    <button onclick="window.print()">طباعة</button>
+    <select id="exportTeacher"></select>
+    <button onclick="exportXlsx()">تصدير Excel</button>
+  </div>
+  <div class="hint no-print">
+    للتعديل: اضغط على اسم المعلمة أو القسم أو نوع الارتباط أو النصاب. اضغط على خلية الحصة لتعديلها،
+    ويمكن سحب الحصة وإفلاتها في خلية أخرى. التغييرات تُحفظ تلقائياً.
+  </div>
+  <div class="scroll"><table id="scheduleGrid" class="grid"></table></div>
+</section>
+
+<section id="teachers" class="section">
+  <h2>👩‍🏫 إدارة المعلمات</h2>
+  <div class="panel no-print edit-control">
+    <input id="teacherName" placeholder="اسم المعلمة">
+    <input id="teacherDept" placeholder="القسم">
+    <select id="teacherConnection"><option>معين</option><option>مكلفة</option><option>محفظة</option></select>
+    <button class="action" onclick="addTeacherManager()">إضافة معلمة</button>
+  </div>
+  <table class="simple">
+    <thead><tr><th>م</th><th>اسم المعلمة</th><th>القسم</th><th>نوع الارتباط</th><th>النصاب</th><th class="edit-control">إجراء</th></tr></thead>
+    <tbody id="teacherList"></tbody>
+  </table>
+</section>
+
+<section id="subjects" class="section">
+  <h2>📚 إدارة المواد</h2>
+  <div class="panel no-print edit-control">
+    <input id="subjectName" placeholder="اسم المادة">
+    <button class="action" onclick="addSubject()">إضافة مادة</button>
+  </div>
+  <table class="simple"><thead><tr><th>م</th><th>المادة</th><th class="edit-control">إجراء</th></tr></thead><tbody id="subjectList"></tbody></table>
+</section>
+
+<section id="admins" class="section">
+  <h2>👩‍💼 الإداريات</h2>
+  <div class="panel no-print edit-control">
+    <input id="adminName" placeholder="اسم الإدارية">
+    <button class="action" onclick="addAdmin()">إضافة إدارية</button>
+  </div>
+  <table class="simple"><thead><tr><th>م</th><th>اسم الإدارية</th><th class="edit-control">إجراء</th></tr></thead><tbody id="adminList"></tbody></table>
+</section>
+
+<section id="printing" class="section">
+  <h2>🖨️ مركز الطباعة والتصدير</h2>
+  <div class="panel no-print">
+    <h3>طباعة الجدول الكامل</h3>
+    <button class="action" onclick="show('schedule');setTimeout(()=>window.print(),100)">طباعة الجدول الكامل</button>
+  </div>
+  <div class="panel no-print">
+    <h3>تصدير Excel</h3>
+    <select id="printTeacher"></select>
+    <button class="action" onclick="exportSelectedTeacher()">تصدير المعلمة إلى Excel</button>
+    <button class="action" onclick="exportAll()">تصدير الجدول الكامل إلى Excel</button>
+  </div>
+</section>
+
+<section id="permissions" class="section">
+  <h2>⚙️ مركز الصلاحيات</h2>
+  <div class="panel">
+    <h3>إضافة مستخدم</h3>
+    <input id="permissionName" placeholder="اسم المستخدم">
+    <input id="permissionPass" type="password" placeholder="كلمة المرور">
+    <select id="permissionRole">
+      <option value="view">مشاهدة فقط</option>
+      <option value="edit">تعديل وإضافة</option>
+      <option value="admin">مسؤول كامل</option>
+    </select>
+    <button class="action" onclick="addPermission()">إضافة المستخدم</button>
+  </div>
+  <div id="permissionsList"></div>
+</section>
+
+</div>
+
+<footer>نظام إدارة جدول حصص دار القرآن نساء ٢</footer>
+
+<div id="teacherModal" class="modal">
+  <div class="modalbox">
+    <h3>تعديل بيانات المعلمة</h3>
+    <label>الاسم</label><input id="mName">
+    <label>القسم</label><input id="mDept">
+    <label>نوع الارتباط</label><input id="mConn">
+    <label>إجمالي النصاب</label><input id="mTotal">
+    <div class="modalrow"><button class="action" onclick="saveTeacherModal()">حفظ</button><button onclick="closeTeacherModal()">إلغاء</button></div>
+  </div>
+</div>
+
+<script>
+const SOURCE_ROWS=[{"n":1,"name":"ريم ظاهر جاسم الخالدي","dept":"القرآن الكريم","connection":"مكلفة","total":"5","slots":["","","","","","","القرآن الكريم 1م2","القرآن الكريم 5م1","","","","","القرآن الكريم 1م2","","دورة أجزاء متفرقة","القرآن الكريم 5م1","","","",""]},{"n":2,"name":"استقلال رخيص الظفيري","dept":"القرآن الكريم","connection":"محفظة","total":"6","slots":["","","","","","","","","","","دورة سورة البقرة الجزء3","دورة سورة البقرة الجزء3","","","تلاوة 2م","تجويد 2م","تلاوة 3م1","تجويد 3م1","",""]},{"n":3,"name":"أفنان طلال منصور المضاحكة","dept":"القرآن الكريم","connection":"معين","total":"4","slots":["","","","","","","","","","","","","تلاوة 1م1","تجويد 1م1","","","","تجويد 1م2","تلاوة 1م2",""]},{"n":4,"name":"فاطمه غانم المنفي","dept":"القرآن الكريم","connection":"معين","total":"5","slots":["","","","","تصحيح تلاوة","","","","","","","","","تلاوة 5م2","تجويد 5م2","","","تلاوة 5م1","تجويد 5م1",""]},{"n":5,"name":"تهاني عبدالله بطحي المطيري","dept":"القرآن الكريم","connection":"معين","total":"1","slots":["","","","","","","","","","","دورة سورة البقرة الجزء2","","","","","","","","",""]},{"n":6,"name":"منيرة عوض ضاحي الشمري","dept":"القرآن الكريم","connection":"معين","total":"3","slots":["","","","","","القرآن الكريم 5م2","دورة سورة البقرة الجزء 1","","","","","","","","","","","","القرآن الكريم 5م2",""]},{"n":7,"name":"أصايل طلال مذكر المطيري","dept":"التفسير","connection":"معين","total":"2","slots":["","","","","","تفسير 3م1","","","","","","","","","","","","","","تفسير 3م1"]},{"n":8,"name":"أسماء عزيز محمد العنزي","dept":"التفسير","connection":"معين","total":"2","slots":["","","","","تفسير 3م2","","","","","","تفسير 3م2","","","","","","","","",""]},{"n":9,"name":"حصه فهد مشعل العتيبي","dept":"التفسير","connection":"معين","total":"2","slots":["","","","","","","","","","","","","تفسير 5م1","","","","","","","تفسير 5م1"]},{"n":10,"name":"هاجر بندر عايد النصافي","dept":"التفسير","connection":"معين","total":"2","slots":["","","","","تفسير 1م2","","","","","","","","","","","","","","","تفسير 1م2"]},{"n":11,"name":"نادية ناصر عبيد الرشيدي","dept":"التفسير","connection":"معين","total":"2","slots":["","","","","","","","","","","","","تفسير 5م1","","","","","بالتناوب مع أ.حصه العتيبي","","تفسير 5م1"]},{"n":12,"name":"نورة حنيظل عجمي حنيظل","dept":"التفسير","connection":"معين","total":"1","slots":["","","","","علوم قرآن 5م2","","","","","","","","","","","","","","",""]},{"n":13,"name":"مريم صالح وحش المطيري","dept":"التفسير","connection":"معين","total":"2","slots":["","","","","","","تفسير3ت","","","","","","","","","","تفسير3ت","","",""]},{"n":14,"name":"لولوه أحمد عبدالله القنيصي","dept":"التفسير","connection":"معين","total":"1","slots":["","","","","","","","","","","","","","","","","علوم قرآن 5م1","","",""]},{"n":15,"name":"دلال عوض ضاحي مطر","dept":"التفسير","connection":"معين","total":"2","slots":["","","","","","","","","تفسير1م1","","","","","","","","","تفسير1م1","",""]},{"n":16,"name":"هاجر دعيج العجمي","dept":"التفسير","connection":"معين","total":"2","slots":["","","","","","","","","","","","","","تفسير 2م","","","تفسير 2م","","",""]},{"n":17,"name":"تهاني يوسف النومس","dept":"التفسير","connection":"معين","total":"2","slots":["","","","","","","","تفسير 5م2","","","","","","","","","","","","تفسير 5م2"]},{"n":18,"name":"نورة فهيد المطيري","dept":"التفسير","connection":"معين","total":"1","slots":["","","","","تفسير 1م2","","","","","","","","","","","","","بالتناوب مع أ.هاجر النصافي","","تفسير 1م2"]},{"n":19,"name":"ساره حمد عياض اللميع","dept":"التفسير","connection":"معين","total":"إجراءات مجلس طبي","slots":["","","","","","","","","","","","","","","","","","","",""]},{"n":20,"name":"حنان عبدالله الديحاني","dept":"التفسير","connection":"معين","total":"إجراءات مجلس طبي","slots":["","","","","","","","","","","","","","","","","","","",""]},{"n":21,"name":"مريم محمد علي العتيبي","dept":"الحديث الشريف","connection":"معين","total":"1","slots":["","","","","","","","","","","","","","حديث شريف 5م1","بالتناوب مع أ.قيروان الديحاني","","","","",""]},{"n":22,"name":"قيروان سعود مطلق الديحاني","dept":"الحديث الشريف","connection":"معين","total":"1","slots":["","","","","","","","","","","","","","حديث شريف 5م1","","","","","",""]},{"n":23,"name":"هدى نهار العصيمي","dept":"الحديث الشريف","connection":"معين","total":"1","slots":["","","","","","","","","","","","","","","","","","تاريخ السنة 2م","بالتناوب مع أ.فرح العجمي",""]},{"n":24,"name":"منال علي سند المطيري","dept":"الحديث الشريف","connection":"معين","total":"1","slots":["","","","","","","","","","","","","بالتناوب مع أ.شيماء الرشيدي","","تاريخ السنة 1م1","","","","",""]},{"n":25,"name":"نورة سعد دعيس الراجحي","dept":"الحديث الشريف","connection":"معين","total":"1","slots":["","","","","بالتناوب مع أ.جميلة شهاب","","حديث شريف 3م1","","","","","","","","","","","","",""]},{"n":26,"name":"نور طلال هزاع العارضي","dept":"الحديث الشريف","connection":"معين","total":"1","slots":["","","","","","","","","","","","","","","","تاريخ السنة 1م2","","","",""]},{"n":27,"name":"دليل سالم جديع العازمي","dept":"الحديث الشريف","connection":"معين","total":"1","slots":["","","","","","","","حديث شريف 3م2","","","","","","","","","","","",""]},{"n":28,"name":"مريم فالح حسن الشمري","dept":"الحديث الشريف","connection":"معين","total":"2","slots":["","","","","","القرآن الكريم 3م2","","","","","","القرآن الكريم 3م2","","","","","","","",""]},{"n":29,"name":"شيماء مبارك غايب الرشيدي","dept":"الحديث الشريف","connection":"معين","total":"1","slots":["","","","","","","","","","","","","","","تاريخ السنة 1م1","","","","",""]},{"n":30,"name":"أمينة خالد طه الأنصاري","dept":"الحديث الشريف","connection":"معين","total":"1","slots":["","","","","","","","","","","","","حديث شريف 5م2","بالتناوب مع أ.دانة العباسي","","","","","",""]},{"n":31,"name":"ساره خالد طه الأنصاري","dept":"الحديث الشريف","connection":"معين","total":"2","slots":["","","","","","القرآن الكريم 2م","","","","","","","","","","","","","القرآن الكريم 2م",""]},{"n":32,"name":"دانة علي خميس العباسي","dept":"الحديث الشريف","connection":"معين","total":"1","slots":["","","","","","","","","","","","","حديث شريف 5م2","","","","","","",""]},{"n":33,"name":"جميلة شهاب فالح حمود","dept":"الحديث الشريف","connection":"معين","total":"1","slots":["","","","","","","حديث شريف 3م1","","","","","","","","","","","","",""]},{"n":34,"name":"فرح محمد العجمي","dept":"الحديث الشريف","connection":"معين","total":"1","slots":["","","","","","","","","","","","","","","","","","تاريخ السنة 2م","",""]},{"n":35,"name":"موضي فهد العتيبي","dept":"الحديث الشريف","connection":"معين","total":"2","slots":["","","","","","","","","","","القرآن الكريم 1م1","","","","","","القرآن الكريم 1م1","","",""]},{"n":36,"name":"ساره الحميدي الحربي","dept":"الحديث الشريف","connection":"معين","total":"1","slots":["","","","","","","","","","","","","","بالتناوب مع أ.نور العارضي","","تاريخ السنة 1م2","","","",""]},{"n":37,"name":"العنود مبارك فنيطل الديحاني","dept":"الحديث الشريف","connection":"معين","total":"2","slots":["","","","","فقه 3ت","","","","","","","فقه 3ت","","","","","","","",""]},{"n":38,"name":"عهد سعود مرضي الربعي","dept":"الحديث الشريف","connection":"معين","total":"1","slots":["","","","","","بالتناوب مع أ.دليل العزمي","","حديث شريف 3م2","","","","","","","","","","","",""]},{"n":39,"name":"عالية فهاد ناصر العجمي","dept":"الحديث الشريف","connection":"معين","total":"إجراءات مجلس طبي","slots":["","","","","","","","","","","","","","","","","","","",""]},{"n":40,"name":"أسرار مفرح مبارك العجمي","dept":"العقيدة","connection":"معين","total":"1","slots":["","","","","","","","","","","","","","","","","","عقيدة 5م2","",""]},{"n":41,"name":"شروق حميدي صنت المطيري","dept":"العقيدة","connection":"معين","total":"1","slots":["","","","","","","","","عقيدة 3م2","","","","","","","","","","",""]},{"n":42,"name":"ساره محمد الحربي","dept":"العقيدة","connection":"معين","total":"1","slots":["","","","","","","دورة سورة البقرة الجزء 1","","","","","","","","","","","","",""]},{"n":43,"name":"أسماء مطلق ناصر الخالدي","dept":"العقيدة","connection":"معين","total":"1","slots":["","","","","","","","","","","","","","","عقيدة 1م2","","","","",""]},{"n":44,"name":"ضحى فرحان ثاني جاعد","dept":"العقيدة","connection":"معين","total":"1","slots":["","","","","","","","","","","","","","","","","","","","عقيدة 1م1"]},{"n":45,"name":"ضحى محسن محمد المطيري","dept":"العقيدة","connection":"معين","total":"1","slots":["","","","","","","","","","دورة عقيدة","","","","","","","","","",""]},{"n":46,"name":"ساره بداح مطلق الرشيدي","dept":"العقيدة","connection":"معين","total":"إجراءات مجلس طبي","slots":["","","","","","","","","","","","","","","","","","","",""]},{"n":47,"name":"مشاعل محمد دغيم الرشيدي","dept":"العقيدة","connection":"معين","total":"1","slots":["","","","","","","","","","","","","عقيدة 2م","","","","","","",""]},{"n":48,"name":"نوف فالح الأصقة","dept":"العقيدة","connection":"معين","total":"1","slots":["","","","","","","","","","","","","","","","","","سيرة نبوية 3ت","",""]},{"n":49,"name":"نورة بندر غانم العتيبي","dept":"العقيدة","connection":"معين","total":"1","slots":["","","","","","","","","","","","","","","","","","بالتناوب مع أ.ضحى فرحان","","عقيدة 1م1"]},{"n":50,"name":"رحاب خلف المطيري","dept":"العقيدة","connection":"معين","total":"1","slots":["","","","","","","","","","","","","بالتناوب مع أ.أسماء الخالدي","","عقيدة 1م2","","","","",""]},{"n":51,"name":"شيخة عوض العنزي","dept":"العقيدة","connection":"معين","total":"1","slots":["","","","","","","عقيدة 5م1","","","","","","","","","","","","",""]},{"n":52,"name":"عائشة عايد الرشيدي","dept":"العقيدة","connection":"معين","total":"1","slots":["","","","","","","","","","","","","","","","عقيدة 3م1","","","",""]},{"n":53,"name":"ألطاف فالح سبيل المطيري","dept":"السيرة النبوية","connection":"معين","total":"1","slots":["","","","","","","","","","","","","","","سيرة نبوية 3م1","","","","",""]},{"n":54,"name":"اقبال الفي سعد الرشيدي","dept":"السيرة النبوية","connection":"معين","total":"2","slots":["","","","","","","","القرآن الكريم 3م1","","","","","القرآن الكريم 3م1","","","","","","",""]},{"n":55,"name":"أسيل حربي عبدالله العريمان","dept":"السيرة النبوية","connection":"معين","total":"3","slots":["","","","","","","","القرآن الكريم 3ت","القرآن الكريم 3ت","","","","","","","","","","القرآن الكريم 3ت",""]},{"n":56,"name":"عائشة تركي عيسى المطيري","dept":"السيرة النبوية","connection":"معين","total":"1","slots":["","","","","","","","","","","دورة السيرة النبوية","","","","","","","","",""]},{"n":57,"name":"أنوار محمد عبدالله العليم","dept":"السيرة النبوية","connection":"معين","total":"1","slots":["","","","","","","","","","","","","بالتناوب مع أ.ألطاف المطيري","","سيرة نبوية 3م1","","","","",""]},{"n":58,"name":"مرام فهد العقيلي","dept":"السيرة النبوية","connection":"معين","total":"1","slots":["","","","","","","سيرة نبوية 3م2","","","","","","","","","","","","",""]},{"n":59,"name":"نورة خالد فهد المطيري","dept":"السيرة النبوية","connection":"معين","total":"1","slots":["","","","","بالتناوب مع أ.مرام العقيلي","","سيرة نبوية 3م2","","","","","","","","","","","","",""]},{"n":60,"name":"ريم عيسى عبدالله عبدالعليم","dept":"السيرة النبوية","connection":"معين","total":"1","slots":["","","","","","سيرة نبوية 1م2","","","","","","","","","","","","","",""]},{"n":61,"name":"مها فالح الديحاني","dept":"السيرة النبوية","connection":"معين","total":"1","slots":["","","","","","","","","","سيرة نبوية 1م1","","","","","","","","","",""]},{"n":62,"name":"روان فواز الرشيدي","dept":"السيرة النبوية","connection":"معين","total":"2","slots":["","","","","","","","","","","","","","","","","تلاوة 3م2","تجويد 3م2","",""]},{"n":63,"name":"تهاني فالح العتيبي","dept":"السيرة النبوية","connection":"معين","total":"1","slots":["","","","","","","","","","","","","","","","","سيرة نبوية 1م2","بالتناوب مع أ.ريم العليم","",""]},{"n":64,"name":"نور ناصر المطيري","dept":"السيرة النبوية","connection":"معين","total":"1","slots":["","","","","","","سيرة نبوية 2م","","","","","","","","","","","","",""]},{"n":65,"name":"آلاء محمد صابر الأيوبي","dept":"الفقه","connection":"معين","total":"2","slots":["","","","","","","","","","","","فقه 1م1","","","","","","","فقه 1م1",""]},{"n":66,"name":"جمانة ثامر عموش المطيري","dept":"الفقه","connection":"معين","total":"1","slots":["","","","","","","","","","","","دورة الفقه","","","","","","","",""]},{"n":67,"name":"مريم فالح خالد المطيري","dept":"الفقه","connection":"معين","total":"2","slots":["","","","","","فقه 5م1","","","","","","","","","فقه 5م1","","","","",""]},{"n":68,"name":"نوف ماجد حمد المطيري","dept":"الفقه","connection":"معين","total":"2","slots":["","","","","فقه 2م","","","","","","","","","","","","","","","فقه 2م"]},{"n":69,"name":"حصه عبدالله السبيعي","dept":"الفقه","connection":"معين","total":"2","slots":["","","","","","","","","","","","","","فقه3م1","","","","","فقه3م1",""]},{"n":70,"name":"هناء خلف شاهر العنزي","dept":"الفقه","connection":"معين","total":"2","slots":["","","","","","","فقه 5م2","","","","","","","","","فقه 5م2","","","",""]},{"n":71,"name":"نهى صالح محمد الفجري","dept":"الفقه","connection":"معين","total":"3","slots":["","","","","","","","","","","دورة الأسماء الحسنى","","","فقه 1م2","","","فقه 1م2","","",""]},{"n":72,"name":"أنوار سليمان محمد الحشان","dept":"الفقه","connection":"معين","total":"2","slots":["","","","","","","","","","فقه 3م2","","","","","","","","","","فقه 3م2"]},{"n":73,"name":"مريم سعود المطيري","dept":"الفقه","connection":"معين","total":"2","slots":["","","","","","فقه 5م1","بالتناوب مع مريم فالح","","","","","","","","فقه 5م1","","","","",""]},{"n":74,"name":"مرزوقة مرزوق الرشيدي","dept":"اللغة العربية","connection":"معين","total":"4","slots":["","","","","","عربي 3ت","","","","عربي 3ت","عربي 3ت","","","","","","","","","عربي 3ت"]},{"n":75,"name":"مها بدر المطيري","dept":"اللغة العربية","connection":"معين","total":"3","slots":["","","","","نحو 3م1","","","نحو 2م","","","","","","","","","","","نحو 3م2",""]},{"n":76,"name":"معالي مطلق حسين المطيري","dept":"اللغة العربية","connection":"معين","total":"2","slots":["","","","","","","","نحو 1م2","","","","","","","","نحو 1م1","","","",""]},{"n":77,"name":"خزنة ناصر عايد النصافي","dept":"اللغة العربية","connection":"معين","total":"2","slots":["","","","","نحو5م1","","","","","","","","","","","","نحو 5م2","","",""]}];
+const DAYS=["الأحد","الاثنين","الثلاثاء","الأربعاء","الخميس"];
+const PERIODS=["الأولى","الثانية","الثالثة","الرابعة"];
+const DAY_CLASSES=["sun","mon","tue","wed","thu"];
+
+const ROWS_KEY="darquran_rows_complete_2026_v12";
+const SUBJECTS_KEY="darquran_subjects_2026";
+const ADMINS_KEY="darquran_admins_2026";
+const USERS_KEY="permissions";
+
+let rows=loadRows();
+let subjects=loadArray(SUBJECTS_KEY,["القرآن الكريم","التفسير","الحديث الشريف","العقيدة","السيرة النبوية","الفقه","اللغة العربية","التجويد","التلاوة","علوم القرآن","تاريخ السنة"]);
+let admins=loadArray(ADMINS_KEY,[]);
+let editingTeacher=-1;
+let dragState=null;
+
+function cloneSource(){
+  return JSON.parse(JSON.stringify(SOURCE_ROWS));
+}
+
+function loadRows(){
+  try{
+    const v=JSON.parse(localStorage.getItem(ROWS_KEY)||"null");
+    if(Array.isArray(v) && v.length) return v;
+  }catch(e){}
+  return cloneSource();
+}
+
+function loadArray(key,fallback){
+  try{
+    const v=JSON.parse(localStorage.getItem(key)||"null");
+    if(Array.isArray(v)) return v;
+  }catch(e){}
+  return [...fallback];
+}
+
+function esc(s){
+  return String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+}
+
+function currentAccount(){
+  try{ return JSON.parse(localStorage.getItem("currentUser")||"null"); }catch(e){ return null; }
+}
+
+function role(){
+  const a=currentAccount();
+  return a ? (a.role||"view") : "view";
+}
+
+function canEdit(){
+  return role()==="edit" || role()==="admin";
+}
+
+function requireEdit(){
+  if(!canEdit()){ alert("هذا المستخدم لديه صلاحية مشاهدة فقط."); return false; }
+  return true;
+}
+
+function saveRows(){
+  localStorage.setItem(ROWS_KEY,JSON.stringify(rows));
+  renderAll();
+}
+
+function saveSubjects(){
+  localStorage.setItem(SUBJECTS_KEY,JSON.stringify(subjects));
+  renderAll();
+}
+
+function saveAdmins(){
+  localStorage.setItem(ADMINS_KEY,JSON.stringify(admins));
+  renderAll();
+}
+
+function home(){
+  document.querySelectorAll(".section").forEach(x=>x.classList.remove("active"));
+  document.getElementById("home").style.display="block";
+}
+
+function show(id){
+  if(id==="permissions" && role()!=="admin"){ alert("الصلاحيات متاحة للمسؤول فقط."); return; }
+  document.getElementById("home").style.display="none";
+  document.querySelectorAll(".section").forEach(x=>x.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+}
+
+function renderSchedule(){
+  let h='<thead>';
+  h+='<tr><th rowspan="3" class="meta num">م</th><th rowspan="3" class="meta name">الاسم</th><th rowspan="3" class="meta dept">القسم</th><th rowspan="3" class="meta conn">نوع الارتباط</th><th colspan="20" class="meta">أيام الأسبوع</th><th rowspan="3" class="meta total">إجمالي<br>نصاب الحصص</th><th rowspan="3" class="meta actioncol no-print edit-control">إجراء</th></tr>';
+  h+='<tr>';
+  DAYS.forEach((d,i)=>h+=`<th colspan="4" class="${DAY_CLASSES[i]}">${d}</th>`);
+  h+='</tr><tr>';
+  DAYS.forEach((d,i)=>PERIODS.forEach(p=>h+=`<th class="period ${DAY_CLASSES[i]}">${p}</th>`));
+  h+='</tr></thead><tbody>';
+
+  rows.forEach((r,ri)=>{
+    h+=`<tr><td>${ri+1}</td>`;
+    h+=`<td class="edit name" onclick="openTeacherModal(${ri})">${esc(r.name)}</td>`;
+    h+=`<td class="edit" onclick="openTeacherModal(${ri})">${esc(r.dept)}</td>`;
+    h+=`<td class="edit" onclick="openTeacherModal(${ri})">${esc(r.connection)}</td>`;
+    const slots=Array.isArray(r.slots)?r.slots:Array(20).fill("");
+    for(let si=0;si<20;si++){
+      const v=slots[si]||"";
+      const di=Math.floor(si/4);
+      const draggable=canEdit() && v ? "true":"false";
+      h+=`<td class="slot ${DAY_CLASSES[di]}" draggable="${draggable}" data-r="${ri}" data-s="${si}" onclick="editSlot(${ri},${si})" ondragstart="dragStart(event,${ri},${si})" ondragover="dragOver(event)" ondragleave="event.currentTarget.classList.remove('over')" ondrop="dropSlot(event,${ri},${si})" ondragend="dragEnd(event)">${esc(v)}</td>`;
+    }
+    h+=`<td class="edit" onclick="openTeacherModal(${ri})">${esc(r.total)}</td>`;
+    h+=`<td class="no-print edit-control"><button onclick="openTeacherModal(${ri})">✏️ تعديل</button> <button class="danger" onclick="removeTeacher(${ri})">حذف</button></td></tr>`;
+  });
+
+  h+='</tbody>';
+  document.getElementById("scheduleGrid").innerHTML=h;
+}
+
+function editSlot(ri,si){
+  if(dragState || !requireEdit()) return;
+  const old=rows[ri].slots[si]||"";
+  const v=prompt("المادة / بيان الحصة:",old);
+  if(v===null) return;
+  rows[ri].slots[si]=v.trim();
+  saveRows();
+}
+
+function dragStart(ev,r,s){
+  if(!canEdit()){ ev.preventDefault(); return; }
+  dragState={r,s};
+  ev.currentTarget.classList.add("dragging");
+  ev.dataTransfer.effectAllowed="move";
+  ev.dataTransfer.setData("text/plain","lesson");
+}
+
+function dragOver(ev){
+  if(!canEdit()) return;
+  ev.preventDefault();
+  ev.currentTarget.classList.add("over");
+}
+
+function dropSlot(ev,r,s){
+  if(!canEdit()) return;
+  ev.preventDefault();
+  ev.currentTarget.classList.remove("over");
+  if(!dragState) return;
+  const from=rows[dragState.r].slots;
+  const to=rows[r].slots;
+  [from[dragState.s],to[s]]=[to[s],from[dragState.s]];
+  dragState=null;
+  saveRows();
+}
+
+function dragEnd(ev){
+  ev.currentTarget.classList.remove("dragging");
+  setTimeout(()=>dragState=null,50);
+}
+
+function openTeacherModal(i){
+  if(!requireEdit()) return;
+  editingTeacher=i;
+  const r=rows[i];
+  mName.value=r.name||"";
+  mDept.value=r.dept||"";
+  mConn.value=r.connection||"";
+  mTotal.value=r.total||"";
+  teacherModal.classList.add("open");
+}
+
+function closeTeacherModal(){
+  teacherModal.classList.remove("open");
+  editingTeacher=-1;
+}
+
+function saveTeacherModal(){
+  if(!requireEdit() || editingTeacher<0) return;
+  const r=rows[editingTeacher];
+  r.name=mName.value.trim();
+  r.dept=mDept.value.trim();
+  r.connection=mConn.value.trim();
+  r.total=mTotal.value.trim();
+  closeTeacherModal();
+  saveRows();
+}
+
+function addTeacherFromSchedule(){
+  if(!requireEdit()) return;
+  rows.push({n:rows.length+1,name:"معلمة جديدة",dept:"",connection:"معين",total:"0",slots:Array(20).fill("")});
+  saveRows();
+  openTeacherModal(rows.length-1);
+}
+
+function addTeacherManager(){
+  if(!requireEdit()) return;
+  const name=teacherName.value.trim();
+  if(!name) return alert("اكتب اسم المعلمة");
+  rows.push({n:rows.length+1,name,dept:teacherDept.value.trim(),connection:teacherConnection.value,total:"0",slots:Array(20).fill("")});
+  teacherName.value="";
+  teacherDept.value="";
+  saveRows();
+}
+
+function removeTeacher(i){
+  if(!requireEdit()) return;
+  if(confirm("حذف هذه المعلمة وجميع حصصها؟")){
+    rows.splice(i,1);
+    saveRows();
+  }
+}
+
+function resetSchedule(){
+  if(!requireEdit()) return;
+  if(confirm("استعادة الجدول الأصلي وإلغاء جميع تعديلات الجدول؟")){
+    rows=cloneSource();
+    saveRows();
+  }
+}
+
+function renderTeachers(){
+  teacherList.innerHTML=rows.map((r,i)=>`<tr><td>${i+1}</td><td>${esc(r.name)}</td><td>${esc(r.dept)}</td><td>${esc(r.connection)}</td><td>${esc(r.total)}</td><td class="edit-control"><button onclick="openTeacherModal(${i})">تعديل</button> <button class="danger" onclick="removeTeacher(${i})">حذف</button></td></tr>`).join("");
+}
+
+function addSubject(){
+  if(!requireEdit()) return;
+  const v=subjectName.value.trim();
+  if(!v) return;
+  if(!subjects.includes(v)) subjects.push(v);
+  subjectName.value="";
+  saveSubjects();
+}
+
+function editSubject(i){
+  if(!requireEdit()) return;
+  const v=prompt("تعديل اسم المادة:",subjects[i]);
+  if(v===null || !v.trim()) return;
+  subjects[i]=v.trim();
+  saveSubjects();
+}
+
+function deleteSubject(i){
+  if(!requireEdit()) return;
+  if(confirm("حذف المادة من قائمة المواد؟")){ subjects.splice(i,1); saveSubjects(); }
+}
+
+function renderSubjects(){
+  subjectList.innerHTML=subjects.map((x,i)=>`<tr><td>${i+1}</td><td>${esc(x)}</td><td class="edit-control"><button onclick="editSubject(${i})">تعديل</button> <button class="danger" onclick="deleteSubject(${i})">حذف</button></td></tr>`).join("");
+}
+
+function addAdmin(){
+  if(!requireEdit()) return;
+  const v=adminName.value.trim();
+  if(!v) return;
+  admins.push(v);
+  adminName.value="";
+  saveAdmins();
+}
+
+function editAdmin(i){
+  if(!requireEdit()) return;
+  const v=prompt("تعديل اسم الإدارية:",admins[i]);
+  if(v===null || !v.trim()) return;
+  admins[i]=v.trim();
+  saveAdmins();
+}
+
+function deleteAdmin(i){
+  if(!requireEdit()) return;
+  if(confirm("حذف الإدارية؟")){ admins.splice(i,1); saveAdmins(); }
+}
+
+function renderAdmins(){
+  adminList.innerHTML=admins.map((x,i)=>`<tr><td>${i+1}</td><td>${esc(x)}</td><td class="edit-control"><button onclick="editAdmin(${i})">تعديل</button> <button class="danger" onclick="deleteAdmin(${i})">حذف</button></td></tr>`).join("");
+}
+
+function fillTeacherSelectors(){
+  const opts='<option value="">الجدول الكامل</option>'+rows.map((r,i)=>`<option value="${i}">${esc(r.name)}</option>`).join("");
+  const ex=document.getElementById("exportTeacher");
+  const pv=ex.value;
+  ex.innerHTML=opts;
+  ex.value=pv;
+
+  const pt=document.getElementById("printTeacher");
+  const pv2=pt.value;
+  pt.innerHTML='<option value="">اختر المعلمة</option>'+rows.map((r,i)=>`<option value="${i}">${esc(r.name)}</option>`).join("");
+  pt.value=pv2;
+}
+
+function exportRows(rr,filename){
+  if(typeof XLSX==="undefined"){ alert("تعذر تحميل أداة Excel. تأكد من اتصال الإنترنت."); return; }
+  const data=[["م","الاسم","القسم","نوع الارتباط",...DAYS.flatMap(d=>PERIODS.map(p=>d+" - "+p)),"إجمالي النصاب"]];
+  rr.forEach((r,i)=>data.push([i+1,r.name,r.dept,r.connection,...(r.slots||Array(20).fill("")),r.total]));
+  const ws=XLSX.utils.aoa_to_sheet(data);
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,"جدول النصاب");
+  XLSX.writeFile(wb,filename);
+}
+
+function exportXlsx(){
+  const q=exportTeacher.value;
+  if(q==="") exportRows(rows,"جدول_نصاب_المعلمات_2026.xlsx");
+  else exportRows([rows[Number(q)]],`جدول_${rows[Number(q)].name}.xlsx`);
+}
+
+function exportSelectedTeacher(){
+  const q=printTeacher.value;
+  if(q==="") return alert("اختر المعلمة");
+  exportRows([rows[Number(q)]],`جدول_${rows[Number(q)].name}.xlsx`);
+}
+
+function exportAll(){
+  exportRows(rows,"جدول_نصاب_المعلمات_2026.xlsx");
+}
+
+function addPermission(){
+  if(role()!=="admin") return alert("هذه العملية للمسؤول فقط.");
+  const name=permissionName.value.trim();
+  const pass=permissionPass.value;
+  const userRole=permissionRole.value;
+  if(!name) return alert("اكتب اسم المستخدم");
+  if(!pass) return alert("اكتب كلمة المرور");
+  if(name==="admin") return alert("اسم admin محجوز للمسؤول الرئيسي.");
+
+  let users=[];
+  try{ users=JSON.parse(localStorage.getItem(USERS_KEY)||"[]"); }catch(e){}
+  const old=users.findIndex(x=>x.name===name);
+  if(old>=0) users[old]={name,pass,role:userRole};
+  else users.push({name,pass,role:userRole});
+  localStorage.setItem(USERS_KEY,JSON.stringify(users));
+  permissionName.value="";
+  permissionPass.value="";
+  renderPermissions();
+}
+
+function renderPermissions(){
+  const box=document.getElementById("permissionsList");
+  if(!box) return;
+  let users=[];
+  try{ users=JSON.parse(localStorage.getItem(USERS_KEY)||"[]"); }catch(e){}
+  const roleLabel={view:"مشاهدة فقط",edit:"تعديل وإضافة",admin:"مسؤول كامل"};
+  box.innerHTML='<div class="panel"><b>admin</b> — مسؤول رئيسي</div>'+users.map((p,i)=>`<div class="panel"><b>${esc(p.name)}</b> — ${roleLabel[p.role]||esc(p.role)} <button onclick="editPermission(${i})">تعديل</button> <button class="danger" onclick="deletePermission(${i})">حذف</button></div>`).join("");
+}
+
+function editPermission(i){
+  if(role()!=="admin") return;
+  let users=JSON.parse(localStorage.getItem(USERS_KEY)||"[]");
+  const p=users[i];
+  const np=prompt("كلمة المرور الجديدة (اتركها كما هي بالضغط موافق):",p.pass);
+  if(np===null) return;
+  const nr=prompt("الصلاحية: view أو edit أو admin",p.role);
+  if(nr===null) return;
+  if(!["view","edit","admin"].includes(nr)) return alert("الصلاحية غير صحيحة");
+  p.pass=np;
+  p.role=nr;
+  localStorage.setItem(USERS_KEY,JSON.stringify(users));
+  renderPermissions();
+}
+
+function deletePermission(i){
+  if(role()!=="admin") return;
+  if(!confirm("حذف هذا المستخدم؟")) return;
+  let users=JSON.parse(localStorage.getItem(USERS_KEY)||"[]");
+  users.splice(i,1);
+  localStorage.setItem(USERS_KEY,JSON.stringify(users));
+  renderPermissions();
+}
+
+function applyRole(){
+  const a=currentAccount();
+  if(!a) return;
+  currentUserLabel.textContent=a.name;
+  currentRoleLabel.textContent={view:"مشاهدة فقط",edit:"تعديل وإضافة",admin:"مسؤول كامل"}[a.role]||a.role;
+
+  const adminOnly=a.role==="admin";
+  permissionsNav.style.display=adminOnly?"inline-block":"none";
+  permissionsCard.style.display=adminOnly?"block":"none";
+
+  document.querySelectorAll(".edit-control").forEach(el=>el.style.display=canEdit()?"":"none");
+  renderSchedule();
+}
+
+function renderAll(){
+  renderSchedule();
+  renderTeachers();
+  renderSubjects();
+  renderAdmins();
+  fillTeacherSelectors();
+  renderPermissions();
+  if(currentAccount()) applyRole();
+}
+
+function doLogin(){
+  const user=loginUser.value.trim();
+  const pass=loginPass.value;
+  let account=null;
+
+  if(user==="admin" && pass==="1234"){
+    account={name:"admin",role:"admin"};
+  }else{
+    let users=[];
+    try{ users=JSON.parse(localStorage.getItem(USERS_KEY)||"[]"); }catch(e){}
+    account=users.find(p=>p.name===user && p.pass===pass)||null;
+  }
+
+  if(!account){
+    loginError.textContent="اسم المستخدم أو كلمة المرور غير صحيحة";
+    return;
+  }
+
+  localStorage.setItem("currentUser",JSON.stringify(account));
+  localStorage.setItem("loggedIn","yes");
+  loginScreen.style.display="none";
+  loginError.textContent="";
+  renderAll();
+  home();
+}
+
+function logout(){
+  localStorage.removeItem("currentUser");
+  localStorage.removeItem("loggedIn");
+  location.reload();
+}
+
+function initApp(){
+  renderAll();
+  const loggedIn=localStorage.getItem("loggedIn")==="yes";
+  const a=currentAccount();
+  loginScreen.style.display=(loggedIn && a)?"none":"flex";
+  if(loggedIn && a){
+    applyRole();
+    home();
+  }
+}
+
+loginPass.addEventListener("keydown",e=>{if(e.key==="Enter")doLogin();});
+initApp();
+</script>
+</body>
+</html>
