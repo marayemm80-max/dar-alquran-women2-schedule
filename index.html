@@ -163,7 +163,7 @@ footer{
 <button onclick="show('subjects')">المواد</button>
 <button onclick="show('admins')">الإداريات</button>
 <button onclick="show('printing')">مركز الطباعة</button>
-  <button onclick="logout()">🚪 تسجيل الخروج</button>
+<button id="logoutBtn" type="button" onclick="logout()" style="display:inline-block !important;">🚪 تسجيل الخروج</button>
 </nav>
 
 <div class="container">
@@ -509,15 +509,11 @@ function doLogin(){
       "اسم المستخدم أو كلمة المرور غير صحيحة";
   }
 }
-
 function logout(){
   localStorage.removeItem("currentUser");
   localStorage.removeItem("loggedIn");
-  document.getElementById("app").style.display = "none";
-  document.getElementById("loginScreen").style.display = "flex";
-  document.getElementById("loginUser").value = "";
-  document.getElementById("loginPass").value = "";
-}</script>
+  location.reload();
+}
 
 </body>
 </html>
