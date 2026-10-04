@@ -492,13 +492,13 @@ function doLogin(){
 
   let account = null;
 
-  if(user === "admin" && pass === "1234"){
-    account = {name:"admin", role:"admin"};
+  if (user === "admin" && pass === "1234") {
+    account = { name: "admin", role: "admin" };
   } else {
     account = permissions.find(p => p.name === user && p.pass === pass);
   }
 
-  if(account){
+  if (account) {
     localStorage.setItem("currentUser", JSON.stringify(account));
     localStorage.setItem("loggedIn", "yes");
     document.getElementById("loginScreen").style.display = "none";
@@ -508,12 +508,12 @@ function doLogin(){
     document.getElementById("loginError").textContent =
       "اسم المستخدم أو كلمة المرور غير صحيحة";
   }
-  }
-  
+}
+
 function logout(){
   localStorage.removeItem("currentUser");
   localStorage.removeItem("loggedIn");
-  location.reload();
+  window.location.reload();
 }
 
 </body>
