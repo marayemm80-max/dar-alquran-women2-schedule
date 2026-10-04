@@ -163,6 +163,7 @@ footer{
 <button onclick="show('subjects')">المواد</button>
 <button onclick="show('admins')">الإداريات</button>
 <button onclick="show('printing')">مركز الطباعة</button>
+  <button onclick="logout()">🚪 تسجيل الخروج</button>
 </nav>
 
 <div class="container">
@@ -487,16 +488,36 @@ document.getElementById("loginScreen").style.display="flex";
 function doLogin(){
   const user = document.getElementById("loginUser").value.trim();
   const pass = document.getElementById("loginPass").value;
+  const permissions = JSON.parse(localStorage.getItem("permissions") || "[]");
+
+  let account = null;
 
   if(user === "admin" && pass === "1234"){
+    account = {name:"admin", role:"admin"};
+  } else {
+    account = permissions.find(p => p.name === user && p.pass === pass);
+  }
+
+  if(account){
+    localStorage.setItem("currentUser", JSON.stringify(account));
+    localStorage.setItem("loggedIn", "yes");
     document.getElementById("loginScreen").style.display = "none";
     document.getElementById("app").style.display = "grid";
-    localStorage.setItem("loggedIn", "yes");
+    document.getElementById("loginError").textContent = "";
   } else {
-    document.getElementById("loginError").textContent = "اسم المستخدم أو كلمة المرور غير صحيحة";
+    document.getElementById("loginError").textContent =
+      "اسم المستخدم أو كلمة المرور غير صحيحة";
   }
 }
-</script>
+
+function logout(){
+  localStorage.removeItem("currentUser");
+  localStorage.removeItem("loggedIn");
+  document.getElementById("app").style.display = "none";
+  document.getElementById("loginScreen").style.display = "flex";
+  document.getElementById("loginUser").value = "";
+  document.getElementById("loginPass").value = "";
+}</script>
 
 </body>
 </html>
