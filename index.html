@@ -5,8 +5,6 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>نظام إدارة جدول حصص دار القرآن نساء ٢</title>
 <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js"></script>
 <style>
 *{box-sizing:border-box}
 body{margin:0;font-family:Tahoma,Arial,sans-serif;background:#f4f7f6;color:#222}
@@ -70,24 +68,41 @@ table.simple th{background:#e7efec}
 .loginbox input{width:100%;padding:16px 14px;margin:10px 0;font-size:18px}.loginbox .action{font-size:19px}
 footer{text-align:center;padding:18px;color:#666}
 @media print{
- @page{size:A3 landscape;margin:7mm}
- *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;color-adjust:exact!important}
- html,body{background:#fff!important}
  header,nav,.no-print,.cards,.welcome,footer{display:none!important}
- .container{padding:0!important}
+ .container{padding:0}
  .section{display:none!important}
  #schedule.section{display:block!important}
- #schedule>h2{display:block!important;text-align:center;background:#17583f!important;color:#fff!important;border:1px solid #555!important;margin:0 0 5px!important;padding:7px!important;font-size:15px!important}
- .scroll{overflow:visible!important;max-height:none!important;border:0!important}
- .grid{min-width:0!important;width:100%!important;font-size:7px!important;table-layout:fixed!important;direction:rtl!important}
- .grid thead{display:table-header-group!important}
- .grid tr{break-inside:avoid!important;page-break-inside:avoid!important}
- .grid th,.grid td{padding:2px 1px!important;height:24px!important;border:1px solid #555!important;text-align:center!important;vertical-align:middle!important}
- .meta{background:#efefef!important}
- .sun{background:#f3dfc9!important}.mon{background:#c7d8ea!important}.tue{background:#cfe4c8!important}.wed{background:#ead0df!important}.thu{background:#d7d7d7!important}
- .name{width:11.5%!important}.dept{width:6.8%!important}.conn{width:5.5%!important}.period{width:3.45%!important}.num{width:2.2%!important}.total{width:4.8%!important}
+ .scroll{overflow:visible;max-height:none;border:0}
+ .grid{min-width:0;width:100%;font-size:6.3px}
+ .grid th,.grid td{padding:1px;height:18px}
+ .name{width:100px} .dept{width:55px} .conn{width:45px} .period{width:32px}
 }
 </style>
+
+<style id="printFix2026">
+@page { size: A3 landscape; margin: 7mm; }
+@media print {
+  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+  html, body { background: #fff !important; direction: rtl !important; }
+  header, nav, .no-print, footer, #loginScreen, .modal { display:none !important; }
+  .container { padding:0 !important; margin:0 !important; width:100% !important; }
+  #home, #teachers, #subjects, #admins, #printing, #permissions { display:none !important; }
+  #schedule { display:block !important; margin:0 !important; padding:0 !important; }
+  #schedule h2, #schedule .hint, #schedule .schedule-toolbar { display:none !important; }
+  .scroll { overflow:visible !important; max-height:none !important; border:0 !important; width:100% !important; }
+  #scheduleGrid { width:100% !important; min-width:0 !important; table-layout:fixed !important; border-collapse:collapse !important; font-size:7px !important; }
+  #scheduleGrid th, #scheduleGrid td { border:0.6px solid #555 !important; padding:1px !important; height:19px !important; }
+  #scheduleGrid .sun { background:#f3dfc9 !important; }
+  #scheduleGrid .mon { background:#c7d8ea !important; }
+  #scheduleGrid .tue { background:#cfe4c8 !important; }
+  #scheduleGrid .wed { background:#ead0df !important; }
+  #scheduleGrid .thu { background:#d7d7d7 !important; }
+  #scheduleGrid .meta { background:#efefef !important; }
+  #scheduleGrid .edit { background:#fff7c7 !important; }
+  #scheduleGrid .actioncol, #scheduleGrid td:last-child { display:none !important; }
+}
+</style>
+
 </head>
 <body>
 
@@ -142,8 +157,8 @@ footer{text-align:center;padding:18px;color:#666}
   <div class="schedule-toolbar no-print">
     <button class="action edit-control" onclick="addTeacherFromSchedule()">+ إضافة معلمة</button>
     <button class="edit-control" onclick="resetSchedule()">استعادة الجدول الأصلي</button>
-    <button onclick="printColoredSchedule()">طباعة</button>
-    <button onclick="exportPdf()">تصدير PDF</button>
+    <button onclick="printSchedule2026()">طباعة</button>
+    <button onclick="pdfSchedule2026()">تصدير PDF</button>
     <select id="exportTeacher"></select>
     <button onclick="exportXlsx()">تصدير Excel</button>
   </div>
@@ -190,14 +205,14 @@ footer{text-align:center;padding:18px;color:#666}
   <h2>🖨️ مركز الطباعة والتصدير</h2>
   <div class="panel no-print">
     <h3>طباعة الجدول الكامل</h3>
-    <button class="action" onclick="printColoredSchedule()">طباعة الجدول الكامل</button>
+    <button class="action" onclick="printSchedule2026()">طباعة الجدول الكامل</button>
   </div>
   <div class="panel no-print">
     <h3>تصدير Excel</h3>
     <select id="printTeacher"></select>
     <button class="action" onclick="exportSelectedTeacher()">تصدير المعلمة إلى Excel</button>
     <button class="action" onclick="exportAll()">تصدير الجدول الكامل إلى Excel</button>
-    <button class="action" onclick="exportPdf()">تصدير الجدول الكامل إلى PDF</button>
+    <button class="action" onclick="pdfSchedule2026()">تصدير الجدول الكامل إلى PDF</button>
   </div>
 </section>
 
@@ -601,59 +616,35 @@ async function exportRows(rr,filename){
   setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
 
-async function buildPrintableHtml(){
-  const safe = esc;
-  const dayClasses=["sun","mon","tue","wed","thu"];
-  const chunks=[rows.slice(0,20),rows.slice(20,52),rows.slice(52,77)];
-  function tableHtml(rr,offset){
-    let h='<table class="pdfgrid"><thead>';
-    h+='<tr><th rowspan="3" class="meta num">م</th><th rowspan="3" class="meta name">الاسم</th><th rowspan="3" class="meta dept">القسم</th><th rowspan="3" class="meta conn">نوع الارتباط</th><th colspan="20" class="meta">أيام الأسبوع</th><th rowspan="3" class="meta total">إجمالي<br>نصاب الحصص</th></tr>';
-    h+='<tr>';
-    DAYS.forEach((d,i)=>h+=`<th colspan="4" class="${dayClasses[i]}">${d}</th>`);
-    h+='</tr><tr>';
-    DAYS.forEach((d,i)=>PERIODS.forEach(p=>h+=`<th class="period ${dayClasses[i]}">${p}</th>`));
-    h+='</tr></thead><tbody>';
-    rr.forEach((r,ri)=>{
-      h+=`<tr><td>${offset+ri+1}</td><td class="namecell">${safe(r.name)}</td><td>${safe(r.dept)}</td><td>${safe(r.connection)}</td>`;
-      const slots=Array.isArray(r.slots)?r.slots:Array(20).fill("");
-      for(let si=0;si<20;si++){
-        const di=Math.floor(si/4);
-        h+=`<td class="${dayClasses[di]}">${safe(slots[si]||"")}</td>`;
+async function exportPdf(){
+  if(!window.jspdf || !window.jspdf.jsPDF){ alert("تعذر تحميل أداة PDF. تأكد من اتصال الإنترنت."); return; }
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF({orientation:"landscape",unit:"pt",format:"a3"});
+  doc.setFontSize(14);
+  doc.text("جدول نصاب حصص معلمات مركز دار قرآن غرب عبدالله المبارك نساء (2) للعام الدراسي 2026م", doc.internal.pageSize.getWidth()/2, 30,{align:"center"});
+  const head1=[["م","الاسم","القسم","نوع الارتباط",...DAYS.flatMap(d=>PERIODS.map(p=>d+" - "+p)),"إجمالي النصاب"]];
+  const body=rows.map((r,i)=>[i+1,r.name,r.dept,r.connection,...(r.slots||Array(20).fill("")),r.total]);
+  const dayFills=[[243,223,201],[199,216,234],[207,228,200],[234,208,223],[215,215,215]];
+  doc.autoTable({
+    head:head1,body,
+    startY:42,
+    theme:"grid",
+    styles:{fontSize:5.5,cellPadding:1.5,halign:"center",valign:"middle",overflow:"linebreak"},
+    headStyles:{fillColor:[239,239,239],textColor:[0,0,0],fontStyle:"bold"},
+    columnStyles:{0:{cellWidth:20},1:{cellWidth:95},2:{cellWidth:52},3:{cellWidth:46},24:{cellWidth:38}},
+    didParseCell:function(data){
+      const c=data.column.index;
+      if(c>=4 && c<=23){
+        const di=Math.floor((c-4)/4);
+        data.cell.styles.fillColor=dayFills[di];
       }
-      h+=`<td>${safe(r.total)}</td></tr>`;
-    });
-    return h+'</tbody></table>';
-  }
-  let pages='',offset=0;
-  chunks.forEach(chunk=>{
-    if(!chunk.length)return;
-    pages+=`<section class="page"><div class="title">جدول نصاب حصص معلمات مركز دار قرآن غرب عبدالله المبارك نساء (2) للعام الدراسي 2026م</div>${tableHtml(chunk,offset)}</section>`;
-    offset+=chunk.length;
+    },
+    margin:{left:18,right:18,top:18,bottom:18},
+    horizontalPageBreak:true,
+    horizontalPageBreakRepeat:[0,1,2,3]
   });
-  return `<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>جدول نصاب المعلمات 2026</title><style>
-  @page{size:A3 landscape;margin:7mm}
-  *{box-sizing:border-box;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;color-adjust:exact!important}
-  html,body{margin:0;padding:0;background:#fff;color:#111;font-family:Tahoma,Arial,sans-serif;direction:rtl}
-  .page{page-break-after:always;break-after:page;width:100%}.page:last-child{page-break-after:auto;break-after:auto}
-  .title{background:#17583f!important;color:#fff!important;font-weight:700;font-size:17px;text-align:center;padding:8px;margin-bottom:5px;border:1px solid #555}
-  .pdfgrid{border-collapse:collapse;table-layout:fixed;width:100%;font-size:7px;direction:rtl}
-  .pdfgrid thead{display:table-header-group}.pdfgrid tr{break-inside:avoid;page-break-inside:avoid}
-  .pdfgrid th,.pdfgrid td{border:1px solid #555;text-align:center;vertical-align:middle;padding:2px 1px;height:24px;line-height:1.25;overflow-wrap:anywhere}
-  .pdfgrid thead th{font-weight:700}.meta{background:#efefef!important}.num{width:2.2%}.name{width:11.5%}.dept{width:6.8%}.conn{width:5.5%}.total{width:4.8%}.period{width:3.45%}.namecell{font-weight:600}
-  .sun{background:#f3dfc9!important}.mon{background:#c7d8ea!important}.tue{background:#cfe4c8!important}.wed{background:#ead0df!important}.thu{background:#d7d7d7!important}
-  @media screen{body{padding:12px;background:#ddd}.page{background:#fff;padding:6px;margin:0 auto 14px;max-width:1580px;box-shadow:0 2px 12px #777}}
-  </style></head><body>${pages}</body></html>`;
+  doc.save("جدول_نصاب_المعلمات_2026.pdf");
 }
-function openPrintView(autoPrint=true){
-  const w=window.open('', '_blank');
-  if(!w){alert('تعذر فتح نافذة الطباعة. اسمح بالنوافذ المنبثقة لهذا الموقع ثم حاول مرة أخرى.');return;}
-  w.document.open();
-  w.document.write(buildPrintableHtml());
-  w.document.close();
-  if(autoPrint){w.onload=()=>setTimeout(()=>w.print(),350);}
-}
-function printColoredSchedule(){ openPrintView(true); }
-function exportPdf(){ openPrintView(true); }
 function exportXlsx(){
   const q=exportTeacher.value;
   if(q==="") exportRows(rows,"جدول_نصاب_المعلمات_2026.xlsx");
@@ -793,5 +784,35 @@ function initApp(){
 loginPass.addEventListener("keydown",e=>{if(e.key==="Enter")doLogin();});
 initApp();
 </script>
+
+<script id="nativePrintFix2026">
+function printSchedule2026(){
+  try {
+    var current = document.querySelector('.section.active');
+    var homeEl = document.getElementById('home');
+    var scheduleEl = document.getElementById('schedule');
+    var homeDisplay = homeEl ? homeEl.style.display : '';
+    document.querySelectorAll('.section').forEach(function(x){ x.classList.remove('active'); });
+    if(homeEl) homeEl.style.display='none';
+    if(scheduleEl) scheduleEl.classList.add('active');
+    setTimeout(function(){
+      window.print();
+      setTimeout(function(){
+        if(scheduleEl) scheduleEl.classList.remove('active');
+        if(current) current.classList.add('active');
+        if(homeEl) homeEl.style.display=homeDisplay;
+      }, 300);
+    }, 120);
+  } catch(e) {
+    window.print();
+  }
+}
+function pdfSchedule2026(){
+  // Browser print dialog is the reliable Arabic-safe PDF path:
+  // choose "Save as PDF" / "Microsoft Print to PDF".
+  printSchedule2026();
+}
+</script>
+
 </body>
 </html>
