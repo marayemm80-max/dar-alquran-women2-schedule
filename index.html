@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>نظام إدارة جدول حصص دار القرآن نساء ٢</title>
+<title>نظام إدارة جدول حصص مركز دار القرآن غرب عبدالله المبارك نساء ٢</title>
 <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
@@ -69,6 +69,7 @@ table.simple th{background:#e7efec}
 .loginbox small{font-size:14px;margin-top:10px}
 .loginbox input{width:100%;padding:16px 14px;margin:10px 0;font-size:18px}.loginbox .action{font-size:19px}
 footer{text-align:center;padding:18px;color:#666}
+.system-title{font-size:32px!important;font-weight:900!important;line-height:1.5}.arabic-num{font-weight:800}.conflict{outline:3px solid #c62828!important;background:#ffd9d9!important}.lesson-chip{font-weight:800}.reserve-stat{font-weight:800;color:#17583f}.subject-legend{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}.subject-legend span{padding:5px 9px;border-radius:10px;font-weight:800;border:1px solid #999}.pdf-tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.simple td,.simple th{font-weight:700;font-size:15px}
 @media print{
  header,nav,.no-print,.cards,.welcome,footer{display:none!important}
  .container{padding:0}
@@ -111,7 +112,7 @@ footer{text-align:center;padding:18px;color:#666}
 <div id="loginScreen">
   <div class="loginbox">
     <h2>تسجيل الدخول</h2>
-    <p>نظام إدارة جدول حصص دار القرآن نساء ٢</p>
+    <p class="system-title" style="font-size:24px!important">نظام إدارة جدول حصص مركز دار القرآن غرب عبدالله المبارك نساء ٢</p>
     <input id="loginUser" placeholder="اسم المستخدم" autocomplete="username">
     <input id="loginPass" type="password" placeholder="كلمة المرور" autocomplete="current-password">
     <button class="action" style="width:100%;padding:12px" onclick="doLogin()">دخول</button>
@@ -122,7 +123,7 @@ footer{text-align:center;padding:18px;color:#666}
 </div>
 
 <header>
-  <h1>نظام إدارة جدول حصص دار القرآن نساء ٢</h1>
+  <h1 class="system-title">نظام إدارة جدول حصص مركز دار القرآن غرب عبدالله المبارك نساء ٢</h1>
   <p>إدارة الجداول والمعلمات والمواد والإداريات والطباعة والصلاحيات</p>
 </header>
 
@@ -132,6 +133,7 @@ footer{text-align:center;padding:18px;color:#666}
   <button onclick="show('teachers')">المعلمات</button>
   <button onclick="show('subjects')">المواد</button>
   <button onclick="show('admins')">الإداريات</button>
+  <button onclick="show('reserve')">الاحتياط اليومي</button>
   <button onclick="show('printing')">مركز الطباعة</button>
   <button id="permissionsNav" onclick="show('permissions')">الصلاحيات</button>
   <button id="logoutBtn" onclick="logout()">🚪 تسجيل الخروج</button>
@@ -180,8 +182,12 @@ footer{text-align:center;padding:18px;color:#666}
     <select id="teacherConnection"><option>معين</option><option>مكلفة</option><option>محفظة</option></select>
     <button class="action" onclick="addTeacherManager()">إضافة معلمة</button>
   </div>
+  <div class="panel no-print pdf-tools">
+    <select id="teacherPdfSelect"><option value="">اختر المعلمة</option></select>
+    <button class="action" onclick="pdfTeacherSelected()">تصدير جدول المعلمة PDF</button>
+  </div>
   <table class="simple">
-    <thead><tr><th>م</th><th>اسم المعلمة</th><th>القسم</th><th>نوع الارتباط</th><th>النصاب</th><th class="edit-control">إجراء</th></tr></thead>
+    <thead><tr><th>م</th><th>اسم المعلمة</th><th>القسم</th><th>نوع الارتباط</th><th>النصاب</th><th>PDF</th><th class="edit-control">إجراء</th></tr></thead>
     <tbody id="teacherList"></tbody>
   </table>
 </section>
@@ -193,6 +199,21 @@ footer{text-align:center;padding:18px;color:#666}
     <button class="action" onclick="addSubject()">إضافة مادة</button>
   </div>
   <table class="simple"><thead><tr><th>م</th><th>المادة</th><th class="edit-control">إجراء</th></tr></thead><tbody id="subjectList"></tbody></table>
+</section>
+
+
+<section id="reserve" class="section">
+  <h2>🗓️ الاحتياط اليومي</h2>
+  <div class="panel no-print pdf-tools">
+    <select id="reserveTeacher"></select>
+    <select id="reserveDay"><option>الأحد</option><option>الاثنين</option><option>الثلاثاء</option><option>الأربعاء</option><option>الخميس</option></select>
+    <select id="reservePeriod"><option>الأولى</option><option>الثانية</option><option>الثالثة</option><option>الرابعة</option></select>
+    <input id="reserveClass" placeholder="الفصل / البيان">
+    <button class="action edit-control" onclick="addReserveEntry()">إضافة احتياط</button>
+    <button onclick="pdfReserve()">تصدير PDF</button>
+  </div>
+  <div class="hint">هذا الجدول فارغ من الحصص الأساسية ويستخدم لتسجيل الاحتياط اليومي، مع حفظ إجمالي عدد حصص الاحتياط لكل معلمة طوال الفصل الدراسي.</div>
+  <table class="simple"><thead><tr><th>م</th><th>اسم المعلمة</th><th>اليوم</th><th>الحصة</th><th>الفصل / البيان</th><th>إجمالي احتياط المعلمة</th><th class="edit-control">إجراء</th></tr></thead><tbody id="reserveList"></tbody></table>
 </section>
 
 <section id="admins" class="section">
@@ -216,6 +237,11 @@ footer{text-align:center;padding:18px;color:#666}
     <button class="action" onclick="exportSelectedTeacher()">تصدير المعلمة إلى Excel</button>
     <button class="action" onclick="exportAll()">تصدير الجدول الكامل إلى Excel</button>
     <button class="action" onclick="pdfSchedule2026()">تصدير الجدول الكامل إلى PDF</button>
+    <hr>
+    <select id="pdfTeacherFilter"><option value="">اختر المعلمة</option></select>
+    <button class="action" onclick="pdfTeacherSelected('pdfTeacherFilter')">فرز المعلمة PDF</button>
+    <select id="pdfClassFilter"><option value="">اختر الفصل</option></select>
+    <button class="action" onclick="pdfClassSelected()">فرز الفصل PDF</button>
   </div>
 </section>
 
@@ -237,7 +263,7 @@ footer{text-align:center;padding:18px;color:#666}
 
 </div>
 
-<footer>نظام إدارة جدول حصص دار القرآن نساء ٢</footer>
+<footer>نظام إدارة جدول حصص مركز دار القرآن غرب عبدالله المبارك نساء ٢</footer>
 
 <div id="teacherModal" class="modal">
   <div class="modalbox">
@@ -245,7 +271,7 @@ footer{text-align:center;padding:18px;color:#666}
     <label>الاسم</label><input id="mName">
     <label>القسم</label><input id="mDept">
     <label>نوع الارتباط</label><input id="mConn">
-    <label>إجمالي النصاب</label><input id="mTotal">
+    <label>إجمالي النصاب (يُحسب تلقائياً)</label><input id="mTotal" readonly>
     <div class="modalrow"><button class="action" onclick="saveTeacherModal()">حفظ</button><button onclick="closeTeacherModal()">إلغاء</button></div>
   </div>
 </div>
@@ -260,12 +286,16 @@ const ROWS_KEY="darquran_rows_complete_2026_v12";
 const SUBJECTS_KEY="darquran_subjects_2026";
 const ADMINS_KEY="darquran_admins_2026";
 const USERS_KEY="permissions";
+const RESERVE_KEY="darquran_reserve_2026";
+const ARABIC_DIGITS="٠١٢٣٤٥٦٧٨٩";
+const SUBJECT_COLORS={"القرآن الكريم":"#d9ead3","التفسير":"#cfe2f3","الحديث الشريف":"#fce5cd","العقيدة":"#ead1dc","السيرة النبوية":"#fff2cc","الفقه":"#d9d2e9","اللغة العربية":"#c9daf8","نحو":"#c9daf8","التجويد":"#d0e0e3","تجويد":"#d0e0e3","التلاوة":"#f4cccc","تلاوة":"#f4cccc","علوم قرآن":"#d9ead3","تاريخ السنة":"#fce5cd"};
 
 let rows=loadRows();
 let subjects=loadArray(SUBJECTS_KEY,["القرآن الكريم","التفسير","الحديث الشريف","العقيدة","السيرة النبوية","الفقه","اللغة العربية","التجويد","التلاوة","علوم القرآن","تاريخ السنة"]);
 let admins=loadArray(ADMINS_KEY,[]);
 let editingTeacher=-1;
 let dragState=null;
+let reserveEntries=loadArray(RESERVE_KEY,[]);
 
 function cloneSource(){
   return JSON.parse(JSON.stringify(SOURCE_ROWS));
@@ -309,7 +339,25 @@ function requireEdit(){
   return true;
 }
 
+
+function arNum(v){return String(v??"").replace(/\d/g,d=>ARABIC_DIGITS[Number(d)]);}
+function isNoteLesson(v){return !v || /^بالتناوب/.test(v.trim());}
+function lessonCount(r){return (r.slots||[]).filter(v=>v && !isNoteLesson(v)).length;}
+function refreshTotals(){rows.forEach(r=>{if(!String(r.total||'').includes('إجراءات مجلس طبي')) r.total=String(lessonCount(r));});}
+function extractClass(v){
+  if(!v) return ''; const m=String(v).match(/([١٢٣٤٥٦٧٨٩0-9]+\s*[مت](?:[١٢٣٤٥٦٧٨٩0-9]+)?)/); return m?m[1].replace(/\s+/g,''):'';
+}
+function subjectColor(v){const t=String(v||''); for(const [k,c] of Object.entries(SUBJECT_COLORS)) if(t.includes(k)) return c; return ''; }
+function findClassConflict(targetTeacher,targetSlot,value,ignoreTeacher=-1,ignoreSlot=-1){
+ const cls=extractClass(value); if(!cls) return null;
+ for(let ri=0;ri<rows.length;ri++){ const v=(rows[ri].slots||[])[targetSlot]||''; if(ri===ignoreTeacher && targetSlot===ignoreSlot) continue; if(!v) continue; if(extractClass(v)===cls && !(ri===targetTeacher && targetSlot===ignoreSlot)) return {ri,value:v}; }
+ return null;
+}
+function classesList(){const s=new Set(); rows.forEach(r=>(r.slots||[]).forEach(v=>{const c=extractClass(v); if(c)s.add(c);})); return [...s].sort((a,b)=>a.localeCompare(b,'ar'));}
+function saveReserve(){localStorage.setItem(RESERVE_KEY,JSON.stringify(reserveEntries));renderReserve();}
+
 function saveRows(){
+  refreshTotals();
   localStorage.setItem(ROWS_KEY,JSON.stringify(rows));
   renderAll();
 }
@@ -346,7 +394,7 @@ function renderSchedule(){
   h+='</tr></thead><tbody>';
 
   rows.forEach((r,ri)=>{
-    h+=`<tr><td>${ri+1}</td>`;
+    h+=`<tr><td class="arabic-num">${arNum(ri+1)}</td>`;
     h+=`<td class="edit name" onclick="openTeacherModal(${ri})">${esc(r.name)}</td>`;
     h+=`<td class="edit" onclick="openTeacherModal(${ri})">${esc(r.dept)}</td>`;
     h+=`<td class="edit" onclick="openTeacherModal(${ri})">${esc(r.connection)}</td>`;
@@ -355,9 +403,9 @@ function renderSchedule(){
       const v=slots[si]||"";
       const di=Math.floor(si/4);
       const draggable=canEdit() && v ? "true":"false";
-      h+=`<td class="slot ${DAY_CLASSES[di]}" draggable="${draggable}" data-r="${ri}" data-s="${si}" onclick="editSlot(${ri},${si})" ondragstart="dragStart(event,${ri},${si})" ondragover="dragOver(event)" ondragleave="event.currentTarget.classList.remove('over')" ondrop="dropSlot(event,${ri},${si})" ondragend="dragEnd(event)">${esc(v)}</td>`;
+      const clr=subjectColor(v); h+=`<td class="slot ${DAY_CLASSES[di]} lesson-chip" style="${clr?`background:${clr}`:''}" draggable="${draggable}" data-r="${ri}" data-s="${si}" onclick="editSlot(${ri},${si})" ondragstart="dragStart(event,${ri},${si})" ondragover="dragOver(event)" ondragleave="event.currentTarget.classList.remove('over')" ondrop="dropSlot(event,${ri},${si})" ondragend="dragEnd(event)">${esc(v)}</td>`;
     }
-    h+=`<td class="edit" onclick="openTeacherModal(${ri})">${esc(r.total)}</td>`;
+    h+=`<td class="edit arabic-num" onclick="openTeacherModal(${ri})">${esc(arNum(r.total))}</td>`;
     h+=`<td class="no-print edit-control"><button onclick="openTeacherModal(${ri})">✏️ تعديل</button> <button class="danger" onclick="removeTeacher(${ri})">حذف</button></td></tr>`;
   });
 
@@ -370,7 +418,10 @@ function editSlot(ri,si){
   const old=rows[ri].slots[si]||"";
   const v=prompt("المادة / بيان الحصة:",old);
   if(v===null) return;
-  rows[ri].slots[si]=v.trim();
+  const nv=v.trim();
+  const conflict=findClassConflict(ri,si,nv,ri,si);
+  if(conflict){ alert(`تعارض: الفصل ${extractClass(nv)} لديه حصة أخرى في نفس الوقت عند المعلمة ${rows[conflict.ri].name}. لم يتم حفظ التعديل.`); return; }
+  rows[ri].slots[si]=nv;
   saveRows();
 }
 
@@ -390,14 +441,14 @@ function dragOver(ev){
 
 function dropSlot(ev,r,s){
   if(!canEdit()) return;
-  ev.preventDefault();
-  ev.currentTarget.classList.remove("over");
-  if(!dragState) return;
-  const from=rows[dragState.r].slots;
-  const to=rows[r].slots;
-  [from[dragState.s],to[s]]=[to[s],from[dragState.s]];
-  dragState=null;
-  saveRows();
+  ev.preventDefault(); ev.currentTarget.classList.remove("over"); if(!dragState) return;
+  const sr=dragState.r, ss=dragState.s; const source=rows[sr].slots[ss]||""; const target=rows[r].slots[s]||"";
+  if(sr===r && ss===s){dragState=null;return;}
+  const c1=findClassConflict(r,s,source,sr,ss);
+  const c2=target?findClassConflict(sr,ss,target,r,s):null;
+  if(c1||c2){ const c=c1||c2; alert(`تعارض: الفصل ${extractClass(c1?source:target)} لديه حصة أخرى في نفس الوقت عند المعلمة ${rows[c.ri].name}. النقل غير مقبول.`); dragState=null; return; }
+  [rows[sr].slots[ss],rows[r].slots[s]]=[target,source];
+  dragState=null; saveRows();
 }
 
 function dragEnd(ev){
@@ -427,7 +478,6 @@ function saveTeacherModal(){
   r.name=mName.value.trim();
   r.dept=mDept.value.trim();
   r.connection=mConn.value.trim();
-  r.total=mTotal.value.trim();
   closeTeacherModal();
   saveRows();
 }
@@ -466,7 +516,8 @@ function resetSchedule(){
 }
 
 function renderTeachers(){
-  teacherList.innerHTML=rows.map((r,i)=>`<tr><td>${i+1}</td><td>${esc(r.name)}</td><td>${esc(r.dept)}</td><td>${esc(r.connection)}</td><td>${esc(r.total)}</td><td class="edit-control"><button onclick="openTeacherModal(${i})">تعديل</button> <button class="danger" onclick="removeTeacher(${i})">حذف</button></td></tr>`).join("");
+  refreshTotals();
+  teacherList.innerHTML=rows.map((r,i)=>`<tr><td class="arabic-num">${arNum(i+1)}</td><td>${esc(r.name)}</td><td>${esc(r.dept)}</td><td>${esc(r.connection)}</td><td class="arabic-num">${esc(arNum(r.total))}</td><td><button onclick="pdfTeacher(${i})">PDF</button></td><td class="edit-control"><button onclick="openTeacherModal(${i})">تعديل</button> <button class="danger" onclick="removeTeacher(${i})">حذف</button></td></tr>`).join("");
 }
 
 function addSubject(){
@@ -532,12 +583,14 @@ function fillTeacherSelectors(){
   const pv2=pt.value;
   pt.innerHTML='<option value="">اختر المعلمة</option>'+rows.map((r,i)=>`<option value="${i}">${esc(r.name)}</option>`).join("");
   pt.value=pv2;
+  ['teacherPdfSelect','pdfTeacherFilter','reserveTeacher'].forEach(id=>{const el=document.getElementById(id);if(el){const pv=el.value;el.innerHTML='<option value="">اختر المعلمة</option>'+rows.map((r,i)=>`<option value="${i}">${esc(r.name)}</option>`).join('');el.value=pv;}});
+  const cf=document.getElementById('pdfClassFilter'); if(cf){const pv=cf.value;cf.innerHTML='<option value="">اختر الفصل</option>'+classesList().map(c=>`<option>${esc(c)}</option>`).join('');cf.value=pv;}
 }
 
 async function exportRows(rr,filename){
   if(typeof ExcelJS==="undefined"){ alert("تعذر تحميل أداة Excel. تأكد من اتصال الإنترنت."); return; }
   const wb=new ExcelJS.Workbook();
-  wb.creator="نظام إدارة جدول حصص دار القرآن نساء ٢";
+  wb.creator="نظام إدارة جدول حصص مركز دار القرآن غرب عبدالله المبارك نساء ٢";
   const ws=wb.addWorksheet("جدول النصاب",{views:[{rightToLeft:true,state:"frozen",ySplit:4,xSplit:4,showGridLines:false}]});
   ws.properties.defaultRowHeight=28;
   ws.pageSetup={orientation:"landscape",fitToPage:true,fitToWidth:1,fitToHeight:0,paperSize:9,showGridLines:false,printArea:`A1:Y${rr.length+4}`,margins:{left:0.15,right:0.15,top:0.25,bottom:0.25,header:0.1,footer:0.1}};
@@ -694,6 +747,22 @@ function exportAll(){
   exportRows(rows,"جدول_نصاب_المعلمات_2026.xlsx");
 }
 
+function renderReserve(){
+ const counts={}; reserveEntries.forEach(x=>counts[x.teacher]=(counts[x.teacher]||0)+1);
+ reserveList.innerHTML=reserveEntries.map((x,i)=>`<tr><td>${arNum(i+1)}</td><td>${esc(rows[x.teacher]?.name||x.teacherName||'')}</td><td>${esc(x.day)}</td><td>${esc(x.period)}</td><td>${esc(x.cls)}</td><td class="reserve-stat">${arNum(counts[x.teacher]||0)}</td><td class="edit-control"><button class="danger" onclick="deleteReserve(${i})">حذف</button></td></tr>`).join('');
+}
+function addReserveEntry(){if(!requireEdit())return;const t=reserveTeacher.value;if(t==='')return alert('اختر المعلمة');reserveEntries.push({teacher:Number(t),teacherName:rows[Number(t)].name,day:reserveDay.value,period:reservePeriod.value,cls:reserveClass.value.trim()});reserveClass.value='';saveReserve();}
+function deleteReserve(i){if(!requireEdit())return;if(confirm('حذف سجل الاحتياط؟')){reserveEntries.splice(i,1);saveReserve();}}
+async function pdfSimpleTable(title,headers,data,filename){
+ if(typeof html2canvas==='undefined'||!window.jspdf)return alert('تعذر تحميل أداة PDF');
+ const host=document.createElement('div');host.style.cssText='position:fixed;left:-20000px;top:0;width:1120px;background:#fff;padding:30px;direction:rtl;font-family:Tahoma,Arial';
+ let h=`<h1 style="text-align:center;font-weight:900;font-size:28px">${esc(title)}</h1><table style="width:100%;border-collapse:collapse;font-size:16px;font-weight:700">`;h+='<tr>'+headers.map(x=>`<th style="border:1px solid #111;padding:8px;background:#e7efec">${esc(x)}</th>`).join('')+'</tr>';data.forEach(row=>{h+='<tr>'+row.map(x=>`<td style="border:1px solid #111;padding:8px;text-align:center">${esc(arNum(x))}</td>`).join('')+'</tr>'});h+='</table>';host.innerHTML=h;document.body.appendChild(host);const canvas=await html2canvas(host,{scale:1.5,backgroundColor:'#fff'});const {jsPDF}=window.jspdf;const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});doc.addImage(canvas.toDataURL('image/jpeg',.94),'JPEG',0,0,297,210);doc.save(filename);host.remove();
+}
+function pdfTeacher(i){const r=rows[i];const data=[];for(let s=0;s<20;s++){if(r.slots[s])data.push([DAYS[Math.floor(s/4)],PERIODS[s%4],r.slots[s]]);}return pdfSimpleTable(`جدول المعلمة - ${r.name}`,['اليوم','الحصة','المادة / الفصل'],data,`جدول_${r.name}.pdf`);}
+function pdfTeacherSelected(id='teacherPdfSelect'){const el=document.getElementById(id);if(!el||el.value==='')return alert('اختر المعلمة');return pdfTeacher(Number(el.value));}
+function pdfClassSelected(){const cls=pdfClassFilter.value;if(!cls)return alert('اختر الفصل');const data=[];rows.forEach(r=>(r.slots||[]).forEach((v,s)=>{if(extractClass(v)===cls)data.push([DAYS[Math.floor(s/4)],PERIODS[s%4],r.name,v]);}));return pdfSimpleTable(`جدول الفصل - ${cls}`,['اليوم','الحصة','المعلمة','المادة'],data,`جدول_الفصل_${cls}.pdf`);}
+function pdfReserve(){const counts={};reserveEntries.forEach(x=>counts[x.teacher]=(counts[x.teacher]||0)+1);const data=reserveEntries.map((x,i)=>[i+1,rows[x.teacher]?.name||x.teacherName,x.day,x.period,x.cls,counts[x.teacher]||0]);return pdfSimpleTable('الاحتياط اليومي',['م','المعلمة','اليوم','الحصة','الفصل / البيان','إجمالي الاحتياط'],data,'الاحتياط_اليومي.pdf');}
+
 function addPermission(){
   if(role()!=="admin") return alert("هذه العملية للمسؤول فقط.");
   const name=permissionName.value.trim();
@@ -762,10 +831,12 @@ function applyRole(){
 }
 
 function renderAll(){
+  refreshTotals();
   renderSchedule();
   renderTeachers();
   renderSubjects();
   renderAdmins();
+  renderReserve();
   fillTeacherSelectors();
   renderPermissions();
   if(currentAccount()) applyRole();
