@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>نظام إدارة جدول حصص دار القرآن نساء ٢</title>
+<title>نظام إدارة جدول حصص مركز دار القرآن غرب عبدالله المبارك نساء ٢</title>
 <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
@@ -105,13 +105,18 @@ footer{text-align:center;padding:18px;color:#666}
 }
 </style>
 
+
+<style>
+header h1 { font-weight: 900 !important; font-size: clamp(24px, 3vw, 36px) !important; line-height: 1.45 !important; }
+#loginScreen .loginbox > p:first-of-type { font-weight: 900 !important; font-size: 18px !important; line-height: 1.7 !important; }
+</style>
 </head>
 <body>
 
 <div id="loginScreen">
   <div class="loginbox">
     <h2>تسجيل الدخول</h2>
-    <p>نظام إدارة جدول حصص دار القرآن نساء ٢</p>
+    <p>نظام إدارة جدول حصص مركز دار القرآن غرب عبدالله المبارك نساء ٢</p>
     <input id="loginUser" placeholder="اسم المستخدم" autocomplete="username">
     <input id="loginPass" type="password" placeholder="كلمة المرور" autocomplete="current-password">
     <button class="action" style="width:100%;padding:12px" onclick="doLogin()">دخول</button>
@@ -122,7 +127,7 @@ footer{text-align:center;padding:18px;color:#666}
 </div>
 
 <header>
-  <h1>نظام إدارة جدول حصص دار القرآن نساء ٢</h1>
+  <h1>نظام إدارة جدول حصص مركز دار القرآن غرب عبدالله المبارك نساء ٢</h1>
   <p>إدارة الجداول والمعلمات والمواد والإداريات والطباعة والصلاحيات</p>
 </header>
 
@@ -237,7 +242,7 @@ footer{text-align:center;padding:18px;color:#666}
 
 </div>
 
-<footer>نظام إدارة جدول حصص دار القرآن نساء ٢</footer>
+<footer>نظام إدارة جدول حصص مركز دار القرآن غرب عبدالله المبارك نساء ٢</footer>
 
 <div id="teacherModal" class="modal">
   <div class="modalbox">
@@ -537,7 +542,7 @@ function fillTeacherSelectors(){
 async function exportRows(rr,filename){
   if(typeof ExcelJS==="undefined"){ alert("تعذر تحميل أداة Excel. تأكد من اتصال الإنترنت."); return; }
   const wb=new ExcelJS.Workbook();
-  wb.creator="نظام إدارة جدول حصص دار القرآن نساء ٢";
+  wb.creator="نظام إدارة جدول حصص مركز دار القرآن غرب عبدالله المبارك نساء ٢";
   const ws=wb.addWorksheet("جدول النصاب",{views:[{rightToLeft:true,state:"frozen",ySplit:4,xSplit:4,showGridLines:false}]});
   ws.properties.defaultRowHeight=28;
   ws.pageSetup={orientation:"landscape",fitToPage:true,fitToWidth:1,fitToHeight:0,paperSize:9,showGridLines:false,printArea:`A1:Y${rr.length+4}`,margins:{left:0.15,right:0.15,top:0.25,bottom:0.25,header:0.1,footer:0.1}};
@@ -914,14 +919,14 @@ async function pdfSchedule2026(){
     h+='<th class="no-print" colspan="3"><input class="filter-input" data-filter-key="className" style="width:96%" value="'+esc(FILTERS.className)+'" placeholder="فرز الفصل (مثال: 3م2)" oninput="setScheduleFilter2026(\'className\',this.value)"></th>';
     DAYS.forEach((d,i)=>PERIODS.forEach(p=>h+=`<th class="period ${DAY_CLASSES[i]}">${p}</th>`));
     h+='<th class="no-print"><button onclick="clearFilters2026()">مسح الفرز</button></th></tr></thead><tbody>';
-    rows.forEach((r,ri)=>{ if(!matches(r))return; h+=`<tr><td>${ri+1}</td><td class="edit name" onclick="openTeacherModal(${ri})">${esc(r.name)}</td><td class="edit" onclick="openTeacherModal(${ri})">${esc(r.dept)}</td><td class="edit" onclick="openTeacherModal(${ri})">${esc(r.connection)}</td>`; const slots=Array.isArray(r.slots)?r.slots:Array(20).fill(''); for(let si=0;si<20;si++){const v=slots[si]||'',di=Math.floor(si/4),draggable=canEdit()&&v?'true':'false';h+=`<td class="slot ${DAY_CLASSES[di]}" draggable="${draggable}" data-r="${ri}" data-s="${si}" onclick="editSlot(${ri},${si})" ondragstart="dragStart(event,${ri},${si})" ondragover="dragOver(event)" ondragleave="event.currentTarget.classList.remove('over')" ondrop="dropSlot(event,${ri},${si})" ondragend="dragEnd(event)">${esc(v)}</td>`;} h+=`<td class="edit" onclick="openTeacherModal(${ri})">${esc(r.total)}</td><td class="no-print edit-control"><button onclick="openTeacherModal(${ri})">✏️ تعديل</button> <button class="danger" onclick="removeTeacher(${ri})">حذف</button></td></tr>`;});
+    let visibleNo=0; rows.forEach((r,ri)=>{ if(!matches(r))return; visibleNo++; h+=`<tr><td>${visibleNo}</td><td class="edit name" onclick="openTeacherModal(${ri})">${esc(r.name)}</td><td class="edit" onclick="openTeacherModal(${ri})">${esc(r.dept)}</td><td class="edit" onclick="openTeacherModal(${ri})">${esc(r.connection)}</td>`; const slots=Array.isArray(r.slots)?r.slots:Array(20).fill(''); for(let si=0;si<20;si++){const v=slots[si]||'',di=Math.floor(si/4),draggable=canEdit()&&v?'true':'false';h+=`<td class="slot ${DAY_CLASSES[di]}" draggable="${draggable}" data-r="${ri}" data-s="${si}" onclick="editSlot(${ri},${si})" ondragstart="dragStart(event,${ri},${si})" ondragover="dragOver(event)" ondragleave="event.currentTarget.classList.remove('over')" ondrop="dropSlot(event,${ri},${si})" ondragend="dragEnd(event)">${esc(v)}</td>`;} h+=`<td class="edit" onclick="openTeacherModal(${ri})">${esc(r.total)}</td><td class="no-print edit-control"><button onclick="openTeacherModal(${ri})">✏️ تعديل</button> <button class="danger" onclick="removeTeacher(${ri})">حذف</button></td></tr>`;});
     scheduleGrid.innerHTML=h;
     document.querySelectorAll('.edit-control').forEach(el=>el.style.display=canEdit()?'':'none');
   };
 
   window.renderTeachers=function(){
     const table=document.querySelector('#teachers table.simple'); if(table){table.querySelector('thead').innerHTML='<tr><th>م</th><th>اسم المعلمة</th><th>القسم</th><th>نوع الارتباط</th><th>النصاب</th><th class="edit-control">إجراء</th></tr><tr class="filter-row no-print"><th></th><th><input class="filter-input" data-teacher-filter-key="name" placeholder="فرز الاسم" value="'+esc(FILTERS.name)+'" oninput="FILTER_TEACHER(\'name\',this.value)"></th><th><input class="filter-input" data-teacher-filter-key="dept" placeholder="فرز القسم" value="'+esc(FILTERS.dept)+'" oninput="FILTER_TEACHER(\'dept\',this.value)"></th><th><input class="filter-input" data-teacher-filter-key="connection" placeholder="فرز الارتباط" value="'+esc(FILTERS.connection)+'" oninput="FILTER_TEACHER(\'connection\',this.value)"></th><th><input class="filter-input" data-teacher-filter-key="total" placeholder="فرز النصاب" value="'+esc(FILTERS.total)+'" oninput="FILTER_TEACHER(\'total\',this.value)"></th><th></th></tr>';}
-    teacherList.innerHTML=rows.map((r,i)=>matches(r)?`<tr><td>${i+1}</td><td>${esc(r.name)}</td><td>${esc(r.dept)}</td><td>${esc(r.connection)}</td><td>${esc(r.total)}</td><td class="edit-control"><button onclick="openTeacherModal(${i})">تعديل</button> <button class="danger" onclick="removeTeacher(${i})">حذف</button></td></tr>`:'').join('');
+    let teacherNo=0; teacherList.innerHTML=rows.map((r,i)=>matches(r)?`<tr><td>${++teacherNo}</td><td>${esc(r.name)}</td><td>${esc(r.dept)}</td><td>${esc(r.connection)}</td><td>${esc(r.total)}</td><td class="edit-control"><button onclick="openTeacherModal(${i})">تعديل</button> <button class="danger" onclick="removeTeacher(${i})">حذف</button></td></tr>`:'').join('');
     document.querySelectorAll('.edit-control').forEach(el=>el.style.display=canEdit()?'':'none');
   };
   window.FILTER_TEACHER=(k,v)=>{const el=document.activeElement,pos=el&&typeof el.selectionStart==='number'?el.selectionStart:v.length;FILTERS[k]=v;renderTeachers();requestAnimationFrame(()=>{const n=document.querySelector('#teachers [data-teacher-filter-key=\"'+k+'\"]');if(n){n.focus();try{n.setSelectionRange(pos,pos)}catch(e){}}});};
