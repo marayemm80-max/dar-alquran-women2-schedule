@@ -776,7 +776,7 @@ function doLogin(){
   const pass=loginPass.value;
   let account=null;
 
-  if(user==="admin" && pass==="1234"){
+  if(user==="admin" && pass==="1980"){
     account={name:"admin",role:"admin"};
   }else{
     let users=[];
@@ -902,16 +902,16 @@ async function pdfSchedule2026(){
       (!FILTERS.className||norm(slots).includes(norm(FILTERS.className)));
   }
   window.getFilteredRows2026=()=>rows.filter(matches);
-  window.setScheduleFilter2026=(k,v)=>{FILTERS[k]=v; renderSchedule();};
+  window.setScheduleFilter2026=(k,v)=>{const el=document.activeElement,pos=el&&typeof el.selectionStart==='number'?el.selectionStart:v.length;FILTERS[k]=v;renderSchedule();requestAnimationFrame(()=>{const n=document.querySelector('#schedule [data-filter-key=\"'+k+'\"]');if(n){n.focus();try{n.setSelectionRange(pos,pos)}catch(e){}}});};
   window.clearFilters2026=()=>{Object.keys(FILTERS).forEach(k=>FILTERS[k]='');renderSchedule();renderTeachers();};
 
   window.renderSchedule=function(){
     let h='<thead>';
     h+='<tr><th rowspan="3" class="meta num">م</th><th class="meta name">الاسم</th><th class="meta dept">القسم</th><th class="meta conn">نوع الارتباط</th><th colspan="20" class="meta">أيام الأسبوع</th><th class="meta total">إجمالي<br>نصاب الحصص</th><th rowspan="3" class="meta actioncol no-print edit-control">إجراء</th></tr>';
-    h+='<tr class="filter-row no-print"><th><input class="filter-input" value="'+esc(FILTERS.name)+'" placeholder="فرز الاسم" oninput="setScheduleFilter2026(\'name\',this.value)"></th><th><input class="filter-input" value="'+esc(FILTERS.dept)+'" placeholder="فرز القسم" oninput="setScheduleFilter2026(\'dept\',this.value)"></th><th><input class="filter-input" value="'+esc(FILTERS.connection)+'" placeholder="فرز الارتباط" oninput="setScheduleFilter2026(\'connection\',this.value)"></th>';
+    h+='<tr class="filter-row no-print"><th><input class="filter-input" data-filter-key="name" value="'+esc(FILTERS.name)+'" placeholder="فرز الاسم" oninput="setScheduleFilter2026(\'name\',this.value)"></th><th><input class="filter-input" data-filter-key="dept" value="'+esc(FILTERS.dept)+'" placeholder="فرز القسم" oninput="setScheduleFilter2026(\'dept\',this.value)"></th><th><input class="filter-input" data-filter-key="connection" value="'+esc(FILTERS.connection)+'" placeholder="فرز الارتباط" oninput="setScheduleFilter2026(\'connection\',this.value)"></th>';
     DAYS.forEach((d,i)=>h+=`<th colspan="4" class="${DAY_CLASSES[i]}">${d}</th>`);
-    h+='<th><input class="filter-input" value="'+esc(FILTERS.total)+'" placeholder="فرز النصاب" oninput="setScheduleFilter2026(\'total\',this.value)"></th></tr><tr>';
-    h+='<th class="no-print" colspan="3"><input class="filter-input" style="width:96%" value="'+esc(FILTERS.className)+'" placeholder="فرز الفصل (مثال: 3م2)" oninput="setScheduleFilter2026(\'className\',this.value)"></th>';
+    h+='<th><input class="filter-input" data-filter-key="total" value="'+esc(FILTERS.total)+'" placeholder="فرز النصاب" oninput="setScheduleFilter2026(\'total\',this.value)"></th></tr><tr>';
+    h+='<th class="no-print" colspan="3"><input class="filter-input" data-filter-key="className" style="width:96%" value="'+esc(FILTERS.className)+'" placeholder="فرز الفصل (مثال: 3م2)" oninput="setScheduleFilter2026(\'className\',this.value)"></th>';
     DAYS.forEach((d,i)=>PERIODS.forEach(p=>h+=`<th class="period ${DAY_CLASSES[i]}">${p}</th>`));
     h+='<th class="no-print"><button onclick="clearFilters2026()">مسح الفرز</button></th></tr></thead><tbody>';
     rows.forEach((r,ri)=>{ if(!matches(r))return; h+=`<tr><td>${ri+1}</td><td class="edit name" onclick="openTeacherModal(${ri})">${esc(r.name)}</td><td class="edit" onclick="openTeacherModal(${ri})">${esc(r.dept)}</td><td class="edit" onclick="openTeacherModal(${ri})">${esc(r.connection)}</td>`; const slots=Array.isArray(r.slots)?r.slots:Array(20).fill(''); for(let si=0;si<20;si++){const v=slots[si]||'',di=Math.floor(si/4),draggable=canEdit()&&v?'true':'false';h+=`<td class="slot ${DAY_CLASSES[di]}" draggable="${draggable}" data-r="${ri}" data-s="${si}" onclick="editSlot(${ri},${si})" ondragstart="dragStart(event,${ri},${si})" ondragover="dragOver(event)" ondragleave="event.currentTarget.classList.remove('over')" ondrop="dropSlot(event,${ri},${si})" ondragend="dragEnd(event)">${esc(v)}</td>`;} h+=`<td class="edit" onclick="openTeacherModal(${ri})">${esc(r.total)}</td><td class="no-print edit-control"><button onclick="openTeacherModal(${ri})">✏️ تعديل</button> <button class="danger" onclick="removeTeacher(${ri})">حذف</button></td></tr>`;});
@@ -920,26 +920,34 @@ async function pdfSchedule2026(){
   };
 
   window.renderTeachers=function(){
-    const table=document.querySelector('#teachers table.simple'); if(table){table.querySelector('thead').innerHTML='<tr><th>م</th><th>اسم المعلمة</th><th>القسم</th><th>نوع الارتباط</th><th>النصاب</th><th class="edit-control">إجراء</th></tr><tr class="filter-row no-print"><th></th><th><input class="filter-input" placeholder="فرز الاسم" value="'+esc(FILTERS.name)+'" oninput="FILTER_TEACHER(\'name\',this.value)"></th><th><input class="filter-input" placeholder="فرز القسم" value="'+esc(FILTERS.dept)+'" oninput="FILTER_TEACHER(\'dept\',this.value)"></th><th><input class="filter-input" placeholder="فرز الارتباط" value="'+esc(FILTERS.connection)+'" oninput="FILTER_TEACHER(\'connection\',this.value)"></th><th><input class="filter-input" placeholder="فرز النصاب" value="'+esc(FILTERS.total)+'" oninput="FILTER_TEACHER(\'total\',this.value)"></th><th></th></tr>';}
+    const table=document.querySelector('#teachers table.simple'); if(table){table.querySelector('thead').innerHTML='<tr><th>م</th><th>اسم المعلمة</th><th>القسم</th><th>نوع الارتباط</th><th>النصاب</th><th class="edit-control">إجراء</th></tr><tr class="filter-row no-print"><th></th><th><input class="filter-input" data-teacher-filter-key="name" placeholder="فرز الاسم" value="'+esc(FILTERS.name)+'" oninput="FILTER_TEACHER(\'name\',this.value)"></th><th><input class="filter-input" data-teacher-filter-key="dept" placeholder="فرز القسم" value="'+esc(FILTERS.dept)+'" oninput="FILTER_TEACHER(\'dept\',this.value)"></th><th><input class="filter-input" data-teacher-filter-key="connection" placeholder="فرز الارتباط" value="'+esc(FILTERS.connection)+'" oninput="FILTER_TEACHER(\'connection\',this.value)"></th><th><input class="filter-input" data-teacher-filter-key="total" placeholder="فرز النصاب" value="'+esc(FILTERS.total)+'" oninput="FILTER_TEACHER(\'total\',this.value)"></th><th></th></tr>';}
     teacherList.innerHTML=rows.map((r,i)=>matches(r)?`<tr><td>${i+1}</td><td>${esc(r.name)}</td><td>${esc(r.dept)}</td><td>${esc(r.connection)}</td><td>${esc(r.total)}</td><td class="edit-control"><button onclick="openTeacherModal(${i})">تعديل</button> <button class="danger" onclick="removeTeacher(${i})">حذف</button></td></tr>`:'').join('');
     document.querySelectorAll('.edit-control').forEach(el=>el.style.display=canEdit()?'':'none');
   };
-  window.FILTER_TEACHER=(k,v)=>{FILTERS[k]=v;renderTeachers();};
+  window.FILTER_TEACHER=(k,v)=>{const el=document.activeElement,pos=el&&typeof el.selectionStart==='number'?el.selectionStart:v.length;FILTERS[k]=v;renderTeachers();requestAnimationFrame(()=>{const n=document.querySelector('#teachers [data-teacher-filter-key=\"'+k+'\"]');if(n){n.focus();try{n.setSelectionRange(pos,pos)}catch(e){}}});};
 
   function scopeRows(){const rr=getFilteredRows2026(); return rr.length?rr:rows;}
-  window.exportXlsx=function(){const rr=scopeRows();exportRows(rr,rr.length===rows.length?'جدول_نصاب_المعلمات_2026.xlsx':'الجدول_المفلتر_2026.xlsx');};
+  window.exportXlsx=function(){const q=document.getElementById('exportTeacher').value;if(q!==''){const r=rows[Number(q)];if(!r)return alert('تعذر العثور على المعلمة المختارة.');return exportRows([r],`جدول_${r.name}.xlsx`);}const filtered=getFilteredRows2026();if(!filtered.length)return alert('لا توجد نتائج مطابقة للفرز.');exportRows(filtered,filtered.length===rows.length?'جدول_نصاب_المعلمات_2026.xlsx':'الجدول_المفلتر_2026.xlsx');};
   window.exportAll=function(){exportRows(rows,'جدول_نصاب_المعلمات_2026.xlsx');};
   window.exportSelectedTeacher=function(){const q=printTeacher.value;if(q==='')return alert('اختر المعلمة');exportRows([rows[Number(q)]],`جدول_${rows[Number(q)].name}.xlsx`);};
 
   const oldPdf=window.pdfSchedule2026;
   window.pdfSchedule2026=async function(){
-    const original=rows; const filtered=getFilteredRows2026();
-    if(!filtered.length){alert('لا توجد نتائج مطابقة للفرز.');return;}
-    try{rows=filtered; await oldPdf();} finally{rows=original;}
+    const original=rows; const q=document.getElementById('exportTeacher')?.value??'';
+    let selected;
+    if(q!==''){
+      const r=rows[Number(q)];
+      if(!r){alert('تعذر العثور على المعلمة المختارة.');return;}
+      selected=[r];
+    }else{
+      selected=getFilteredRows2026();
+      if(!selected.length){alert('لا توجد نتائج مطابقة للفرز.');return;}
+    }
+    try{rows=selected; await oldPdf();} finally{rows=original;}
   };
 
   function addExportControls(){
-    const tb=document.querySelector('#schedule .schedule-toolbar'); if(tb&&!document.getElementById('scopeExport2026')){const d=document.createElement('div');d.id='scopeExport2026';d.className='export-scope';d.innerHTML='<b>التصدير:</b><span>استخدم الفرز في رأس الجدول ثم اضغط PDF أو Excel — يمكن الفرز باسم معلمة أو قسم أو فصل أو نوع ارتباط أو نصاب.</span>';tb.appendChild(d);}
+    const tb=document.querySelector('#schedule .schedule-toolbar'); if(tb&&!document.getElementById('scopeExport2026')){const d=document.createElement('div');d.id='scopeExport2026';d.className='export-scope';d.innerHTML='<b>التصدير:</b><span>اختر معلمة من القائمة لتصديرها وحدها، أو اترك «الجدول الكامل» واستخدم الفرز في رأس الجدول ثم اضغط PDF أو Excel.</span>';tb.appendChild(d);}
     const p=document.querySelector('#printing .panel:nth-of-type(2)');if(p&&!document.getElementById('filterExportNote2026')){const d=document.createElement('div');d.id='filterExportNote2026';d.className='hint';d.innerHTML='للتصدير حسب <b>قسم أو فصل</b>: استخدم فرز الجدول الدراسي أولاً، ثم صدّر PDF أو Excel.';p.appendChild(d);}
   }
 
