@@ -137,7 +137,6 @@ header h1 { font-weight: 900 !important; font-size: clamp(24px, 3vw, 36px) !impo
   <button onclick="show('teachers')">المعلمات</button>
   <button onclick="show('subjects')">المواد</button>
   <button onclick="show('admins')">الإداريات</button>
-  <button onclick="show('printing')">مركز الطباعة</button>
   <button id="permissionsNav" onclick="show('permissions')">الصلاحيات</button>
   <button id="logoutBtn" onclick="logout()">🚪 تسجيل الخروج</button>
 </nav>
@@ -155,7 +154,6 @@ header h1 { font-weight: 900 !important; font-size: clamp(24px, 3vw, 36px) !impo
     <div class="card" onclick="show('teachers')"><div class="icon">👩‍🏫</div><h3>المعلمات</h3><p>إدارة أسماء المعلمات وبياناتهن.</p></div>
     <div class="card" onclick="show('subjects')"><div class="icon">📚</div><h3>المواد</h3><p>إضافة المواد وتعديلها وحذفها.</p></div>
     <div class="card" onclick="show('admins')"><div class="icon">👩‍💼</div><h3>الإداريات</h3><p>إدارة أسماء الإداريات.</p></div>
-    <div class="card" onclick="show('printing')"><div class="icon">🖨️</div><h3>مركز الطباعة</h3><p>طباعة الجدول وتصديره إلى Excel.</p></div>
     <div id="permissionsCard" class="card" onclick="show('permissions')"><div class="icon">🔐</div><h3>الصلاحيات</h3><p>إدارة المستخدمين وكلمات المرور والصلاحيات.</p></div>
   </div>
 </section>
@@ -179,6 +177,7 @@ header h1 { font-weight: 900 !important; font-size: clamp(24px, 3vw, 36px) !impo
 
 <section id="teachers" class="section">
   <h2>👩‍🏫 إدارة المعلمات</h2>
+  <div class="panel no-print"><button class="action" onclick="pdfSimpleSection2026('teachers')">تصدير المعلمات PDF</button></div>
   <div class="panel no-print edit-control">
     <input id="teacherName" placeholder="اسم المعلمة">
     <input id="teacherDept" placeholder="القسم">
@@ -193,6 +192,7 @@ header h1 { font-weight: 900 !important; font-size: clamp(24px, 3vw, 36px) !impo
 
 <section id="subjects" class="section">
   <h2>📚 إدارة المواد</h2>
+  <div class="panel no-print"><button class="action" onclick="pdfSimpleSection2026('subjects')">تصدير المواد PDF</button></div>
   <div class="panel no-print edit-control">
     <input id="subjectName" placeholder="اسم المادة">
     <button class="action" onclick="addSubject()">إضافة مادة</button>
@@ -202,6 +202,7 @@ header h1 { font-weight: 900 !important; font-size: clamp(24px, 3vw, 36px) !impo
 
 <section id="admins" class="section">
   <h2>👩‍💼 الإداريات</h2>
+  <div class="panel no-print"><button class="action" onclick="pdfSimpleSection2026('admins')">تصدير الإداريات PDF</button></div>
   <div class="panel no-print edit-control">
     <input id="adminName" placeholder="اسم الإدارية">
     <button class="action" onclick="addAdmin()">إضافة إدارية</button>
@@ -209,20 +210,7 @@ header h1 { font-weight: 900 !important; font-size: clamp(24px, 3vw, 36px) !impo
   <table class="simple"><thead><tr><th>م</th><th>اسم الإدارية</th><th class="edit-control">إجراء</th></tr></thead><tbody id="adminList"></tbody></table>
 </section>
 
-<section id="printing" class="section">
-  <h2>🖨️ مركز الطباعة والتصدير</h2>
-  <div class="panel no-print">
-    <h3>طباعة الجدول الكامل</h3>
-    <button class="action" onclick="printSchedule2026()">طباعة الجدول الكامل</button>
-  </div>
-  <div class="panel no-print">
-    <h3>تصدير Excel</h3>
-    <select id="printTeacher"></select>
-    <button class="action" onclick="exportSelectedTeacher()">تصدير المعلمة إلى Excel</button>
-    <button class="action" onclick="exportAll()">تصدير الجدول الكامل إلى Excel</button>
-    <button class="action" onclick="pdfSchedule2026()">تصدير الجدول الكامل إلى PDF</button>
-  </div>
-</section>
+
 
 <section id="permissions" class="section">
   <h2>⚙️ مركز الصلاحيات</h2>
@@ -1171,6 +1159,31 @@ async function pdfSchedule2026(){
   window.addEventListener('focus',()=>pullCloud(false));
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)pullCloud(false)});
 })();
+</script>
+
+
+<style id="periodGray2026">
+/* رؤوس الحصص الأولى والثانية والثالثة والرابعة بالرمادي */
+#scheduleGrid thead tr:nth-child(3) th.period{background:#d7d7d7!important;color:#111!important;}
+</style>
+<script id="simplePdfExports2026">
+window.pdfSimpleSection2026=async function(kind){
+  if(typeof html2canvas==='undefined'||!window.jspdf||!window.jspdf.jsPDF){alert('تعذر تحميل أداة PDF. تأكد من اتصال الإنترنت.');return;}
+  const cfg={
+    teachers:{title:'قائمة المعلمات',headers:['م','اسم المعلمة','القسم','نوع الارتباط','النصاب'],rows:()=>rows.map((r,i)=>[i+1,r.name,r.dept,r.connection,r.total]),file:'المعلمات.pdf'},
+    subjects:{title:'قائمة المواد',headers:['م','المادة'],rows:()=>subjects.map((x,i)=>[i+1,x]),file:'المواد.pdf'},
+    admins:{title:'قائمة الإداريات',headers:['م','اسم الإدارية'],rows:()=>admins.map((x,i)=>[i+1,x]),file:'الإداريات.pdf'}
+  }[kind];
+  if(!cfg)return;
+  const data=cfg.rows(); if(!data.length){alert('لا توجد بيانات للتصدير.');return;}
+  const host=document.createElement('div');host.style.cssText='position:fixed;left:-99999px;top:0;background:#fff;z-index:-1';document.body.appendChild(host);
+  const page=document.createElement('div');page.style.cssText='width:1100px;background:#fff;padding:42px;font-family:Tahoma,Arial,sans-serif;direction:rtl;color:#000';
+  const th=cfg.headers.map(h=>`<th style="border:1px solid #555;padding:10px;background:#d7d7d7;font-size:18px">${esc(h)}</th>`).join('');
+  const trs=data.map(r=>`<tr>${r.map(v=>`<td style="border:1px solid #777;padding:9px;text-align:center;font-size:16px">${esc(v)}</td>`).join('')}</tr>`).join('');
+  page.innerHTML=`<h2 style="text-align:center;margin:0 0 8px;font-size:28px">${cfg.title}</h2><div style="text-align:center;margin-bottom:22px;font-size:18px;font-weight:bold">نظام إدارة جدول حصص مركز دار القرآن غرب عبدالله المبارك نساء ٢</div><table style="width:100%;border-collapse:collapse;table-layout:fixed"><thead><tr>${th}</tr></thead><tbody>${trs}</tbody></table>`;
+  host.appendChild(page);
+  try{const canvas=await html2canvas(page,{scale:1.5,useCORS:true,backgroundColor:'#fff',logging:false});const {jsPDF}=window.jspdf;const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4',compress:true});const pw=210,ph=297,margin=7;const ratio=Math.min((pw-margin*2)/canvas.width,(ph-margin*2)/canvas.height);const w=canvas.width*ratio,h=canvas.height*ratio;doc.addImage(canvas.toDataURL('image/jpeg',.95),'JPEG',(pw-w)/2,margin,w,h,undefined,'FAST');doc.save(cfg.file);}catch(e){console.error(e);alert('تعذر إنشاء ملف PDF. حاول مرة أخرى.');}finally{host.remove();}
+};
 </script>
 
 </body>
