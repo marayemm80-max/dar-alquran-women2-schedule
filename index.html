@@ -139,6 +139,24 @@ header h1 { font-weight: 900 !important; font-size: clamp(24px, 3vw, 36px) !impo
 }
 </style>
 
+
+<style id="leaveStyle2026">
+.leave-card-2026{background:linear-gradient(135deg,#f5faff,#edf5ff)!important;border:2px solid #82aeda!important}
+.leave-tools-2026{display:flex;gap:8px;flex-wrap:wrap;align-items:center;background:#fff;padding:12px;border:1px solid #ddd;border-radius:10px;margin-bottom:12px}
+.leave-tools-2026 input{min-width:310px;flex:1}
+.leave-paper-2026{background:#fff;padding:22px;max-width:1250px;margin:auto;border:1px solid #bbb}
+.leave-head-2026{display:grid;grid-template-columns:120px 1fr 120px;align-items:center;text-align:center;margin-bottom:14px}
+.leave-head-2026 h1{margin:0;font-size:27px}.leave-head-2026 h2{margin:6px 0;font-size:21px}.leave-head-2026 h3{margin:0;font-size:19px}
+.leave-logo-2026{font-size:55px;color:#a88943}
+.leave-table-2026{width:100%;border-collapse:collapse;table-layout:fixed;direction:rtl}
+.leave-table-2026 th,.leave-table-2026 td{border:2px solid #222;padding:7px 4px;text-align:center;vertical-align:middle;font-size:13px;overflow-wrap:anywhere}
+.leave-table-2026 th{background:#9fc3e6;font-weight:900}
+.leave-table-2026 th:first-child,.leave-table-2026 td:first-child{background:#9fc3e6;width:38px}
+.leave-sign-2026{display:flex;justify-content:space-between;align-items:flex-end;margin-top:34px;padding:0 30px;font-size:15px}
+.leave-sign-2026 small{font-weight:bold}
+@media(max-width:800px){.leave-paper-2026{overflow:auto;padding:10px}.leave-table-2026{min-width:1050px}.leave-head-2026{grid-template-columns:55px 1fr 55px}.leave-logo-2026{font-size:32px}.leave-head-2026 h1{font-size:21px}.leave-head-2026 h2{font-size:16px}}
+</style>
+
 </head>
 <body>
 
@@ -164,6 +182,7 @@ header h1 { font-weight: 900 !important; font-size: clamp(24px, 3vw, 36px) !impo
   <button onclick="home()">الرئيسية</button>
   <button onclick="show('schedule')">الجدول الدراسي</button>
   <button onclick="show('dailySchedule2026');renderDailySchedule2026()">🌷 الجدول اليومي</button>
+  <button onclick="show('leaves2026');renderLeaves2026()">🗂️ حصر الإجازات</button>
   <button onclick="show('teachers')">المعلمات</button>
   <button onclick="show('subjects')">المواد</button>
   <button onclick="show('admins')">الإداريات</button>
@@ -182,6 +201,7 @@ header h1 { font-weight: 900 !important; font-size: clamp(24px, 3vw, 36px) !impo
   <div class="cards">
     <div class="card" onclick="show('schedule')"><div class="icon">📅</div><h3>الجدول الدراسي</h3><p>عرض وتعديل وسحب وتبديل الحصص.</p></div>
     <div class="card daily-card-2026" onclick="show('dailySchedule2026');renderDailySchedule2026()"><div class="icon">🌷</div><h3>الجدول اليومي</h3><p>جداول الفصول مرتبطة تلقائياً بالجدول الأساسي.</p></div>
+    <div class="card leave-card-2026" onclick="show('leaves2026');renderLeaves2026()"><div class="icon">🗂️</div><h3>حصر الإجازات</h3><p>إدارة إجازات المعلمات والفرز والتصدير PDF.</p></div>
     <div class="card" onclick="show('teachers')"><div class="icon">👩‍🏫</div><h3>المعلمات</h3><p>إدارة أسماء المعلمات وبياناتهن.</p></div>
     <div class="card" onclick="show('subjects')"><div class="icon">📚</div><h3>المواد</h3><p>إضافة المواد وتعديلها وحذفها.</p></div>
     <div class="card" onclick="show('admins')"><div class="icon">👩‍💼</div><h3>الإداريات</h3><p>إدارة أسماء الإداريات.</p></div>
@@ -277,6 +297,56 @@ header h1 { font-weight: 900 !important; font-size: clamp(24px, 3vw, 36px) !impo
     </div>
   </div>
 </section>
+
+
+<section id="leaves2026" class="section">
+  <h2>🗂️ حصر إجازات المعلمات</h2>
+  <div class="leave-tools-2026 no-print">
+    <input id="leaveSearch2026" placeholder="🔎 فرز/بحث بالاسم أو الهاتف أو القسم أو نوع الإجازة..." oninput="renderLeaves2026()">
+    <select id="leaveDeptFilter2026" onchange="renderLeaves2026()"><option value="">كل الأقسام</option></select>
+    <select id="leaveTypeFilter2026" onchange="renderLeaves2026()"><option value="">كل أنواع الإجازات</option></select>
+    <button class="action edit-control" onclick="openLeaveModal2026()">+ إضافة إجازة</button>
+    <button class="action" onclick="pdfLeaves2026()">تصدير PDF للنتائج الظاهرة</button>
+  </div>
+  <div class="leave-paper-2026" id="leavePaper2026">
+    <div class="leave-head-2026">
+      <div class="leave-logo-2026">◈</div>
+      <div>
+        <h1>حصر إجازات المعلمات</h1>
+        <h2>مركز دار القرآن غرب عبدالله المبارك نساء صباحي (٢)</h2>
+        <h3>لعام ٢٠٢٦-٢٠٢٧م</h3>
+      </div>
+      <div class="leave-logo-2026">◈</div>
+    </div>
+    <table class="leave-table-2026">
+      <thead><tr>
+        <th>م</th><th>الاسم</th><th>الهاتف</th><th>القسم</th><th>نوع الإجازة</th>
+        <th>تاريخ بداية الإجازة</th><th>تاريخ نهاية الإجازة</th><th>ملاحظة</th><th>مستند</th>
+        <th class="no-print edit-control">إجراء</th>
+      </tr></thead>
+      <tbody id="leaveList2026"></tbody>
+    </table>
+    <div class="leave-sign-2026">
+      <div>مشرفة مركز دار قرآن غرب عبدالله المبارك<br><b>أ. هيله العتيبي</b></div>
+      <small>إعداد وتصميم / أ. مريم العتيبي</small>
+    </div>
+  </div>
+</section>
+
+<div id="leaveModal2026" class="modal">
+ <div class="modalbox">
+  <h3 id="leaveModalTitle2026">إضافة إجازة</h3>
+  <label>الاسم</label><input id="lvName2026">
+  <label>الهاتف</label><input id="lvPhone2026" inputmode="numeric">
+  <label>القسم</label><input id="lvDept2026">
+  <label>نوع الإجازة</label><input id="lvType2026">
+  <label>تاريخ بداية الإجازة</label><input id="lvStart2026">
+  <label>تاريخ نهاية الإجازة</label><input id="lvEnd2026">
+  <label>ملاحظة</label><input id="lvNote2026">
+  <label>مستند</label><input id="lvDoc2026">
+  <div class="modalrow"><button class="action" onclick="saveLeave2026()">حفظ</button><button onclick="closeLeaveModal2026()">إلغاء</button></div>
+ </div>
+</div>
 
 <section id="permissions" class="section">
   <h2>⚙️ مركز الصلاحيات</h2>
@@ -1420,6 +1490,84 @@ window.pdfSimpleSection2026=async function(kind){
     };
   }
   setTimeout(renderDailySchedule2026,300);
+})();
+</script>
+
+
+<script id="leaveManager2026">
+(function(){
+ const LEAVES_KEY_2026="darquran_leaves_independent_2026_v1";
+ const INITIAL_LEAVES_2026=[
+  {name:"منال عوض الرشيدي",phone:"55880097",dept:"عقيدة",type:"مجلس طبي (وضع)",start:"٦ سبتمبر ٢٠٢٦م",end:"",note:"طبيات متكررة",doc:""},
+  {name:"ملاك محمد العازمي",phone:"67747846",dept:"فقه",type:"علاج بالخارج",start:"١ سبتمبر ٢٠٢٦م",end:"إلى العودة",note:"",doc:""},
+  {name:"طيبة فالح العجمي",phone:"50922134",dept:"سيرة نبوية",type:"رعاية طفل",start:"٦ سبتمبر ٢٠٢٦م",end:"٣٠ نوفمبر ٢٠٢٦م",note:"",doc:""},
+  {name:"ريم شياب العتيبي",phone:"99861663",dept:"حديث شريف",type:"مجلس طبي",start:"٢٥ مارس ٢٠٢٦م",end:"إلى الوضع",note:"",doc:""},
+  {name:"هند فرحان النامي",phone:"94452331",dept:"حديث شريف",type:"أمومة",start:"٣ أكتوبر ٢٠٢٦م",end:"٢ نوفمبر ٢٠٢٦م",note:"",doc:""},
+  {name:"ساره بداح الرشيدي",phone:"99575107",dept:"عقيدة",type:"مجلس طبي",start:"٦ سبتمبر ٢٠٢٦م",end:"",note:"طبيات متكررة",doc:""},
+  {name:"أفراح عصيب العنزي",phone:"56664460",dept:"تفسير",type:"مجلس طبي (وضع + أمومة)",start:"٢ أغسطس ٢٠٢٦م",end:"٢ نوفمبر ٢٠٢٦م",note:"",doc:""},
+  {name:"حنان عبيد المطيري",phone:"50947772",dept:"قرآن كريم",type:"مجلس طبي",start:"١٤ سبتمبر ٢٠٢٦م",end:"",note:"أسبوعين قابلة للتجديد",doc:""},
+  {name:"لولوه سعيد الرشيدي",phone:"64952527",dept:"فقه",type:"مجلس طبي",start:"٦ سبتمبر ٢٠٢٦م",end:"",note:"طبيات متكررة",doc:""}
+ ];
+ let leaves2026=[];
+ let editLeaveIndex2026=-1;
+
+ function loadLeaves2026(){
+   try{const v=JSON.parse(localStorage.getItem(LEAVES_KEY_2026)||"null"); leaves2026=Array.isArray(v)?v:JSON.parse(JSON.stringify(INITIAL_LEAVES_2026));}
+   catch(e){leaves2026=JSON.parse(JSON.stringify(INITIAL_LEAVES_2026));}
+ }
+ function saveLeavesLocal2026(){localStorage.setItem(LEAVES_KEY_2026,JSON.stringify(leaves2026));renderLeaves2026();}
+ function arNums2026(v){return String(v??"").replace(/\d/g,d=>"٠١٢٣٤٥٦٧٨٩"[+d]);}
+ function filteredLeaves2026(){
+   const q=(document.getElementById("leaveSearch2026")?.value||"").trim().toLowerCase();
+   const d=document.getElementById("leaveDeptFilter2026")?.value||"";
+   const t=document.getElementById("leaveTypeFilter2026")?.value||"";
+   return leaves2026.map((x,i)=>({x,i})).filter(({x})=>{
+     const blob=[x.name,x.phone,x.dept,x.type,x.start,x.end,x.note,x.doc].join(" ").toLowerCase();
+     return (!q||blob.includes(q))&&(!d||x.dept===d)&&(!t||x.type===t);
+   });
+ }
+ window.renderLeaves2026=function(){
+   const body=document.getElementById("leaveList2026"); if(!body)return;
+   const dept=document.getElementById("leaveDeptFilter2026"), type=document.getElementById("leaveTypeFilter2026");
+   const dv=dept.value,tv=type.value;
+   const depts=[...new Set(leaves2026.map(x=>x.dept).filter(Boolean))].sort();
+   const types=[...new Set(leaves2026.map(x=>x.type).filter(Boolean))].sort();
+   dept.innerHTML='<option value="">كل الأقسام</option>'+depts.map(x=>`<option>${esc(x)}</option>`).join(""); dept.value=dv;
+   type.innerHTML='<option value="">كل أنواع الإجازات</option>'+types.map(x=>`<option>${esc(x)}</option>`).join(""); type.value=tv;
+   body.innerHTML=filteredLeaves2026().map(({x,i},n)=>`<tr>
+    <td>${arNums2026(n+1)}</td><td>${esc(x.name)}</td><td>${arNums2026(x.phone)}</td><td>${esc(x.dept)}</td><td>${esc(x.type)}</td>
+    <td>${arNums2026(x.start)}</td><td>${arNums2026(x.end)}</td><td>${esc(x.note)}</td><td>${esc(x.doc)}</td>
+    <td class="no-print edit-control"><button onclick="openLeaveModal2026(${i})">تعديل</button> <button class="danger" onclick="deleteLeave2026(${i})">حذف</button></td></tr>`).join("");
+ };
+ window.openLeaveModal2026=function(i){
+   if(typeof requireEdit==="function"&&!requireEdit())return;
+   editLeaveIndex2026=Number.isInteger(i)?i:-1; const x=editLeaveIndex2026>=0?leaves2026[editLeaveIndex2026]:{};
+   leaveModalTitle2026.textContent=editLeaveIndex2026>=0?"تعديل الإجازة":"إضافة إجازة";
+   lvName2026.value=x.name||"";lvPhone2026.value=x.phone||"";lvDept2026.value=x.dept||"";lvType2026.value=x.type||"";
+   lvStart2026.value=x.start||"";lvEnd2026.value=x.end||"";lvNote2026.value=x.note||"";lvDoc2026.value=x.doc||"";
+   leaveModal2026.classList.add("open");
+ };
+ window.closeLeaveModal2026=function(){leaveModal2026.classList.remove("open");editLeaveIndex2026=-1;};
+ window.saveLeave2026=function(){
+   if(typeof requireEdit==="function"&&!requireEdit())return;
+   const x={name:lvName2026.value.trim(),phone:lvPhone2026.value.trim(),dept:lvDept2026.value.trim(),type:lvType2026.value.trim(),start:lvStart2026.value.trim(),end:lvEnd2026.value.trim(),note:lvNote2026.value.trim(),doc:lvDoc2026.value.trim()};
+   if(!x.name)return alert("اكتب اسم المعلمة");
+   if(editLeaveIndex2026>=0)leaves2026[editLeaveIndex2026]=x;else leaves2026.push(x);
+   closeLeaveModal2026();saveLeavesLocal2026();
+ };
+ window.deleteLeave2026=function(i){if(typeof requireEdit==="function"&&!requireEdit())return;if(confirm("حذف سجل الإجازة؟")){leaves2026.splice(i,1);saveLeavesLocal2026();}};
+ window.pdfLeaves2026=async function(){
+   renderLeaves2026();
+   if(typeof html2canvas==="undefined"||!window.jspdf?.jsPDF)return alert("تعذر تحميل أداة PDF. تأكد من اتصال الإنترنت.");
+   const el=document.getElementById("leavePaper2026");
+   const canvas=await html2canvas(el,{scale:2,useCORS:true,backgroundColor:"#fff"});
+   const img=canvas.toDataURL("image/jpeg",.97), {jsPDF}=window.jspdf;
+   const pdf=new jsPDF({orientation:"landscape",unit:"mm",format:"a4"});
+   const pw=pdf.internal.pageSize.getWidth(),ph=pdf.internal.pageSize.getHeight(),ratio=Math.min((pw-8)/canvas.width,(ph-8)/canvas.height);
+   const w=canvas.width*ratio,h=canvas.height*ratio;pdf.addImage(img,"JPEG",(pw-w)/2,(ph-h)/2,w,h);
+   pdf.save("حصر إجازات المعلمات.pdf");
+ };
+ loadLeaves2026(); setTimeout(renderLeaves2026,350);
 })();
 </script>
 
