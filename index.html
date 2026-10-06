@@ -314,6 +314,17 @@ function requireEdit(){
   return true;
 }
 
+function isCountedLesson2026(value){
+  const t=String(value||"").trim();
+  return !!t && !t.includes("بالتناوب");
+}
+
+function recalcTeacherTotal2026(i){
+  if(!rows[i]) return;
+  const slots=Array.isArray(rows[i].slots)?rows[i].slots:[];
+  rows[i].total=String(slots.filter(isCountedLesson2026).length);
+}
+
 function saveRows(){
   localStorage.setItem(ROWS_KEY,JSON.stringify(rows));
   renderAll();
@@ -405,8 +416,28 @@ function editSlot(ri,si){
   if(v===null) return;
   const nv=v.trim();
   const conflict=findScheduleConflict2026(ri,si,nv);
-  if(conflict){ alert(conflictMessage2026(conflict,si)); return; }
+  if(conflict){
+    const day=DAYS[Math.floor(si/4)]||"";
+    const period=PERIODS[si%4]||"";
+    const doSwap=confirm(`⚠️ يوجد تعارض في الجدول\n\nالفصل موجود في نفس الحصة عند المعلمة: ${conflict.teacher}\n${day} - الحصة ${period}\nالبيان: ${conflict.lesson}\n\nاضغط «موافق» لتبديل الحصتين بين المعلمتين، أو «إلغاء» لعدم الحفظ.`);
+    if(!doSwap) return;
+    const otherOld=(rows[conflict.row].slots||[])[si]||"";
+    const oldHere=old;
+    // قبل التبديل نتأكد أن الحصة القديمة لن تصنع تعارضاً جديداً عند المعلمة الأخرى.
+    const backConflict=findScheduleConflict2026(conflict.row,si,oldHere);
+    if(backConflict && backConflict.row!==ri){
+      alert("تعذر التبديل لأن الحصة الحالية ستسبب تعارضاً آخر. لم يتم تغيير الجدول.");
+      return;
+    }
+    rows[ri].slots[si]=otherOld;
+    rows[conflict.row].slots[si]=oldHere;
+    recalcTeacherTotal2026(ri);
+    recalcTeacherTotal2026(conflict.row);
+    saveRows();
+    return;
+  }
   rows[ri].slots[si]=nv;
+  recalcTeacherTotal2026(ri);
   saveRows();
 }
 
@@ -449,6 +480,8 @@ function dropSlot(ev,r,s){
   }
 
   [from[ss],to[s]]=[displaced,moving];
+  recalcTeacherTotal2026(sr);
+  recalcTeacherTotal2026(r);
   dragState=null;
   saveRows();
 }
@@ -1032,6 +1065,47 @@ async function pdfSchedule2026(){
     renderReserve2026();
   }
   addReserve();addExportControls();renderAll();
+})();
+</script>
+
+
+<!-- 2026-10 cross-device-ready permissions + visual enhancements -->
+<style id="syncPermissionVisual2026">
+#scheduleGrid{font-size:13px!important;font-weight:600}
+#scheduleGrid th{font-weight:900!important}
+#scheduleGrid td{line-height:1.45}
+.slot.alternate-2026{filter:brightness(.82);font-weight:900!important;box-shadow:inset 0 0 0 2px rgba(0,0,0,.18)}
+.dept-quran-2026{background:#d8eadf!important}.dept-tafsir-2026{background:#dce8f5!important}.dept-hadith-2026{background:#f5e3d5!important}.dept-aqida-2026{background:#eadff2!important}.dept-seera-2026{background:#f6e8b8!important}.dept-fiqh-2026{background:#d9eeee!important}.dept-arabic-2026{background:#f2dfe4!important}
+.permission-scope-2026{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin:10px 0;padding:10px;background:#f5f8f7;border:1px solid #d7e1dd;border-radius:8px}.permission-scope-2026 label{font-weight:700}.permission-scope-2026 input{margin-left:4px}
+.sync-note-2026{background:#fff8d9;border:1px solid #e4cc65;padding:10px;border-radius:8px;margin:10px 0}
+</style>
+<script id="syncPermissionVisualScript2026">
+(function(){
+ const AR='٠١٢٣٤٥٦٧٨٩';
+ window.toArabicDigits2026=function(v){return String(v??'').replace(/\d/g,d=>AR[d]);};
+ function deptClass2026(d){d=String(d||'');if(d.includes('القرآن'))return'dept-quran-2026';if(d.includes('التفسير'))return'dept-tafsir-2026';if(d.includes('الحديث'))return'dept-hadith-2026';if(d.includes('العقيدة'))return'dept-aqida-2026';if(d.includes('السيرة'))return'dept-seera-2026';if(d.includes('الفقه'))return'dept-fiqh-2026';if(d.includes('اللغة العربية'))return'dept-arabic-2026';return'';}
+ window.userScopes2026=function(){const a=currentAccount();if(!a)return[];if(a.role==='admin')return['schedule','teachers','reserve'];return Array.isArray(a.scopes)&&a.scopes.length?a.scopes:['schedule','teachers','reserve'];};
+ window.hasScope2026=function(scope){return role()==='admin'||userScopes2026().includes(scope);};
+ const oldCanEdit=window.canEdit; window.canEdit=function(scope){const base=role()==='edit'||role()==='admin';return base&&(!scope||hasScope2026(scope));};
+ window.requireScopeEdit2026=function(scope){if(!canEdit(scope)){alert('لا توجد لهذا المستخدم صلاحية تعديل هذا القسم.');return false}return true};
+ const oldShow=window.show;window.show=function(id){if(id==='permissions'&&role()!=='admin')return oldShow(id);const map={schedule:'schedule',teachers:'teachers',reserve2026:'reserve'};if(map[id]&&role()!=='admin'&&!hasScope2026(map[id])){alert('لا توجد لهذا المستخدم صلاحية الدخول إلى هذا القسم.');return;}return oldShow(id);};
+ function decorate2026(){
+   document.querySelectorAll('#scheduleGrid tbody tr').forEach(tr=>{const cells=tr.children;if(!cells.length)return;const dept=cells[2]?.textContent||'';const dc=deptClass2026(dept);if(dc)Array.from(cells).forEach(td=>td.classList.add(dc));Array.from(cells).forEach(td=>{if((td.textContent||'').includes('بالتناوب'))td.classList.add('alternate-2026');td.childNodes.forEach(n=>{if(n.nodeType===3)n.nodeValue=toArabicDigits2026(n.nodeValue)});});});
+   document.querySelectorAll('#teacherList td,#reserveBody td').forEach(td=>{td.childNodes.forEach(n=>{if(n.nodeType===3)n.nodeValue=toArabicDigits2026(n.nodeValue)});});
+ }
+ const ro=new MutationObserver(decorate2026);ro.observe(document.body,{childList:true,subtree:true});setTimeout(decorate2026,0);
+ // Add granular permission controls without removing existing role controls.
+ const roleSel=document.getElementById('permissionRole');if(roleSel){const wrap=document.createElement('div');wrap.id='permissionScopes2026';wrap.className='permission-scope-2026';wrap.innerHTML='<b>الأقسام المسموح بها:</b><label><input type="checkbox" value="schedule" checked> الجدول الدراسي</label><label><input type="checkbox" value="teachers" checked> المعلمات</label><label><input type="checkbox" value="reserve" checked> جدول الاحتياط</label>';roleSel.insertAdjacentElement('afterend',wrap);}
+ function selectedScopes(){return Array.from(document.querySelectorAll('#permissionScopes2026 input:checked')).map(x=>x.value)}
+ window.addPermission=function(){if(role()!=='admin')return alert('هذه العملية للمسؤول فقط.');const name=permissionName.value.trim(),pass=permissionPass.value,userRole=permissionRole.value;if(!name)return alert('اكتب اسم المستخدم');if(!pass)return alert('اكتب كلمة المرور');if(name==='admin')return alert('اسم admin محجوز للمسؤول الرئيسي.');let users=[];try{users=JSON.parse(localStorage.getItem(USERS_KEY)||'[]')}catch(e){}const obj={name,pass,role:userRole,scopes:userRole==='admin'?['schedule','teachers','reserve']:selectedScopes()};const old=users.findIndex(x=>x.name===name);if(old>=0)users[old]=obj;else users.push(obj);localStorage.setItem(USERS_KEY,JSON.stringify(users));permissionName.value='';permissionPass.value='';renderPermissions();};
+ window.renderPermissions=function(){const box=document.getElementById('permissionsList');if(!box)return;let users=[];try{users=JSON.parse(localStorage.getItem(USERS_KEY)||'[]')}catch(e){}const rl={view:'مشاهدة فقط',edit:'تعديل وإضافة',admin:'مسؤول كامل'},sl={schedule:'الجدول الدراسي',teachers:'المعلمات',reserve:'جدول الاحتياط'};box.innerHTML='<div class="panel"><b>admin</b> — مسؤول رئيسي</div>'+users.map((p,i)=>`<div class="panel"><b>${esc(p.name)}</b> — ${rl[p.role]||esc(p.role)}<br><small>الأقسام: ${(p.scopes||['schedule','teachers','reserve']).map(x=>sl[x]||x).join('، ')}</small> <button onclick="editPermission2026(${i})">تعديل</button> <button class="danger" onclick="deletePermission(${i})">حذف</button></div>`).join('');};
+ window.editPermission2026=function(i){if(role()!=='admin')return;let users=JSON.parse(localStorage.getItem(USERS_KEY)||'[]'),p=users[i];const np=prompt('كلمة المرور الجديدة:',p.pass);if(np===null)return;const nr=prompt('الصلاحية: view أو edit أو admin',p.role);if(nr===null||!['view','edit','admin'].includes(nr))return;let scopes=p.scopes||['schedule','teachers','reserve'];if(nr!=='admin'){const raw=prompt('الأقسام المسموح بها مفصولة بفاصلة: schedule للجدول، teachers للمعلمات، reserve للاحتياط',scopes.join(','));if(raw===null)return;scopes=raw.split(',').map(x=>x.trim()).filter(x=>['schedule','teachers','reserve'].includes(x));}else scopes=['schedule','teachers','reserve'];p.pass=np;p.role=nr;p.scopes=scopes;localStorage.setItem(USERS_KEY,JSON.stringify(users));renderPermissions();};
+ // Scope checks on editing entry points.
+ const wrapFns={editSlot:'schedule',dragStart:'schedule',dropSlot:'schedule',openTeacherModal:'teachers',saveTeacherModal:'teachers',addTeacherFromSchedule:'schedule',addTeacherManager:'teachers',removeTeacher:'teachers',resetSchedule:'schedule',addReserve2026:'reserve',deleteReserve2026:'reserve'};
+ Object.entries(wrapFns).forEach(([n,sc])=>{const fn=window[n];if(typeof fn==='function')window[n]=function(){if(!requireScopeEdit2026(sc))return;return fn.apply(this,arguments)}});
+ // Explain cloud requirement in permissions screen; actual provider config can be added without changing UI/functions.
+ const pp=document.querySelector('#permissions .panel');if(pp){const n=document.createElement('div');n.className='sync-note-2026';n.innerHTML='<b>مزامنة الأجهزة:</b> النسخة جاهزة للربط بمخزن بيانات سحابي مشترك. يلزم إدخال إعدادات خدمة سحابية (مثل Firebase/Supabase) حتى تظهر التعديلات تلقائياً على جميع الأجهزة.';pp.insertAdjacentElement('beforebegin',n);}
+ renderPermissions();
 })();
 </script>
 
