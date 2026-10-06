@@ -370,12 +370,43 @@ function renderSchedule(){
   document.getElementById("scheduleGrid").innerHTML=h;
 }
 
+function normalizeClassKey2026(value){
+  const t=String(value||"").trim().replace(/\s+/g," ");
+  if(!t) return "";
+  // نلتقط رمز الفصل مثل: 1م1، 3م2، 5م1، 2م، 3ت حتى لو اختلف اسم المادة.
+  const compact=t.replace(/\s+/g,"");
+  const m=compact.match(/([1-9][ممت][1-9]?)/);
+  return m ? m[1] : t.toLowerCase();
+}
+
+function findScheduleConflict2026(ri,si,value){
+  const key=normalizeClassKey2026(value);
+  if(!key) return null;
+  for(let i=0;i<rows.length;i++){
+    if(i===ri) continue;
+    const other=(rows[i].slots||[])[si]||"";
+    if(other && normalizeClassKey2026(other)===key){
+      return {row:i,teacher:rows[i].name||"معلمة أخرى",lesson:other};
+    }
+  }
+  return null;
+}
+
+function conflictMessage2026(conflict,si){
+  const day=DAYS[Math.floor(si/4)]||"";
+  const period=PERIODS[si%4]||"";
+  return `⚠️ يوجد تعارض في الجدول\n\nالفصل موجود في نفس الحصة عند المعلمة: ${conflict.teacher}\n${day} - الحصة ${period}\nالبيان: ${conflict.lesson}\n\nلم يتم حفظ التعديل.`;
+}
+
 function editSlot(ri,si){
   if(dragState || !requireEdit()) return;
   const old=rows[ri].slots[si]||"";
   const v=prompt("المادة / بيان الحصة:",old);
   if(v===null) return;
-  rows[ri].slots[si]=v.trim();
+  const nv=v.trim();
+  const conflict=findScheduleConflict2026(ri,si,nv);
+  if(conflict){ alert(conflictMessage2026(conflict,si)); return; }
+  rows[ri].slots[si]=nv;
   saveRows();
 }
 
@@ -398,9 +429,26 @@ function dropSlot(ev,r,s){
   ev.preventDefault();
   ev.currentTarget.classList.remove("over");
   if(!dragState) return;
-  const from=rows[dragState.r].slots;
+  const sr=dragState.r, ss=dragState.s;
+  const from=rows[sr].slots;
   const to=rows[r].slots;
-  [from[dragState.s],to[s]]=[to[s],from[dragState.s]];
+  const moving=from[ss]||"";
+  const displaced=to[s]||"";
+
+  const c1=findScheduleConflict2026(r,s,moving);
+  if(c1 && c1.row!==sr){
+    dragState=null;
+    alert(conflictMessage2026(c1,s));
+    return;
+  }
+  const c2=findScheduleConflict2026(sr,ss,displaced);
+  if(c2 && c2.row!==r){
+    dragState=null;
+    alert(conflictMessage2026(c2,ss));
+    return;
+  }
+
+  [from[ss],to[s]]=[displaced,moving];
   dragState=null;
   saveRows();
 }
