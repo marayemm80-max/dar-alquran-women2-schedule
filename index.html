@@ -110,6 +110,35 @@ footer{text-align:center;padding:18px;color:#666}
 header h1 { font-weight: 900 !important; font-size: clamp(24px, 3vw, 36px) !important; line-height: 1.45 !important; }
 #loginScreen .loginbox > p:first-of-type { font-weight: 900 !important; font-size: 18px !important; line-height: 1.7 !important; }
 </style>
+
+<style id="dailyScheduleStyle2026">
+.daily-card-2026{background:linear-gradient(135deg,#fffaf0,#f7fbf4)!important;border:2px solid #d9b76e!important}
+.daily-card-2026 .icon{font-size:34px}
+.daily-toolbar-2026{display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:#fff;padding:12px;border:1px solid #ddd;border-radius:10px;margin-bottom:10px}
+.daily-note-2026{background:#eef7f0;border-right:5px solid #587b4b;padding:10px 13px;border-radius:8px;margin-bottom:12px}
+.daily-paper-2026{position:relative;background:#fffdf7;border:1px solid #d9c9a6;border-radius:18px;padding:34px 38px 26px;max-width:1080px;margin:0 auto;box-shadow:0 8px 24px #00000012;text-align:center;overflow:hidden}
+.daily-paper-2026:before{content:"";position:absolute;inset:0;background:linear-gradient(135deg,#fffaf0 0%,#fffdf8 45%,#f7fbf4 100%);z-index:0}
+.daily-paper-2026>*{position:relative;z-index:1}
+.daily-flower-2026{position:absolute;top:18px;left:25px;color:#c97a62;font-size:29px;letter-spacing:7px}
+#dailyTitle2026{margin:5px 0 2px;color:#b85c24;font-size:34px;font-weight:900}
+#dailySubtitle2026{margin:0 0 28px;color:#8f461b;font-size:27px}
+.daily-table-2026{width:100%;border-collapse:collapse;table-layout:fixed;background:#fff}
+.daily-table-2026 th,.daily-table-2026 td{border:1px solid #8f8879;padding:16px 8px;text-align:center;font-size:20px;font-weight:700;vertical-align:middle}
+.daily-table-2026 thead th{background:#f3dfae;color:#2d2a27;font-size:20px}
+.daily-table-2026 tbody th{background:#f8efe0;color:#b85c24;width:18%}
+.daily-table-2026 tbody tr:nth-child(even) td{background:#f8fbf6}
+.daily-table-2026 tbody tr:nth-child(odd) td{background:#fff}
+.daily-empty-2026{color:#aaa;font-weight:400}
+.daily-footer-2026{text-align:right;margin-top:15px;color:#b85c24;font-size:18px}
+.daily-quote-2026{text-align:center;color:#587b2f;font-size:18px;margin:25px 0 8px;font-weight:800}
+.daily-footer-2026 small{display:block;text-align:left;color:#9a572d}
+@media(max-width:700px){
+ .daily-paper-2026{padding:24px 10px 18px}
+ #dailyTitle2026{font-size:26px}.daily-table-2026 th,.daily-table-2026 td{font-size:14px;padding:10px 4px}
+ .daily-flower-2026{font-size:20px;opacity:.65}
+}
+</style>
+
 </head>
 <body>
 
@@ -134,6 +163,7 @@ header h1 { font-weight: 900 !important; font-size: clamp(24px, 3vw, 36px) !impo
 <nav class="no-print">
   <button onclick="home()">الرئيسية</button>
   <button onclick="show('schedule')">الجدول الدراسي</button>
+  <button onclick="show('dailySchedule2026');renderDailySchedule2026()">🌷 الجدول اليومي</button>
   <button onclick="show('teachers')">المعلمات</button>
   <button onclick="show('subjects')">المواد</button>
   <button onclick="show('admins')">الإداريات</button>
@@ -151,6 +181,7 @@ header h1 { font-weight: 900 !important; font-size: clamp(24px, 3vw, 36px) !impo
   </div>
   <div class="cards">
     <div class="card" onclick="show('schedule')"><div class="icon">📅</div><h3>الجدول الدراسي</h3><p>عرض وتعديل وسحب وتبديل الحصص.</p></div>
+    <div class="card daily-card-2026" onclick="show('dailySchedule2026');renderDailySchedule2026()"><div class="icon">🌷</div><h3>الجدول اليومي</h3><p>جداول الفصول مرتبطة تلقائياً بالجدول الأساسي.</p></div>
     <div class="card" onclick="show('teachers')"><div class="icon">👩‍🏫</div><h3>المعلمات</h3><p>إدارة أسماء المعلمات وبياناتهن.</p></div>
     <div class="card" onclick="show('subjects')"><div class="icon">📚</div><h3>المواد</h3><p>إضافة المواد وتعديلها وحذفها.</p></div>
     <div class="card" onclick="show('admins')"><div class="icon">👩‍💼</div><h3>الإداريات</h3><p>إدارة أسماء الإداريات.</p></div>
@@ -211,6 +242,41 @@ header h1 { font-weight: 900 !important; font-size: clamp(24px, 3vw, 36px) !impo
 </section>
 
 
+
+
+<section id="dailySchedule2026" class="section">
+  <h2>🌷 جدول الحصص اليومية</h2>
+  <div class="daily-toolbar-2026 no-print">
+    <label><b>الفصل:</b>
+      <select id="dailyClassSelect2026" onchange="renderDailySchedule2026()">
+        <option value="5م1">5م1</option>
+        <option value="5م2">5م2</option>
+        <option value="3م1">3م1</option>
+        <option value="3م2">3م2</option>
+        <option value="1م1">1م1</option>
+        <option value="1م2">1م2</option>
+        <option value="2م">2م</option>
+        <option value="3ت">ثالث تمهيدي</option>
+        <option value="courses">الدورات العلمية</option>
+      </select>
+    </label>
+    <button class="action" onclick="pdfDailySchedule2026()">تصدير PDF</button>
+  </div>
+  <div class="daily-note-2026 no-print">
+    هذا الجدول يُنشأ تلقائياً من الجدول الدراسي الأساسي؛ أي تعديل على الحصص في الجدول الأساسي يظهر هنا تلقائياً.
+  </div>
+  <div id="dailyPaper2026" class="daily-paper-2026">
+    <div class="daily-flower-2026">✿ ❀ ✿</div>
+    <h1 id="dailyTitle2026">جدول الحصص اليومية</h1>
+    <h2 id="dailySubtitle2026"></h2>
+    <table id="dailyTable2026" class="daily-table-2026"></table>
+    <div class="daily-footer-2026">
+      <div><b>مشرفة المركز: أ. هيله العتيبي</b></div>
+      <div class="daily-quote-2026">قال الإمام الشافعي رحمه الله: ليس العلم ما حُفظ، إنما العلم ما نفع.</div>
+      <small>إعداد وتصميم: أ. مريم العتيبي</small>
+    </div>
+  </div>
+</section>
 
 <section id="permissions" class="section">
   <h2>⚙️ مركز الصلاحيات</h2>
@@ -1236,6 +1302,124 @@ window.pdfSimpleSection2026=async function(kind){
     try{const canvas=await html2canvas(page,{scale:1.5,useCORS:true,backgroundColor:'#fff',logging:false});const {jsPDF}=window.jspdf;const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4',compress:true});const pw=210,ph=297,margin=7;const ratio=Math.min((pw-margin*2)/canvas.width,(ph-margin*2)/canvas.height);const w=canvas.width*ratio,h=canvas.height*ratio;doc.addImage(canvas.toDataURL('image/jpeg',.95),'JPEG',(pw-w)/2,margin,w,h,undefined,'FAST');doc.save(file);}catch(e){console.error(e);alert('تعذر إنشاء ملف PDF. حاول مرة أخرى.');}finally{host.remove();}
   };
   renderSubjects();renderAdmins();renderTeachers();renderSchedule();
+})();
+</script>
+
+
+<script id="dailyScheduleLinked2026">
+(function(){
+  const CLASS_LABELS_2026={
+    "5م1":"5م1","5م2":"5م2","3م1":"3م1","3م2":"3م2",
+    "1م1":"1م1","1م2":"1م2","2م":"2م","3ت":"ثالث تمهيدي"
+  };
+
+  function compactArabic2026(s){
+    return String(s||"").replace(/\s+/g,"").replace(/أ/g,"ا");
+  }
+
+  function lessonForClass2026(value,classKey){
+    let t=String(value||"").trim();
+    if(!t || t.includes("بالتناوب")) return "";
+    const c=compactArabic2026(t), k=compactArabic2026(classKey);
+    if(!c.includes(k)) return "";
+    // Remove class code while preserving the lesson/subject text.
+    let cleaned=t.replace(/\s+/g," ").trim();
+    const patterns={
+      "5م1":/5\s*م\s*1/g,"5م2":/5\s*م\s*2/g,
+      "3م1":/3\s*م\s*1/g,"3م2":/3\s*م\s*2/g,
+      "1م1":/1\s*م\s*1/g,"1م2":/1\s*م\s*2/g,
+      "2م":/2\s*م(?!\s*[12])/g,"3ت":/3\s*ت/g
+    };
+    cleaned=cleaned.replace(patterns[classKey]||/$^/g,"").replace(/\s{2,}/g," ").trim();
+    return cleaned || t;
+  }
+
+  function courseLesson2026(value){
+    const t=String(value||"").trim();
+    if(!t || t.includes("بالتناوب")) return "";
+    if(!t.includes("دورة") && !/سورة\s*البقرة/.test(t) && !/أجزاء\s*متفرقة/.test(t) && !/تصحيح\s*تلاوة/.test(t)) return "";
+    return t.replace(/^دورة\s*/,"").trim();
+  }
+
+  function valueAt2026(si,classKey){
+    const found=[];
+    rows.forEach(r=>{
+      const raw=(r.slots||[])[si]||"";
+      const val=classKey==="courses" ? courseLesson2026(raw) : lessonForClass2026(raw,classKey);
+      if(val && !found.includes(val)) found.push(val);
+    });
+    return found.join(" / ");
+  }
+
+  window.renderDailySchedule2026=function(){
+    const sel=document.getElementById("dailyClassSelect2026");
+    const table=document.getElementById("dailyTable2026");
+    if(!sel||!table) return;
+    const key=sel.value||"5م1";
+    const sub=document.getElementById("dailySubtitle2026");
+
+    if(key==="courses"){
+      sub.textContent="للدورات العلمية";
+      let h="<thead><tr><th>الحصة / اليوم</th>";
+      DAYS.forEach(d=>h+=`<th>${esc(d)}</th>`);
+      h+="</tr></thead><tbody>";
+      PERIODS.forEach((p,pi)=>{
+        h+=`<tr><th>${esc(p)}</th>`;
+        DAYS.forEach((d,di)=>{
+          const v=valueAt2026(di*4+pi,"courses");
+          h+=`<td>${v?esc(v):'<span class="daily-empty-2026">—</span>'}</td>`;
+        });
+        h+="</tr>";
+      });
+      h+="</tbody>";
+      table.innerHTML=h;
+    }else{
+      sub.textContent="للفصل: "+(CLASS_LABELS_2026[key]||key);
+      let h="<thead><tr><th>اليوم / الحصة</th>";
+      PERIODS.forEach(p=>h+=`<th>${esc(p)}</th>`);
+      h+="</tr></thead><tbody>";
+      DAYS.forEach((d,di)=>{
+        const vals=PERIODS.map((p,pi)=>valueAt2026(di*4+pi,key));
+        // Keep only days that actually have lessons, matching the supplied daily-table concept.
+        if(!vals.some(Boolean)) return;
+        h+=`<tr><th>${esc(d)}</th>`;
+        vals.forEach(v=>h+=`<td>${v?esc(v):'<span class="daily-empty-2026">—</span>'}</td>`);
+        h+="</tr>";
+      });
+      h+="</tbody>";
+      table.innerHTML=h;
+    }
+  };
+
+  window.pdfDailySchedule2026=async function(){
+    if(typeof html2canvas==="undefined"||!window.jspdf||!window.jspdf.jsPDF){
+      alert("تعذر تحميل أداة PDF. تأكد من اتصال الإنترنت."); return;
+    }
+    renderDailySchedule2026();
+    const paper=document.getElementById("dailyPaper2026");
+    const sel=document.getElementById("dailyClassSelect2026");
+    const canvas=await html2canvas(paper,{scale:2,useCORS:true,backgroundColor:"#fffdf7"});
+    const img=canvas.toDataURL("image/jpeg",0.96);
+    const {jsPDF}=window.jspdf;
+    const pdf=new jsPDF({orientation:"landscape",unit:"mm",format:"a4"});
+    const pw=pdf.internal.pageSize.getWidth(), ph=pdf.internal.pageSize.getHeight();
+    const ratio=Math.min((pw-10)/canvas.width,(ph-10)/canvas.height);
+    const w=canvas.width*ratio,h=canvas.height*ratio;
+    pdf.addImage(img,"JPEG",(pw-w)/2,(ph-h)/2,w,h);
+    const label=sel.options[sel.selectedIndex]?.text||"الجدول اليومي";
+    pdf.save("جدول الحصص اليومية - "+label+".pdf");
+  };
+
+  // Make daily table refresh automatically whenever the main render cycle runs.
+  const originalRenderAll2026=window.renderAll;
+  if(typeof originalRenderAll2026==="function"){
+    window.renderAll=function(){
+      const result=originalRenderAll2026.apply(this,arguments);
+      try{ renderDailySchedule2026(); }catch(e){}
+      return result;
+    };
+  }
+  setTimeout(renderDailySchedule2026,300);
 })();
 </script>
 
