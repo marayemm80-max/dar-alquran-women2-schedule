@@ -9,13 +9,13 @@
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <style>
 *{box-sizing:border-box}
-body{margin:0;font-family:Tahoma,Arial,sans-serif;background:#F2F4F7;color:#222}
-header{background:#173B7A;color:#fff;padding:18px 24px}
+body{margin:0;font-family:Tahoma,Arial,sans-serif;background:#f4f7f6;color:#222}
+header{background:#17583f;color:#fff;padding:18px 24px}
 header h1{margin:0;font-size:24px}
 header p{margin:6px 0 0}
 nav{background:#fff;padding:10px 14px;display:flex;gap:7px;flex-wrap:wrap;border-bottom:1px solid #ddd;position:sticky;top:0;z-index:30}
 nav button{padding:9px 13px;border:1px solid #aaa;border-radius:7px;background:#fff;cursor:pointer}
-nav button:hover{background:#E8EDF5}
+nav button:hover{background:#dcece6}
 .container{padding:16px}
 .section{display:none}
 .section.active{display:block}
@@ -24,12 +24,12 @@ nav button:hover{background:#E8EDF5}
 .card{cursor:pointer}
 .card h3{margin:5px 0}
 .icon{font-size:28px}
-.action,.primary{background:#173B7A;color:#fff;border:0;border-radius:7px;padding:9px 13px;cursor:pointer}
+.action,.primary{background:#17583f;color:#fff;border:0;border-radius:7px;padding:9px 13px;cursor:pointer}
 .danger{background:#a92525;color:#fff;border:0;border-radius:6px;padding:6px 9px;cursor:pointer}
 input,select{padding:9px;border:1px solid #aaa;border-radius:6px;margin:4px}
 table.simple{width:100%;border-collapse:collapse;background:#fff;margin-top:10px}
 table.simple th,table.simple td{border:1px solid #bbb;padding:8px;text-align:center}
-table.simple th{background:#DDE2EA}
+table.simple th{background:#e7efec}
 .schedule-toolbar{background:#fff;padding:10px;display:flex;gap:8px;flex-wrap:wrap;border:1px solid #ddd;border-radius:10px;margin-bottom:10px}
 .hint{background:#fff8d9;border:1px solid #e4cc65;padding:9px 12px;margin-bottom:10px;border-radius:8px}
 .scroll{overflow:auto;background:#fff;border:1px solid #555;max-height:72vh}
@@ -44,14 +44,14 @@ table.simple th{background:#DDE2EA}
 .total{width:75px}
 .actioncol{width:105px}
 .period{width:75px}
-.sun{background:#DCE3EE}
-.mon{background:#C8D5E8}
-.tue{background:#E2E6EC}
-.wed{background:#D4D9E2}
-.thu{background:#C5CBD5}
+.sun{background:#f3dfc9}
+.mon{background:#c7d8ea}
+.tue{background:#cfe4c8}
+.wed{background:#ead0df}
+.thu{background:#d7d7d7}
 .slot{cursor:pointer;user-select:none}
 .slot[draggable=true]{cursor:grab}
-.slot.dragging{outline:3px solid #173B7A}
+.slot.dragging{outline:3px solid #17583f}
 .slot.over{outline:3px dashed #333}
 .edit{background:#fff7c7;cursor:text}
 .modal{display:none;position:fixed;inset:0;background:#0007;z-index:100000;align-items:center;justify-content:center}
@@ -61,8 +61,8 @@ table.simple th{background:#DDE2EA}
 .modalbox input,.modalbox select{width:100%;margin:0}
 .modalrow{display:flex;gap:8px;margin-top:14px}
 .modalrow button{flex:1;padding:10px}
-.badge{display:inline-block;padding:3px 7px;border-radius:10px;background:#E5E9F0;font-size:12px}
-#loginScreen{position:fixed;inset:0;background:#F2F4F7;z-index:99999;display:flex;align-items:center;justify-content:center}
+.badge{display:inline-block;padding:3px 7px;border-radius:10px;background:#e8efec;font-size:12px}
+#loginScreen{position:fixed;inset:0;background:#f4f7f6;z-index:99999;display:flex;align-items:center;justify-content:center}
 .loginbox{background:#fff;padding:52px 48px;border-radius:18px;width:min(620px,92vw);min-height:430px;box-shadow:0 8px 30px #888;text-align:center;display:flex;flex-direction:column;justify-content:center}
 .loginbox h2{font-size:32px;margin:0 0 12px}
 .loginbox p{font-size:18px}
@@ -94,11 +94,11 @@ footer{text-align:center;padding:18px;color:#666}
   .scroll { overflow:visible !important; max-height:none !important; border:0 !important; width:100% !important; }
   #scheduleGrid { width:100% !important; min-width:0 !important; table-layout:fixed !important; border-collapse:collapse !important; font-size:7px !important; }
   #scheduleGrid th, #scheduleGrid td { border:0.6px solid #555 !important; padding:1px !important; height:19px !important; }
-  #scheduleGrid .sun { background:#DCE3EE !important; }
-  #scheduleGrid .mon { background:#C8D5E8 !important; }
-  #scheduleGrid .tue { background:#E2E6EC !important; }
-  #scheduleGrid .wed { background:#D4D9E2 !important; }
-  #scheduleGrid .thu { background:#C5CBD5 !important; }
+  #scheduleGrid .sun { background:#f3dfc9 !important; }
+  #scheduleGrid .mon { background:#c7d8ea !important; }
+  #scheduleGrid .tue { background:#cfe4c8 !important; }
+  #scheduleGrid .wed { background:#ead0df !important; }
+  #scheduleGrid .thu { background:#d7d7d7 !important; }
   #scheduleGrid .meta { background:#efefef !important; }
   #scheduleGrid .edit { background:#fff7c7 !important; }
   #scheduleGrid .actioncol, #scheduleGrid td:last-child { display:none !important; }
@@ -112,26 +112,26 @@ header h1 { font-weight: 900 !important; font-size: clamp(24px, 3vw, 36px) !impo
 </style>
 
 <style id="dailyScheduleStyle2026">
-.daily-card-2026{background:linear-gradient(135deg,#F7F9FC,#EEF2F7)!important;border:2px solid #AAB4C4!important}
+.daily-card-2026{background:linear-gradient(135deg,#fffaf0,#f7fbf4)!important;border:2px solid #d9b76e!important}
 .daily-card-2026 .icon{font-size:34px}
 .daily-toolbar-2026{display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:#fff;padding:12px;border:1px solid #ddd;border-radius:10px;margin-bottom:10px}
-.daily-note-2026{background:#EEF2F7;border-right:5px solid #173B7A;padding:10px 13px;border-radius:8px;margin-bottom:12px}
-.daily-paper-2026{position:relative;background:#FFFFFF;border:1px solid #B8C0CC;border-radius:18px;padding:34px 38px 26px;max-width:1080px;margin:0 auto;box-shadow:0 8px 24px #00000012;text-align:center;overflow:hidden}
-.daily-paper-2026:before{content:"";position:absolute;inset:0;background:linear-gradient(135deg,#F7F9FC 0%,#fffdf8 45%,#EEF2F7 100%);z-index:0}
+.daily-note-2026{background:#eef7f0;border-right:5px solid #587b4b;padding:10px 13px;border-radius:8px;margin-bottom:12px}
+.daily-paper-2026{position:relative;background:#fffdf7;border:1px solid #d9c9a6;border-radius:18px;padding:34px 38px 26px;max-width:1080px;margin:0 auto;box-shadow:0 8px 24px #00000012;text-align:center;overflow:hidden}
+.daily-paper-2026:before{content:"";position:absolute;inset:0;background:linear-gradient(135deg,#fffaf0 0%,#fffdf8 45%,#f7fbf4 100%);z-index:0}
 .daily-paper-2026>*{position:relative;z-index:1}
-.daily-flower-2026{position:absolute;top:18px;left:25px;color:#8292AA;font-size:29px;letter-spacing:7px}
-#dailyTitle2026{margin:5px 0 2px;color:#173B7A;font-size:34px;font-weight:900}
-#dailySubtitle2026{margin:0 0 28px;color:#20242B;font-size:27px}
+.daily-flower-2026{position:absolute;top:18px;left:25px;color:#c97a62;font-size:29px;letter-spacing:7px}
+#dailyTitle2026{margin:5px 0 2px;color:#b85c24;font-size:34px;font-weight:900}
+#dailySubtitle2026{margin:0 0 28px;color:#8f461b;font-size:27px}
 .daily-table-2026{width:100%;border-collapse:collapse;table-layout:fixed;background:#fff}
 .daily-table-2026 th,.daily-table-2026 td{border:1px solid #8f8879;padding:16px 8px;text-align:center;font-size:20px;font-weight:700;vertical-align:middle}
-.daily-table-2026 thead th{background:#CBD3DF;color:#2d2a27;font-size:20px}
-.daily-table-2026 tbody th{background:#E7EBF1;color:#173B7A;width:18%}
-.daily-table-2026 tbody tr:nth-child(even) td{background:#F6F8FB}
+.daily-table-2026 thead th{background:#f3dfae;color:#2d2a27;font-size:20px}
+.daily-table-2026 tbody th{background:#f8efe0;color:#b85c24;width:18%}
+.daily-table-2026 tbody tr:nth-child(even) td{background:#f8fbf6}
 .daily-table-2026 tbody tr:nth-child(odd) td{background:#fff}
 .daily-empty-2026{color:#aaa;font-weight:400}
-.daily-footer-2026{text-align:right;margin-top:15px;color:#173B7A;font-size:18px}
-.daily-quote-2026{text-align:center;color:#566273;font-size:18px;margin:25px 0 8px;font-weight:800}
-.daily-footer-2026 small{display:block;text-align:left;color:#566273}
+.daily-footer-2026{text-align:right;margin-top:15px;color:#b85c24;font-size:18px}
+.daily-quote-2026{text-align:center;color:#587b2f;font-size:18px;margin:25px 0 8px;font-weight:800}
+.daily-footer-2026 small{display:block;text-align:left;color:#9a572d}
 @media(max-width:700px){
  .daily-paper-2026{padding:24px 10px 18px}
  #dailyTitle2026{font-size:26px}.daily-table-2026 th,.daily-table-2026 td{font-size:14px;padding:10px 4px}
@@ -141,7 +141,7 @@ header h1 { font-weight: 900 !important; font-size: clamp(24px, 3vw, 36px) !impo
 
 
 <style id="leaveStyle2026">
-.leave-card-2026{background:linear-gradient(135deg,#F7F9FC,#EEF2F7)!important;border:2px solid #8998AF!important}
+.leave-card-2026{background:linear-gradient(135deg,#f5faff,#edf5ff)!important;border:2px solid #82aeda!important}
 .leave-tools-2026{display:flex;gap:8px;flex-wrap:wrap;align-items:center;background:#fff;padding:12px;border:1px solid #ddd;border-radius:10px;margin-bottom:12px}
 .leave-tools-2026 input{min-width:310px;flex:1}
 .leave-paper-2026{background:#fff;padding:22px;max-width:1250px;margin:auto;border:1px solid #bbb}
@@ -150,8 +150,8 @@ header h1 { font-weight: 900 !important; font-size: clamp(24px, 3vw, 36px) !impo
 .leave-logo-2026{display:flex;align-items:center;justify-content:center;height:105px}.leave-logo-2026 img{display:block;max-width:105px;max-height:100px;width:auto;height:auto;object-fit:contain}
 .leave-table-2026{width:100%;border-collapse:collapse;table-layout:fixed;direction:rtl}
 .leave-table-2026 th,.leave-table-2026 td{border:2px solid #222;padding:7px 4px;text-align:center;vertical-align:middle;font-size:13px;overflow-wrap:anywhere}
-.leave-table-2026 th{background:#C7D0DE;font-weight:900}
-.leave-table-2026 th:first-child,.leave-table-2026 td:first-child{background:#C7D0DE;width:38px}
+.leave-table-2026 th{background:#9fc3e6;font-weight:900}
+.leave-table-2026 th:first-child,.leave-table-2026 td:first-child{background:#9fc3e6;width:38px}
 .leave-sign-2026{display:flex;justify-content:space-between;align-items:flex-end;margin-top:34px;padding:0 30px;font-size:15px}
 .leave-sign-2026 small{font-weight:bold}
 @media(max-width:800px){.leave-paper-2026{overflow:auto;padding:10px}.leave-table-2026{min-width:1050px}.leave-head-2026{grid-template-columns:55px 1fr 55px}.leave-logo-2026{height:65px}.leave-logo-2026 img{max-width:60px;max-height:60px}.leave-head-2026 h1{font-size:21px}.leave-head-2026 h2{font-size:16px}}
@@ -160,7 +160,7 @@ header h1 { font-weight: 900 !important; font-size: clamp(24px, 3vw, 36px) !impo
 
 <style id="dailyFooterPositionFix2026">
 .daily-footer-row-2026{display:flex;justify-content:space-between;align-items:flex-end;width:100%;direction:ltr}
-.daily-footer-row-2026 small{display:block;text-align:right;color:#566273;direction:rtl}
+.daily-footer-row-2026 small{display:block;text-align:right;color:#9a572d;direction:rtl}
 .daily-footer-row-2026 div{text-align:left;direction:rtl}
 </style>
 
@@ -179,27 +179,27 @@ header h1 { font-weight: 900 !important; font-size: clamp(24px, 3vw, 36px) !impo
 </style>
 
 
-<style id="royalBlueSilverBlackTheme2026">
-:root{--royal:#173B7A;--royal2:#244F96;--silver:#C5CBD5;--silver2:#E7EBF1;--ink:#171A1F;--soft:#F4F6F9;}
-body{background:linear-gradient(135deg,#F4F6F9,#E7EBF1)!important;color:var(--ink)!important}
-header{background:linear-gradient(135deg,#102B59,#173B7A 55%,#20242B)!important;border-bottom:4px solid #B7BFCC!important}
-nav{background:#F8F9FB!important;border-bottom:1px solid #B8C0CC!important}
-nav button{border-color:#AAB2BF!important;color:#173B7A!important;background:#fff!important;font-weight:700}
-nav button:hover{background:#E4E9F1!important;color:#111!important}
-.action,.primary{background:linear-gradient(135deg,#173B7A,#244F96)!important;color:#fff!important}
-.card,.panel,.welcome{border-color:#C4CBD5!important;box-shadow:0 3px 12px #17233b12}
-.card .icon{filter:saturate(.72) brightness(1.12)}
-table.simple th,.grid .meta,#scheduleGrid thead tr:nth-child(3) th.period{background:#C5CBD5!important;color:#111!important}
-.sun{background:#DCE3EE!important}.mon{background:#C8D5E8!important}.tue{background:#E2E6EC!important}.wed{background:#D4D9E2!important}.thu{background:#C5CBD5!important}
-.daily-card-2026{background:linear-gradient(135deg,#F8FAFD,#E7EBF1)!important;border-color:#8C9BB1!important}
-.leave-card-2026{background:linear-gradient(135deg,#F8FAFD,#E2E7EF)!important;border-color:#8C9BB1!important}
-#dailyTitle2026,.daily-footer-2026{color:#173B7A!important}#dailySubtitle2026,.daily-quote-2026{color:#343B46!important}
-.daily-table-2026 thead th,.leave-table-2026 th,.leave-table-2026 th:first-child,.leave-table-2026 td:first-child{background:#C7D0DE!important;color:#111!important}
-.daily-table-2026 tbody th{background:#E7EBF1!important;color:#173B7A!important}
-.daily-paper-2026:before{background:linear-gradient(135deg,#F8FAFD 0%,#fff 48%,#E9EDF3 100%)!important}
-.daily-flower-2026{color:#8797AF!important}
-@media print{*{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}.sun{background:#DCE3EE!important}.mon{background:#C8D5E8!important}.tue{background:#E2E6EC!important}.wed{background:#D4D9E2!important}.thu{background:#C5CBD5!important}}
+<style id="blueSilverTheme2026">
+:root{--navy:#234a70;--blue:#6f98bd;--pale:#dbe6ef;--silver:#e8ebee;--gray:#d7dadd;--burgundy:#7b2638;--ink:#111;}
+body{background:#f1f3f5!important;color:var(--ink)!important;font-weight:600;}
+header{background:linear-gradient(135deg,#234a70,#6f98bd)!important;color:#fff!important;}
+nav{background:#e8ebee!important;border-bottom:1px solid #aeb6bd!important;}
+nav button{background:#f8f9fa!important;color:#111!important;border-color:#9ca8b2!important;font-weight:800!important;} nav button:hover{background:#dbe6ef!important;}
+.welcome,.card,.panel,.schedule-toolbar,.daily-toolbar-2026,.leave-tools-2026{border-color:#b8c1c9!important;box-shadow:0 2px 8px #00000010;}
+.card h3,h2,h3,label,.hint,table,th,td,input,select,button{color:#111;font-weight:700;}
+.action,.primary{background:#456f96!important;color:#fff!important;font-weight:800!important;} .danger{background:#7b2638!important;color:#fff!important;font-weight:800!important;}
+table.simple th{background:#b9cde0!important;color:#111!important;font-weight:900!important;} table.simple td{background:#f4f5f6!important;color:#111!important;}
+.grid th,.grid td{color:#111!important;font-weight:700!important;border-color:#6f7780!important;} .grid thead th,.grid .meta{background:#c7d4df!important;color:#111!important;font-weight:900!important;}
+.grid .sun{background:#e5e8eb!important}.grid .mon{background:#d7e2ec!important}.grid .tue{background:#e1e5e8!important}.grid .wed{background:#ccd9e4!important}.grid .thu{background:#d5d7da!important}.grid .edit{background:#eef2f5!important;}
+.badge{background:#dbe6ef!important;color:#111!important;} #loginScreen{background:#e9edf0!important}.loginbox{border:1px solid #b8c1c9}.loginbox>div{color:#234a70!important;} footer{color:#333!important;}
+.daily-card-2026,.leave-card-2026{background:linear-gradient(135deg,#f7f9fb,#e8ebee)!important;border-color:#6f98bd!important;}
+.daily-paper-2026{border-color:#9ca8b2!important;background:#fff!important}.daily-paper-2026:before{background:linear-gradient(135deg,#f8f9fa 0%,#fff 45%,#eef2f5 100%)!important;}
+#dailyTitle2026,.daily-footer-2026{color:#234a70!important} #dailySubtitle2026{color:#7b2638!important}.daily-table-2026 thead th{background:#b9cde0!important}.daily-table-2026 tbody th{background:#e8ebee!important;color:#234a70!important}.daily-quote-2026{color:#7b2638!important;}
+.leave-table-2026 th,.leave-table-2026 th:first-child,.leave-table-2026 td:first-child{background:#b9cde0!important;}
+button[onclick*="pdf" i],button[onclick*="PDF" i],button[onclick*="delete" i],button[onclick*="remove" i]{background:#7b2638!important;color:#fff!important;border-color:#7b2638!important;}
+@media print{#scheduleGrid .sun{background:#e5e8eb!important}#scheduleGrid .mon{background:#d7e2ec!important}#scheduleGrid .tue{background:#e1e5e8!important}#scheduleGrid .wed{background:#ccd9e4!important}#scheduleGrid .thu{background:#d5d7da!important}#scheduleGrid .meta{background:#c7d4df!important}#scheduleGrid .edit{background:#eef2f5!important}}
 </style>
+
 </head>
 <body>
 
@@ -211,7 +211,7 @@ table.simple th,.grid .meta,#scheduleGrid thead tr:nth-child(3) th.period{backgr
     <input id="loginPass" type="password" placeholder="كلمة المرور" autocomplete="current-password">
     <button class="action" style="width:100%;padding:12px" onclick="doLogin()">دخول</button>
     <p id="loginError" style="color:#b00020"></p>
-    <div style="margin-top:18px;font-size:16px;font-weight:bold;color:#173B7A">البرنامج ملكية (أ. مريم محمد علي العتيبي)</div>
+    <div style="margin-top:18px;font-size:16px;font-weight:bold;color:#17583f">البرنامج ملكية (أ. مريم محمد علي العتيبي)</div>
     <small>المسؤول الافتراضي: admin</small>
   </div>
 </div>
@@ -806,7 +806,7 @@ async function exportRows(rr,filename){
   const title=ws.getCell("A1");
   title.value="جدول نصاب حصص معلمات مركز دار قرآن غرب عبدالله المبارك نساء (2) للعام الدراسي 2026م";
   title.font={bold:true,size:16,color:{argb:"FFFFFFFF"},name:"Arial"};
-  title.fill={type:"pattern",pattern:"solid",fgColor:{argb:"FF173B7A"}};
+  title.fill={type:"pattern",pattern:"solid",fgColor:{argb:"FF234A70"}};
   title.alignment={horizontal:"center",vertical:"middle",readingOrder:"rtl"};
   ws.getRow(1).height=32;
 
@@ -817,8 +817,8 @@ async function exportRows(rr,filename){
   ws.mergeCells("E2:X2"); ws.getCell("E2").value="أيام الأسبوع";
   ws.mergeCells("Y2:Y4"); ws.getCell("Y2").value="إجمالي\nنصاب الحصص";
 
-  const fills=["FFDCE3EE","FFC8D5E8","FFE2E6EC","FFD4D9E2","FFC5CBD5"];
-  const headerFill="FFEFEFEF";
+  const fills=["FFE5E8EB","FFD7E2EC","FFE1E5E8","FFCCD9E4","FFD5D7DA"];
+  const headerFill="FFC7D4DF";
   const border={top:{style:"thin",color:{argb:"FF555555"}},left:{style:"thin",color:{argb:"FF555555"}},bottom:{style:"thin",color:{argb:"FF555555"}},right:{style:"thin",color:{argb:"FF555555"}}};
   let col=5;
   DAYS.forEach((day,di)=>{
@@ -1146,7 +1146,7 @@ async function pdfSchedule2026(){
 .filter-row th{background:#fff!important;padding:2px!important;height:34px!important}
 .export-scope{display:flex;gap:6px;flex-wrap:wrap;align-items:center;background:#eef5f2;padding:8px;border-radius:8px}
 .export-scope select,.export-scope input{min-width:150px}
-.reserve-table{width:100%;border-collapse:collapse;margin-top:12px}.reserve-table th,.reserve-table td{border:1px solid #bbb;padding:8px;text-align:center}.reserve-table th{background:#DDE2EA}
+.reserve-table{width:100%;border-collapse:collapse;margin-top:12px}.reserve-table th,.reserve-table td{border:1px solid #bbb;padding:8px;text-align:center}.reserve-table th{background:#e7efec}
 </style>
 <script id="finalEnhancementsScript2026">
 (function(){
@@ -1227,7 +1227,7 @@ async function pdfSchedule2026(){
     if(typeof html2canvas==='undefined'||!window.jspdf)return alert('تعذر تحميل أداة PDF. تأكد من اتصال الإنترنت.');
     const host=document.createElement('div');host.style.position='fixed';host.style.left='-99999px';host.style.top='0';host.style.background='#fff';host.style.zIndex='-1';document.body.appendChild(host);
     const page=document.createElement('div');page.style.cssText='width:1100px;background:#fff;padding:34px;font-family:Tahoma,Arial,sans-serif;direction:rtl;color:#000';
-    page.innerHTML=`<h2 style="text-align:center;margin:0 0 8px;font-size:26px">الاحتياط اليومي</h2><div style="text-align:center;margin-bottom:20px;font-size:18px;font-weight:bold">نظام إدارة جدول حصص مركز دار القرآن غرب عبدالله المبارك نساء ٢</div><table style="width:100%;border-collapse:collapse;table-layout:fixed;font-size:16px"><thead><tr><th style="border:1px solid #555;padding:9px;background:#DDE2EA">م</th><th style="border:1px solid #555;padding:9px;background:#DDE2EA">اليوم</th><th style="border:1px solid #555;padding:9px;background:#DDE2EA">التاريخ</th><th style="border:1px solid #555;padding:9px;background:#DDE2EA">المعلمة الغائبة</th><th style="border:1px solid #555;padding:9px;background:#DDE2EA">معلمة الاحتياط</th><th style="border:1px solid #555;padding:9px;background:#DDE2EA">الحصة</th><th style="border:1px solid #555;padding:9px;background:#DDE2EA">ملاحظات</th></tr></thead><tbody>${data.map((x,i)=>`<tr><td style="border:1px solid #777;padding:8px;text-align:center">${i+1}</td><td style="border:1px solid #777;padding:8px;text-align:center">${esc(reserveDay2026(x.date))}</td><td style="border:1px solid #777;padding:8px;text-align:center">${esc(x.date)}</td><td style="border:1px solid #777;padding:8px;text-align:center">${esc(x.absent)}</td><td style="border:1px solid #777;padding:8px;text-align:center">${esc(x.sub)}</td><td style="border:1px solid #777;padding:8px;text-align:center">${esc(x.period)}</td><td style="border:1px solid #777;padding:8px;text-align:center">${esc(x.notes)}</td></tr>`).join('')}</tbody></table>`;
+    page.innerHTML=`<h2 style="text-align:center;margin:0 0 8px;font-size:26px">الاحتياط اليومي</h2><div style="text-align:center;margin-bottom:20px;font-size:18px;font-weight:bold">نظام إدارة جدول حصص مركز دار القرآن غرب عبدالله المبارك نساء ٢</div><table style="width:100%;border-collapse:collapse;table-layout:fixed;font-size:16px"><thead><tr><th style="border:1px solid #555;padding:9px;background:#e7efec">م</th><th style="border:1px solid #555;padding:9px;background:#e7efec">اليوم</th><th style="border:1px solid #555;padding:9px;background:#e7efec">التاريخ</th><th style="border:1px solid #555;padding:9px;background:#e7efec">المعلمة الغائبة</th><th style="border:1px solid #555;padding:9px;background:#e7efec">معلمة الاحتياط</th><th style="border:1px solid #555;padding:9px;background:#e7efec">الحصة</th><th style="border:1px solid #555;padding:9px;background:#e7efec">ملاحظات</th></tr></thead><tbody>${data.map((x,i)=>`<tr><td style="border:1px solid #777;padding:8px;text-align:center">${i+1}</td><td style="border:1px solid #777;padding:8px;text-align:center">${esc(reserveDay2026(x.date))}</td><td style="border:1px solid #777;padding:8px;text-align:center">${esc(x.date)}</td><td style="border:1px solid #777;padding:8px;text-align:center">${esc(x.absent)}</td><td style="border:1px solid #777;padding:8px;text-align:center">${esc(x.sub)}</td><td style="border:1px solid #777;padding:8px;text-align:center">${esc(x.period)}</td><td style="border:1px solid #777;padding:8px;text-align:center">${esc(x.notes)}</td></tr>`).join('')}</tbody></table>`;
     host.appendChild(page);
     try{const canvas=await html2canvas(page,{scale:1.6,useCORS:true,backgroundColor:'#ffffff',logging:false});const img=canvas.toDataURL('image/jpeg',0.95);const {jsPDF}=window.jspdf;const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4',compress:true});const pw=297,ph=210;const ratio=Math.min((pw-10)/canvas.width,(ph-10)/canvas.height);const w=canvas.width*ratio,h=canvas.height*ratio;doc.addImage(img,'JPEG',(pw-w)/2,5,w,h,undefined,'FAST');doc.save('جدول_الاحتياط_اليومي.pdf');}catch(e){console.error(e);alert('تعذر إنشاء ملف PDF. حاول مرة أخرى.');}finally{host.remove();}
   };
@@ -1349,7 +1349,7 @@ async function pdfSchedule2026(){
 
 <style id="periodGray2026">
 /* رؤوس الحصص الأولى والثانية والثالثة والرابعة بالرمادي */
-#scheduleGrid thead tr:nth-child(3) th.period{background:#C5CBD5!important;color:#111!important;}
+#scheduleGrid thead tr:nth-child(3) th.period{background:#d7d7d7!important;color:#111!important;}
 </style>
 <script id="simplePdfExports2026">
 window.pdfSimpleSection2026=async function(kind){
@@ -1363,7 +1363,7 @@ window.pdfSimpleSection2026=async function(kind){
   const data=cfg.rows(); if(!data.length){alert('لا توجد بيانات للتصدير.');return;}
   const host=document.createElement('div');host.style.cssText='position:fixed;left:-99999px;top:0;background:#fff;z-index:-1';document.body.appendChild(host);
   const page=document.createElement('div');page.style.cssText='width:1100px;background:#fff;padding:42px;font-family:Tahoma,Arial,sans-serif;direction:rtl;color:#000';
-  const th=cfg.headers.map(h=>`<th style="border:1px solid #555;padding:10px;background:#C5CBD5;font-size:18px">${esc(h)}</th>`).join('');
+  const th=cfg.headers.map(h=>`<th style="border:1px solid #555;padding:10px;background:#d7d7d7;font-size:18px">${esc(h)}</th>`).join('');
   const trs=data.map(r=>`<tr>${r.map(v=>`<td style="border:1px solid #777;padding:9px;text-align:center;font-size:16px">${esc(v)}</td>`).join('')}</tr>`).join('');
   page.innerHTML=`<h2 style="text-align:center;margin:0 0 8px;font-size:28px">${cfg.title}</h2><div style="text-align:center;margin-bottom:22px;font-size:18px;font-weight:bold">نظام إدارة جدول حصص مركز دار القرآن غرب عبدالله المبارك نساء ٢</div><table style="width:100%;border-collapse:collapse;table-layout:fixed"><thead><tr>${th}</tr></thead><tbody>${trs}</tbody></table>`;
   host.appendChild(page);
@@ -1410,7 +1410,7 @@ window.pdfSimpleSection2026=async function(kind){
     if(!data.length){alert('لا توجد نتائج مطابقة للفرز.');return;}
     const host=document.createElement('div');host.style.cssText='position:fixed;left:-99999px;top:0;background:#fff;z-index:-1';document.body.appendChild(host);
     const page=document.createElement('div');page.style.cssText='width:1100px;background:#fff;padding:42px;font-family:Tahoma,Arial,sans-serif;direction:rtl;color:#000';
-    const th=headers.map(h=>`<th style="border:1px solid #555;padding:10px;background:#C5CBD5;font-size:18px">${esc(h)}</th>`).join('');
+    const th=headers.map(h=>`<th style="border:1px solid #555;padding:10px;background:#d7d7d7;font-size:18px">${esc(h)}</th>`).join('');
     const trs=data.map(r=>`<tr>${r.map(v=>`<td style="border:1px solid #777;padding:9px;text-align:center;font-size:16px">${esc(v)}</td>`).join('')}</tr>`).join('');
     page.innerHTML=`<h2 style="text-align:center;margin:0 0 8px;font-size:28px">${title}</h2><div style="text-align:center;margin-bottom:22px;font-size:18px;font-weight:bold">نظام إدارة جدول حصص مركز دار القرآن غرب عبدالله المبارك نساء ٢</div><table style="width:100%;border-collapse:collapse;table-layout:fixed"><thead><tr>${th}</tr></thead><tbody>${trs}</tbody></table>`;
     host.appendChild(page);
@@ -1513,7 +1513,7 @@ window.pdfSimpleSection2026=async function(kind){
     renderDailySchedule2026();
     const paper=document.getElementById("dailyPaper2026");
     const sel=document.getElementById("dailyClassSelect2026");
-    const canvas=await html2canvas(paper,{scale:2,useCORS:true,backgroundColor:"#FFFFFF"});
+    const canvas=await html2canvas(paper,{scale:2,useCORS:true,backgroundColor:"#fffdf7"});
     const img=canvas.toDataURL("image/jpeg",0.96);
     const {jsPDF}=window.jspdf;
     const pdf=new jsPDF({orientation:"landscape",unit:"mm",format:"a4"});
