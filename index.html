@@ -249,6 +249,7 @@ table.simple th,.grid .meta,#scheduleGrid thead tr:nth-child(3) th.period{backgr
     <div class="card" onclick="show('subjects')"><div class="icon">📚</div><h3>المواد</h3><p>إضافة المواد وتعديلها وحذفها.</p></div>
     <div class="card" onclick="show('admins')"><div class="icon">👩‍💼</div><h3>الإداريات</h3><p>إدارة أسماء الإداريات.</p></div>
     <div id="permissionsCard" class="card" onclick="show('permissions')"><div class="icon">🔐</div><h3>الصلاحيات</h3><p>إدارة المستخدمين وكلمات المرور والصلاحيات.</p></div>
+    <div id="clearScheduleAdminCard2026" class="card" style="display:none;border:2px solid #a92525" onclick="clearAllScheduleLessonsAdmin2026()"><div class="icon">🗑️</div><h3>تفريغ الجدول بالكامل</h3><p>مسح جميع الحصص فقط مع الإبقاء على أسماء المعلمات وبياناتهن. خاص بـ admin.</p></div>
   </div>
 </section>
 
@@ -257,7 +258,7 @@ table.simple th,.grid .meta,#scheduleGrid thead tr:nth-child(3) th.period{backgr
   <div class="schedule-toolbar no-print">
     <button class="action edit-control" onclick="addTeacherFromSchedule()">+ إضافة معلمة</button>
     <button class="edit-control" onclick="resetSchedule()">استعادة الجدول الأصلي</button>
-    <button id="clearScheduleAdminBtn2026" class="danger" style="display:none;font-weight:800;padding:9px 13px" onclick="clearAllScheduleLessonsAdmin2026()">🗑️ تفريغ الجدول بالكامل</button>
+    <button id="clearScheduleAdminBtn2026" class="danger admin-clear-2026" style="font-weight:800;padding:9px 13px" onclick="clearAllScheduleLessonsAdmin2026()">🗑️ تفريغ الجدول بالكامل</button>
     <button onclick="printSchedule2026()">طباعة</button>
     <button onclick="pdfSchedule2026()">تصدير PDF</button>
     <select id="exportTeacher"></select>
@@ -729,7 +730,9 @@ function resetSchedule(){
 }
 
 function clearAllScheduleLessonsAdmin2026(){
-  if(role()!=="admin"){
+  const a=currentAccount();
+  const isAdmin2026=!!a && (a.role==="admin" || String(a.name||"").trim().toLowerCase()==="admin");
+  if(!isAdmin2026){
     alert("هذه الصلاحية خاصة بالمسؤول admin فقط.");
     return;
   }
@@ -1033,11 +1036,13 @@ function applyRole(){
   currentUserLabel.textContent=a.name;
   currentRoleLabel.textContent={view:"مشاهدة فقط",edit:"تعديل وإضافة",admin:"مسؤول كامل"}[a.role]||a.role;
 
-  const adminOnly=a.role==="admin";
+  const adminOnly=(a.role==="admin" || String(a.name||"").trim().toLowerCase()==="admin");
   permissionsNav.style.display=adminOnly?"inline-block":"none";
   permissionsCard.style.display=adminOnly?"block":"none";
   const clearBtn2026=document.getElementById("clearScheduleAdminBtn2026");
   if(clearBtn2026) clearBtn2026.style.display=adminOnly?"inline-block":"none";
+  const clearCard2026=document.getElementById("clearScheduleAdminCard2026");
+  if(clearCard2026) clearCard2026.style.display=adminOnly?"block":"none";
 
   document.querySelectorAll(".edit-control").forEach(el=>el.style.display=canEdit()?"":"none");
   renderSchedule();
