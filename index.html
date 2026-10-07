@@ -615,28 +615,21 @@ function editSlot(ri,si){
 }
 
 function swapSlotsSameDay2026(sr,ss,r,s){
-  // الاسم محفوظ للتوافق مع بقية البرنامج، لكن التبديل الآن مفتوح بين جميع الأيام والمعلمات والحصص.
   if(!canEdit() || !rows[sr] || !rows[r]) return false;
+  if(Math.floor(ss/4)!==Math.floor(s/4)){
+    alert("التبديل بالسحب متاح بين حصص اليوم نفسه فقط.");
+    return false;
+  }
   if(sr===r && ss===s) return false;
   const from=rows[sr].slots, to=rows[r].slots;
   const moving=from[ss]||"", displaced=to[s]||"";
   if(!moving) return false;
-
-  // نطبق التبديل مؤقتاً ثم نفحص النتيجة الفعلية؛ هذا يمنع التعارض حتى عند النقل بين يومين مختلفين.
-  from[ss]=displaced;
-  to[s]=moving;
-  const cTarget=findScheduleConflict2026(r,s,moving);
-  const cSource=displaced ? findScheduleConflict2026(sr,ss,displaced) : null;
-  if(cTarget || cSource){
-    from[ss]=moving;
-    to[s]=displaced;
-    const c=cTarget||cSource;
-    alert(conflictMessage2026(c,cTarget?s:ss));
-    return false;
-  }
-
-  recalcTeacherTotal2026(sr);
-  if(r!==sr) recalcTeacherTotal2026(r);
+  const c1=findScheduleConflict2026(r,s,moving);
+  if(c1 && c1.row!==sr){ alert(conflictMessage2026(c1,s)); return false; }
+  const c2=findScheduleConflict2026(sr,ss,displaced);
+  if(c2 && c2.row!==r){ alert(conflictMessage2026(c2,ss)); return false; }
+  [from[ss],to[s]]=[displaced,moving];
+  recalcTeacherTotal2026(sr); recalcTeacherTotal2026(r);
   saveRows();
   return true;
 }
@@ -1163,16 +1156,32 @@ async function pdfSchedule2026(){
   const FILTERS={name:'',dept:'',connection:'',total:'',className:''};
   const norm=s=>String(s??'').trim().toLowerCase();
   function normalizeClass2026(v){
-    return String(v??'').trim().toLowerCase().replace(/[٠-٩]/g,d=>'٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[۰-۹]/g,d=>'۰۱۲۳۴۵۶۷۸۹'.indexOf(d)).replace(/\s+/g,'');
+    return String(v??'')
+      .trim()
+      .toLowerCase()
+      .replace(/[٠-٩]/g,d=>'٠١٢٣٤٥٦٧٨٩'.indexOf(d))
+      .replace(/[۰-۹]/g,d=>'۰۱۲۳۴۵۶۷۸۹'.indexOf(d))
+      .replace(/\s+/g,'');
   }
   function lessonClasses2026(value){
     const t=normalizeClass2026(value);
-    const found=t.match(/(?:1م1|1م2|2م|3م1|3م2|5م1|5م2|3ت)/g)||[];
-    return [...new Set(found)];
+    const valid=['1م1','1م2','2م','3م1','3م2','5م1','5م2','3ت'];
+    return valid.filter(cls=>{
+      let from=0;
+      while((from=t.indexOf(cls,from))!==-1){
+        const before=t[from-1]||'';
+        const after=t[from+cls.length]||'';
+        if(!/[0-9]/.test(before) && !/[0-9]/.test(after)) return true;
+        from+=cls.length;
+      }
+      return false;
+    });
   }
   function matches(r){
     const wanted=normalizeClass2026(FILTERS.className);
-    const classMatch=!wanted || (r.slots||[]).some(v=>lessonClasses2026(v).includes(wanted));
+    const validClasses=['1م1','1م2','2م','3م1','3م2','5م1','5م2','3ت'];
+    const classMatch=!wanted || (validClasses.includes(wanted) &&
+      (r.slots||[]).some(v=>lessonClasses2026(v).some(cls=>cls===wanted)));
     return (!FILTERS.name||norm(r.name).includes(norm(FILTERS.name))) &&
       (!FILTERS.dept||norm(r.dept).includes(norm(FILTERS.dept))) &&
       (!FILTERS.connection||norm(r.connection).includes(norm(FILTERS.connection))) &&
@@ -1191,7 +1200,7 @@ async function pdfSchedule2026(){
     h+='<th class="no-print" colspan="3"><input class="filter-input" data-filter-key="className" style="width:96%" value="'+esc(FILTERS.className)+'" placeholder="فرز الفصل (مثال: 3م2)" oninput="setScheduleFilter2026(\'className\',this.value)"></th>';
     DAYS.forEach((d,i)=>PERIODS.forEach(p=>h+=`<th class="period ${DAY_CLASSES[i]}">${p}</th>`));
     h+='<th class="no-print"><button onclick="clearFilters2026()">مسح الفرز</button></th></tr></thead><tbody>';
-    let visibleNo=0; rows.forEach((r,ri)=>{ if(!matches(r))return; visibleNo++; h+=`<tr><td>${visibleNo}</td><td class="edit name" onclick="openTeacherModal(${ri})">${esc(r.name)}</td><td class="edit" onclick="openTeacherModal(${ri})">${esc(r.dept)}</td><td class="edit" onclick="openTeacherModal(${ri})">${esc(r.connection)}</td>`; const slots=Array.isArray(r.slots)?r.slots:Array(20).fill(''); for(let si=0;si<20;si++){const v=slots[si]||'',di=Math.floor(si/4),draggable=canEdit()&&v?'true':'false';h+=`<td class="slot ${DAY_CLASSES[di]}" draggable="${draggable}" data-r="${ri}" data-s="${si}" onclick="editSlot(${ri},${si})" ondragstart="dragStart(event,${ri},${si})" ondragover="dragOver(event)" ondragleave="event.currentTarget.classList.remove('over')" ondrop="dropSlot(event,${ri},${si})" ondragend="dragEnd(event)" ontouchstart="touchSlotStart2026(event,${ri},${si})" ontouchmove="touchSlotMove2026(event)" ontouchend="touchSlotEnd2026(event)">${esc(v)}</td>`;} h+=`<td class="edit" onclick="openTeacherModal(${ri})">${esc(r.total)}</td><td class="no-print edit-control"><button onclick="openTeacherModal(${ri})">✏️ تعديل</button> <button class="danger" onclick="removeTeacher(${ri})">حذف</button></td></tr>`;});
+    let visibleNo=0; rows.forEach((r,ri)=>{ if(!matches(r))return; visibleNo++; h+=`<tr><td>${visibleNo}</td><td class="edit name" onclick="openTeacherModal(${ri})">${esc(r.name)}</td><td class="edit" onclick="openTeacherModal(${ri})">${esc(r.dept)}</td><td class="edit" onclick="openTeacherModal(${ri})">${esc(r.connection)}</td>`; const slots=Array.isArray(r.slots)?r.slots:Array(20).fill(''); for(let si=0;si<20;si++){const v=slots[si]||'',di=Math.floor(si/4),draggable=canEdit()&&v?'true':'false';h+=`<td class="slot ${DAY_CLASSES[di]}" draggable="${draggable}" data-r="${ri}" data-s="${si}" onclick="editSlot(${ri},${si})" ondragstart="dragStart(event,${ri},${si})" ondragover="dragOver(event)" ondragleave="event.currentTarget.classList.remove('over')" ondrop="dropSlot(event,${ri},${si})" ondragend="dragEnd(event)">${esc(v)}</td>`;} h+=`<td class="edit" onclick="openTeacherModal(${ri})">${esc(r.total)}</td><td class="no-print edit-control"><button onclick="openTeacherModal(${ri})">✏️ تعديل</button> <button class="danger" onclick="removeTeacher(${ri})">حذف</button></td></tr>`;});
     scheduleGrid.innerHTML=h;
     document.querySelectorAll('.edit-control').forEach(el=>el.style.display=canEdit()?'':'none');
   };
