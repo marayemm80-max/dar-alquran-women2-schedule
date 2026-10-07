@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>نظام إدارة جدول حصص مركز دار القرآن غرب عبدالله المبارك نساء ٢</title>
-<script type="text/javascript" src="https://me.kis.v2.scr.kaspersky-labs.com/FD126C42-EBFA-4E12-B309-BB3FDD723AC1/main.js?attr=-dRpfi4RKpM3T89bQXRdD6AD4-J9CnpRdppk5oIt_DLPllZvHQ9nYKknK4auTLO6fwtPhsMxeJSuaVx96-6_I9Ptlw_HRPMK25Iy_cARDr3FO9hW-uYdU008V1kgIFmVZWobafmO_UnE-nNavEVR28Afbh0kXe-Ua1BvYFq7Xs64GM1OUNC-FMM3A8GU-aeO53JymTIF91NKUj0bvszZZ0KQuE6h4hEeEaDZymlp3vDg7ZkFXXD9PowkQwGqrc3bRI7NeifeKwUzJsmjeF7I32vw0w9MhdgMdkfCqcsc9fWfy1FxFwVEFy9DRGnE8JGy8kTjafG9AXGIgSGYrJBm9OLtD9fneStKK2fR4U-BJZ0OiQvq2FYgtq80TqiVSgHwVAp0YaeEEJEzJDRdGXcx8w" charset="UTF-8"></script><script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <style>
@@ -544,7 +544,7 @@ function renderSchedule(){
       const v=slots[si]||"";
       const di=Math.floor(si/4);
       const draggable=canEdit() && v ? "true":"false";
-      h+=`<td class="slot ${DAY_CLASSES[di]}" draggable="${draggable}" data-r="${ri}" data-s="${si}" onclick="slotClick2026(${ri},${si})" ondragstart="dragStart(event,${ri},${si})" ondragover="dragOver(event)" ondragleave="event.currentTarget.classList.remove('over')" ondrop="dropSlot(event,${ri},${si})" ondragend="dragEnd(event)" ontouchstart="touchSlotStart2026(event,${ri},${si})" ontouchmove="touchSlotMove2026(event)" ontouchend="touchSlotEnd2026(event)">${esc(v)}</td>`;
+      h+=`<td class="slot ${DAY_CLASSES[di]}" draggable="${draggable}" data-r="${ri}" data-s="${si}" onclick="editSlot(${ri},${si})" ondragstart="dragStart(event,${ri},${si})" ondragover="dragOver(event)" ondragleave="event.currentTarget.classList.remove('over')" ondrop="dropSlot(event,${ri},${si})" ondragend="dragEnd(event)">${esc(v)}</td>`;
     }
     h+=`<td class="edit" onclick="openTeacherModal(${ri})">${esc(r.total)}</td>`;
     h+=`<td class="no-print edit-control"><button onclick="openTeacherModal(${ri})">✏️ تعديل</button> <button class="danger" onclick="removeTeacher(${ri})">حذف</button></td></tr>`;
@@ -614,58 +614,61 @@ function editSlot(ri,si){
   saveRows();
 }
 
-function swapSlotsSameDay2026(sr,ss,r,s){
-  if(!canEdit() || !rows[sr] || !rows[r]) return false;
-  if(Math.floor(ss/4)!==Math.floor(s/4)){
-    alert("التبديل بالسحب متاح بين حصص اليوم نفسه فقط.");
-    return false;
-  }
-  if(sr===r && ss===s) return false;
-  const from=rows[sr].slots, to=rows[r].slots;
-  const moving=from[ss]||"", displaced=to[s]||"";
-  if(!moving) return false;
-  const c1=findScheduleConflict2026(r,s,moving);
-  if(c1 && c1.row!==sr){ alert(conflictMessage2026(c1,s)); return false; }
-  const c2=findScheduleConflict2026(sr,ss,displaced);
-  if(c2 && c2.row!==r){ alert(conflictMessage2026(c2,ss)); return false; }
-  [from[ss],to[s]]=[displaced,moving];
-  recalcTeacherTotal2026(sr); recalcTeacherTotal2026(r);
-  saveRows();
-  return true;
-}
-
 function dragStart(ev,r,s){
   if(!canEdit()){ ev.preventDefault(); return; }
-  dragState={r,s}; ev.currentTarget.classList.add("dragging");
-  if(ev.dataTransfer){ ev.dataTransfer.effectAllowed="move"; ev.dataTransfer.setData("text/plain","lesson"); }
-}
-function dragOver(ev){ if(!canEdit()) return; ev.preventDefault(); ev.currentTarget.classList.add("over"); }
-function dropSlot(ev,r,s){
-  if(!canEdit()) return; ev.preventDefault(); ev.currentTarget.classList.remove("over");
-  if(!dragState) return; const st=dragState; dragState=null; swapSlotsSameDay2026(st.r,st.s,r,s);
-}
-function dragEnd(ev){ ev.currentTarget.classList.remove("dragging"); setTimeout(()=>dragState=null,50); }
-
-let touchDrag2026=null, touchMoved2026=false, suppressSlotClick2026=false;
-function touchSlotStart2026(ev,r,s){
-  if(!canEdit() || !(rows[r]?.slots?.[s]||'')) return;
-  const t=ev.touches&&ev.touches[0]; if(!t)return;
-  touchDrag2026={r,s,x:t.clientX,y:t.clientY,cell:ev.currentTarget}; touchMoved2026=false;
+  dragState={r,s};
   ev.currentTarget.classList.add("dragging");
+  ev.dataTransfer.effectAllowed="move";
+  ev.dataTransfer.setData("text/plain","lesson");
 }
-function touchSlotMove2026(ev){
-  if(!touchDrag2026)return; const t=ev.touches&&ev.touches[0]; if(!t)return;
-  if(Math.abs(t.clientX-touchDrag2026.x)>8 || Math.abs(t.clientY-touchDrag2026.y)>8) touchMoved2026=true;
-  if(touchMoved2026){ ev.preventDefault(); document.querySelectorAll('.slot.over').forEach(x=>x.classList.remove('over')); const el=document.elementFromPoint(t.clientX,t.clientY)?.closest?.('.slot'); if(el)el.classList.add('over'); }
+
+function dragOver(ev){
+  if(!canEdit()) return;
+  ev.preventDefault();
+  ev.currentTarget.classList.add("over");
 }
-function touchSlotEnd2026(ev){
-  if(!touchDrag2026)return; const st=touchDrag2026; touchDrag2026=null; st.cell?.classList.remove('dragging');
-  document.querySelectorAll('.slot.over').forEach(x=>x.classList.remove('over'));
-  if(!touchMoved2026)return; ev.preventDefault(); suppressSlotClick2026=true; setTimeout(()=>suppressSlotClick2026=false,350);
-  const t=ev.changedTouches&&ev.changedTouches[0]; if(!t)return; const el=document.elementFromPoint(t.clientX,t.clientY)?.closest?.('.slot'); if(!el)return;
-  swapSlotsSameDay2026(st.r,st.s,Number(el.dataset.r),Number(el.dataset.s));
+
+function dropSlot(ev,r,s){
+  if(!canEdit()) return;
+  ev.preventDefault();
+  ev.currentTarget.classList.remove("over");
+  if(!dragState) return;
+  const sr=dragState.r, ss=dragState.s;
+  // السحب والتبديل مسموحان داخل اليوم نفسه فقط.
+  if(Math.floor(ss/4)!==Math.floor(s/4)){
+    dragState=null;
+    alert("يمكن سحب وتبديل الحصص داخل اليوم نفسه فقط.");
+    return;
+  }
+  const from=rows[sr].slots;
+  const to=rows[r].slots;
+  const moving=from[ss]||"";
+  const displaced=to[s]||"";
+
+  const c1=findScheduleConflict2026(r,s,moving);
+  if(c1 && c1.row!==sr){
+    dragState=null;
+    alert(conflictMessage2026(c1,s));
+    return;
+  }
+  const c2=findScheduleConflict2026(sr,ss,displaced);
+  if(c2 && c2.row!==r){
+    dragState=null;
+    alert(conflictMessage2026(c2,ss));
+    return;
+  }
+
+  [from[ss],to[s]]=[displaced,moving];
+  recalcTeacherTotal2026(sr);
+  recalcTeacherTotal2026(r);
+  dragState=null;
+  saveRows();
 }
-function slotClick2026(r,s){ if(suppressSlotClick2026)return; editSlot(r,s); }
+
+function dragEnd(ev){
+  ev.currentTarget.classList.remove("dragging");
+  setTimeout(()=>dragState=null,50);
+}
 
 function openTeacherModal(i){
   if(!requireEdit()) return;
@@ -1155,21 +1158,25 @@ async function pdfSchedule2026(){
 (function(){
   const FILTERS={name:'',dept:'',connection:'',total:'',className:''};
   const norm=s=>String(s??'').trim().toLowerCase();
-  function normalizeClass2026(v){
-    return String(v??'').trim().toLowerCase().replace(/[٠-٩]/g,d=>'٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/\s+/g,'');
+  const digitMap2026={'٠':'0','١':'1','٢':'2','٣':'3','٤':'4','٥':'5','٦':'6','٧':'7','٨':'8','٩':'9'};
+  const classNorm2026=s=>String(s??'').replace(/[٠-٩]/g,d=>digitMap2026[d]).replace(/\s+/g,'').toLowerCase();
+  function classKeys2026(value){
+    const t=classNorm2026(value);
+    // رموز الفصول المعتمدة: 1م1، 1م2، 2م، 3م1، 3م2، 5م1، 5م2، 3ت.
+    return t.match(/[1-9](?:م[1-9]?|ت)(?![0-9])/g)||[];
   }
-  function lessonClasses2026(value){
-    const t=normalizeClass2026(value);
-    const found=t.match(/(?:1م1|1م2|2م|3م1|3م2|5م1|5م2|3ت)/g)||[];
-    return [...new Set(found)];
+  function classFilterMatch2026(value,query){
+    const q=classNorm2026(query);
+    if(!q) return true;
+    return classKeys2026(value).some(k=>k===q);
   }
   function matches(r){
-    const wanted=normalizeClass2026(FILTERS.className);
-    const classMatch=!wanted || (r.slots||[]).some(v=>lessonClasses2026(v).includes(wanted));
+    const slots=(r.slots||[]).join(' ');
     return (!FILTERS.name||norm(r.name).includes(norm(FILTERS.name))) &&
       (!FILTERS.dept||norm(r.dept).includes(norm(FILTERS.dept))) &&
       (!FILTERS.connection||norm(r.connection).includes(norm(FILTERS.connection))) &&
-      (!FILTERS.total||norm(r.total).includes(norm(FILTERS.total))) && classMatch;
+      (!FILTERS.total||norm(r.total).includes(norm(FILTERS.total))) &&
+      (!FILTERS.className || (r.slots||[]).some(v=>classFilterMatch2026(v,FILTERS.className)));
   }
   window.getFilteredRows2026=()=>rows.filter(matches);
   window.setScheduleFilter2026=(k,v)=>{const el=document.activeElement,pos=el&&typeof el.selectionStart==='number'?el.selectionStart:v.length;FILTERS[k]=v;renderSchedule();requestAnimationFrame(()=>{const n=document.querySelector('#schedule [data-filter-key=\"'+k+'\"]');if(n){n.focus();try{n.setSelectionRange(pos,pos)}catch(e){}}});};
@@ -1627,128 +1634,82 @@ window.pdfSimpleSection2026=async function(kind){
 })();
 </script>
 
-<script id="flexibleLessonSwap2026">
+
+<style id="sameDayTouchDragFix2026">
+/* دعم السحب على الهاتف والتابلت دون تغيير ألوان الجدول */
+#scheduleGrid .slot.touch-drag-source-2026{outline:3px solid #173B7A!important;position:relative;z-index:2}
+#scheduleGrid .slot.touch-drag-target-2026{outline:3px dashed #333!important;position:relative;z-index:2}
+@media (pointer:coarse){#scheduleGrid .slot[draggable="true"]{touch-action:none}}
+</style>
+<script id="sameDayTouchDragFixScript2026">
 (function(){
-  // تبديل الحصص بحرية: بين اليوم نفسه أو أيام مختلفة، وبين معلمة وأخرى.
-  function conflictAt2026(ri,si,value,ignoreRows){
-    const key=normalizeClassKey2026(value);
-    if(!key) return null;
-    const ignored=new Set(ignoreRows||[]);
-    for(let i=0;i<rows.length;i++){
-      if(i===ri || ignored.has(i)) continue;
-      const other=(rows[i].slots||[])[si]||'';
-      if(other && normalizeClassKey2026(other)===key){
-        return {row:i,teacher:rows[i].name||'معلمة أخرى',lesson:other};
-      }
-    }
-    return null;
+  let touchDrag2026=null, suppressClickUntil2026=0;
+  const originalEditSlot2026=window.editSlot;
+  window.editSlot=function(r,s){
+    if(Date.now()<suppressClickUntil2026) return;
+    return originalEditSlot2026(r,s);
+  };
+  function cellFromPoint2026(x,y){
+    const el=document.elementFromPoint(x,y);
+    return el&&el.closest?el.closest('#scheduleGrid td.slot'):null;
   }
-
-  window.swapSlotsFlexible2026=function(sr,ss,r,s){
-    if(!canEdit() || !rows[sr] || !rows[r]) return false;
-    if(sr===r && ss===s) return false;
-    const from=rows[sr].slots||[];
-    const to=rows[r].slots||[];
-    const moving=from[ss]||'';
-    const displaced=to[s]||'';
-    if(!moving) return false;
-
-    // افحص تعارض الحصة المنقولة في الخانة الجديدة، مع تجاهل مصدر التبديل.
-    const c1=conflictAt2026(r,s,moving,[sr,r]);
-    if(c1){
-      alert(`⚠️ لا يمكن التبديل\n\nالفصل الموجود في الحصة المنقولة مسجل أيضًا عند المعلمة: ${c1.teacher}\nالبيان: ${c1.lesson}\n\nلم يتم تغيير الجدول.`);
-      return false;
+  function clearTouchMarks2026(){
+    document.querySelectorAll('#scheduleGrid .touch-drag-source-2026,#scheduleGrid .touch-drag-target-2026').forEach(el=>el.classList.remove('touch-drag-source-2026','touch-drag-target-2026'));
+  }
+  function sameDaySwap2026(sr,ss,tr,ts){
+    if(!canEdit() || !rows[sr] || !rows[tr]) return;
+    if(Math.floor(ss/4)!==Math.floor(ts/4)){
+      alert('يمكن سحب وتبديل الحصص داخل اليوم نفسه فقط.'); return;
     }
-    // إذا كانت الخانة الهدف تحتوي حصة، افحص إمكانية نقلها إلى خانة المصدر.
-    if(displaced){
-      const c2=conflictAt2026(sr,ss,displaced,[sr,r]);
-      if(c2){
-        alert(`⚠️ لا يمكن التبديل\n\nالحصة الموجودة في الخانة الهدف ستسبب تعارضًا عند نقلها إلى:\n${rows[sr].name}\n\nيوجد الفصل نفسه عند: ${c2.teacher}\nالبيان: ${c2.lesson}\n\nلم يتم تغيير الجدول.`);
-        return false;
-      }
-    }
-
-    from[ss]=displaced;
-    to[s]=moving;
-    recalcTeacherTotal2026(sr);
-    recalcTeacherTotal2026(r);
-    saveRows();
-    return true;
-  };
-
-  // استبدال الدالة القديمة التي كانت تسمح باليوم نفسه فقط.
-  window.swapSlotsSameDay2026=window.swapSlotsFlexible2026;
-
-  // إعادة تعريف السحب والإفلات ليعمل بين أي يوم وأي معلمة.
-  window.dropSlot=function(ev,r,s){
-    if(!canEdit()) return;
-    ev.preventDefault();
-    ev.currentTarget.classList.remove('over');
-    if(!dragState) return;
-    const st=dragState;
-    dragState=null;
-    window.swapSlotsFlexible2026(st.r,st.s,r,s);
-  };
-
-  // دعم اللمس في الهاتف/اللوحي بنفس المرونة.
-  window.touchSlotEnd2026=function(ev){
-    if(!touchDrag2026)return;
-    const st=touchDrag2026;
-    touchDrag2026=null;
-    st.cell?.classList.remove('dragging');
-    document.querySelectorAll('.slot.over').forEach(x=>x.classList.remove('over'));
-    if(!touchMoved2026)return;
-    ev.preventDefault();
-    suppressSlotClick2026=true;
-    setTimeout(()=>suppressSlotClick2026=false,350);
-    const t=ev.changedTouches&&ev.changedTouches[0];
-    if(!t)return;
-    const el=document.elementFromPoint(t.clientX,t.clientY)?.closest?.('.slot');
-    if(!el)return;
-    window.swapSlotsFlexible2026(st.r,st.s,Number(el.dataset.r),Number(el.dataset.s));
-  };
-
-  // عرض أرقام الفصول بالعربية، مع إبقاء القيم الداخلية كما هي حتى لا تتأثر المطابقة.
-  const arabicDigits2026='٠١٢٣٤٥٦٧٨٩';
-  const toArabicClass2026=v=>String(v??'').replace(/\d/g,d=>arabicDigits2026[d]);
-  const classLabels2026={
-    '5م1':'٥م١','5م2':'٥م٢','3م1':'٣م١','3م2':'٣م٢',
-    '1م1':'١م١','1م2':'١م٢','2م':'٢م','3ت':'٣ت'
-  };
-
-  function decorateClassFilter2026(){
-    document.querySelectorAll('#scheduleGrid input[data-filter-key="className"]').forEach(el=>{
-      el.placeholder='فرز الفصل (مثال: ٣م٢)';
-      if(el.value) el.value=toArabicClass2026(el.value);
-      if(!el.dataset.arabicClassBound){
-        el.dataset.arabicClassBound='1';
-        el.addEventListener('input',function(){
-          const pos=this.selectionStart||this.value.length;
-          const before=this.value;
-          const converted=toArabicClass2026(before);
-          if(converted!==before){
-            this.value=converted;
-            try{this.setSelectionRange(pos,pos)}catch(e){}
-          }
-        });
-      }
+    if(sr===tr && ss===ts) return;
+    const from=rows[sr].slots, to=rows[tr].slots;
+    const moving=from[ss]||'', displaced=to[ts]||'';
+    if(!moving) return;
+    const c1=findScheduleConflict2026(tr,ts,moving);
+    if(c1 && c1.row!==sr){alert(conflictMessage2026(c1,ts));return;}
+    const c2=findScheduleConflict2026(sr,ss,displaced);
+    if(c2 && c2.row!==tr){alert(conflictMessage2026(c2,ss));return;}
+    [from[ss],to[ts]]=[displaced,moving];
+    recalcTeacherTotal2026(sr); recalcTeacherTotal2026(tr); saveRows();
+  }
+  function bindTouchDrag2026(){
+    document.querySelectorAll('#scheduleGrid td.slot').forEach(cell=>{
+      if(cell.dataset.touchDragBound2026==='1') return;
+      cell.dataset.touchDragBound2026='1';
+      cell.addEventListener('pointerdown',function(e){
+        if(e.pointerType==='mouse' || !canEdit() || !this.textContent.trim()) return;
+        touchDrag2026={id:e.pointerId,r:Number(this.dataset.r),s:Number(this.dataset.s),source:this,target:this,moved:false};
+        this.classList.add('touch-drag-source-2026');
+        try{this.setPointerCapture(e.pointerId)}catch(_){ }
+      });
+      cell.addEventListener('pointermove',function(e){
+        if(!touchDrag2026 || touchDrag2026.id!==e.pointerId) return;
+        touchDrag2026.moved=true; e.preventDefault();
+        const target=cellFromPoint2026(e.clientX,e.clientY);
+        document.querySelectorAll('#scheduleGrid .touch-drag-target-2026').forEach(x=>x.classList.remove('touch-drag-target-2026'));
+        if(target && Math.floor(Number(target.dataset.s)/4)===Math.floor(touchDrag2026.s/4)){
+          target.classList.add('touch-drag-target-2026'); touchDrag2026.target=target;
+        } else touchDrag2026.target=null;
+      },{passive:false});
+      cell.addEventListener('pointerup',function(e){
+        if(!touchDrag2026 || touchDrag2026.id!==e.pointerId) return;
+        const d=touchDrag2026, target=d.target||cellFromPoint2026(e.clientX,e.clientY);
+        touchDrag2026=null; clearTouchMarks2026();
+        if(d.moved){
+          suppressClickUntil2026=Date.now()+500;
+          if(target) sameDaySwap2026(d.r,d.s,Number(target.dataset.r),Number(target.dataset.s));
+        }
+      });
+      cell.addEventListener('pointercancel',function(){touchDrag2026=null;clearTouchMarks2026();});
     });
   }
-
-  function decorateDailyClassOptions2026(){
-    const sel=document.getElementById('dailyClassSelect2026');
-    if(!sel)return;
-    Array.from(sel.options).forEach(o=>{
-      if(classLabels2026[o.value]) o.textContent=classLabels2026[o.value];
-    });
-  }
-
-  const observer2026=new MutationObserver(function(){
-    decorateClassFilter2026();
-    decorateDailyClassOptions2026();
-  });
-  observer2026.observe(document.body,{childList:true,subtree:true});
-  setTimeout(function(){decorateClassFilter2026();decorateDailyClassOptions2026();},0);
+  const priorRenderSchedule2026=window.renderSchedule;
+  window.renderSchedule=function(){
+    const result=priorRenderSchedule2026.apply(this,arguments);
+    requestAnimationFrame(bindTouchDrag2026);
+    return result;
+  };
+  requestAnimationFrame(bindTouchDrag2026);
 })();
 </script>
 
