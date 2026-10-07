@@ -544,7 +544,7 @@ function renderSchedule(){
       const v=slots[si]||"";
       const di=Math.floor(si/4);
       const draggable=canEdit() && v ? "true":"false";
-      h+=`<td class="slot ${DAY_CLASSES[di]}" draggable="${draggable}" data-r="${ri}" data-s="${si}" onclick="editSlot(${ri},${si})" ondragstart="dragStart(event,${ri},${si})" ondragover="dragOver(event)" ondragleave="event.currentTarget.classList.remove('over')" ondrop="dropSlot(event,${ri},${si})" ondragend="dragEnd(event)">${esc(v)}</td>`;
+      h+=`<td class="slot ${DAY_CLASSES[di]}" draggable="${draggable}" data-r="${ri}" data-s="${si}" onclick="slotClick2026(${ri},${si})" ondragstart="dragStart(event,${ri},${si})" ondragover="dragOver(event)" ondragleave="event.currentTarget.classList.remove('over')" ondrop="dropSlot(event,${ri},${si})" ondragend="dragEnd(event)" ontouchstart="touchSlotStart2026(event,${ri},${si})" ontouchmove="touchSlotMove2026(event)" ontouchend="touchSlotEnd2026(event)">${esc(v)}</td>`;
     }
     h+=`<td class="edit" onclick="openTeacherModal(${ri})">${esc(r.total)}</td>`;
     h+=`<td class="no-print edit-control"><button onclick="openTeacherModal(${ri})">✏️ تعديل</button> <button class="danger" onclick="removeTeacher(${ri})">حذف</button></td></tr>`;
@@ -614,61 +614,58 @@ function editSlot(ri,si){
   saveRows();
 }
 
+function swapSlotsSameDay2026(sr,ss,r,s){
+  if(!canEdit() || !rows[sr] || !rows[r]) return false;
+  if(Math.floor(ss/4)!==Math.floor(s/4)){
+    alert("التبديل بالسحب متاح بين حصص اليوم نفسه فقط.");
+    return false;
+  }
+  if(sr===r && ss===s) return false;
+  const from=rows[sr].slots, to=rows[r].slots;
+  const moving=from[ss]||"", displaced=to[s]||"";
+  if(!moving) return false;
+  const c1=findScheduleConflict2026(r,s,moving);
+  if(c1 && c1.row!==sr){ alert(conflictMessage2026(c1,s)); return false; }
+  const c2=findScheduleConflict2026(sr,ss,displaced);
+  if(c2 && c2.row!==r){ alert(conflictMessage2026(c2,ss)); return false; }
+  [from[ss],to[s]]=[displaced,moving];
+  recalcTeacherTotal2026(sr); recalcTeacherTotal2026(r);
+  saveRows();
+  return true;
+}
+
 function dragStart(ev,r,s){
   if(!canEdit()){ ev.preventDefault(); return; }
-  dragState={r,s};
-  ev.currentTarget.classList.add("dragging");
-  ev.dataTransfer.effectAllowed="move";
-  ev.dataTransfer.setData("text/plain","lesson");
+  dragState={r,s}; ev.currentTarget.classList.add("dragging");
+  if(ev.dataTransfer){ ev.dataTransfer.effectAllowed="move"; ev.dataTransfer.setData("text/plain","lesson"); }
 }
-
-function dragOver(ev){
-  if(!canEdit()) return;
-  ev.preventDefault();
-  ev.currentTarget.classList.add("over");
-}
-
+function dragOver(ev){ if(!canEdit()) return; ev.preventDefault(); ev.currentTarget.classList.add("over"); }
 function dropSlot(ev,r,s){
-  if(!canEdit()) return;
-  ev.preventDefault();
-  ev.currentTarget.classList.remove("over");
-  if(!dragState) return;
-  const sr=dragState.r, ss=dragState.s;
-  // السحب والتبديل مسموحان داخل اليوم نفسه فقط.
-  if(Math.floor(ss/4)!==Math.floor(s/4)){
-    dragState=null;
-    alert("يمكن سحب وتبديل الحصص داخل اليوم نفسه فقط.");
-    return;
-  }
-  const from=rows[sr].slots;
-  const to=rows[r].slots;
-  const moving=from[ss]||"";
-  const displaced=to[s]||"";
-
-  const c1=findScheduleConflict2026(r,s,moving);
-  if(c1 && c1.row!==sr){
-    dragState=null;
-    alert(conflictMessage2026(c1,s));
-    return;
-  }
-  const c2=findScheduleConflict2026(sr,ss,displaced);
-  if(c2 && c2.row!==r){
-    dragState=null;
-    alert(conflictMessage2026(c2,ss));
-    return;
-  }
-
-  [from[ss],to[s]]=[displaced,moving];
-  recalcTeacherTotal2026(sr);
-  recalcTeacherTotal2026(r);
-  dragState=null;
-  saveRows();
+  if(!canEdit()) return; ev.preventDefault(); ev.currentTarget.classList.remove("over");
+  if(!dragState) return; const st=dragState; dragState=null; swapSlotsSameDay2026(st.r,st.s,r,s);
 }
+function dragEnd(ev){ ev.currentTarget.classList.remove("dragging"); setTimeout(()=>dragState=null,50); }
 
-function dragEnd(ev){
-  ev.currentTarget.classList.remove("dragging");
-  setTimeout(()=>dragState=null,50);
+let touchDrag2026=null, touchMoved2026=false, suppressSlotClick2026=false;
+function touchSlotStart2026(ev,r,s){
+  if(!canEdit() || !(rows[r]?.slots?.[s]||'')) return;
+  const t=ev.touches&&ev.touches[0]; if(!t)return;
+  touchDrag2026={r,s,x:t.clientX,y:t.clientY,cell:ev.currentTarget}; touchMoved2026=false;
+  ev.currentTarget.classList.add("dragging");
 }
+function touchSlotMove2026(ev){
+  if(!touchDrag2026)return; const t=ev.touches&&ev.touches[0]; if(!t)return;
+  if(Math.abs(t.clientX-touchDrag2026.x)>8 || Math.abs(t.clientY-touchDrag2026.y)>8) touchMoved2026=true;
+  if(touchMoved2026){ ev.preventDefault(); document.querySelectorAll('.slot.over').forEach(x=>x.classList.remove('over')); const el=document.elementFromPoint(t.clientX,t.clientY)?.closest?.('.slot'); if(el)el.classList.add('over'); }
+}
+function touchSlotEnd2026(ev){
+  if(!touchDrag2026)return; const st=touchDrag2026; touchDrag2026=null; st.cell?.classList.remove('dragging');
+  document.querySelectorAll('.slot.over').forEach(x=>x.classList.remove('over'));
+  if(!touchMoved2026)return; ev.preventDefault(); suppressSlotClick2026=true; setTimeout(()=>suppressSlotClick2026=false,350);
+  const t=ev.changedTouches&&ev.changedTouches[0]; if(!t)return; const el=document.elementFromPoint(t.clientX,t.clientY)?.closest?.('.slot'); if(!el)return;
+  swapSlotsSameDay2026(st.r,st.s,Number(el.dataset.r),Number(el.dataset.s));
+}
+function slotClick2026(r,s){ if(suppressSlotClick2026)return; editSlot(r,s); }
 
 function openTeacherModal(i){
   if(!requireEdit()) return;
@@ -1158,25 +1155,21 @@ async function pdfSchedule2026(){
 (function(){
   const FILTERS={name:'',dept:'',connection:'',total:'',className:''};
   const norm=s=>String(s??'').trim().toLowerCase();
-  const digitMap2026={'٠':'0','١':'1','٢':'2','٣':'3','٤':'4','٥':'5','٦':'6','٧':'7','٨':'8','٩':'9'};
-  const classNorm2026=s=>String(s??'').replace(/[٠-٩]/g,d=>digitMap2026[d]).replace(/\s+/g,'').toLowerCase();
-  function classKeys2026(value){
-    const t=classNorm2026(value);
-    // رموز الفصول المعتمدة: 1م1، 1م2، 2م، 3م1، 3م2، 5م1، 5م2، 3ت.
-    return t.match(/[1-9](?:م[1-9]?|ت)(?![0-9])/g)||[];
+  function normalizeClass2026(v){
+    return String(v??'').trim().toLowerCase().replace(/[٠-٩]/g,d=>'٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/\s+/g,'');
   }
-  function classFilterMatch2026(value,query){
-    const q=classNorm2026(query);
-    if(!q) return true;
-    return classKeys2026(value).some(k=>k===q);
+  function lessonClasses2026(value){
+    const t=normalizeClass2026(value);
+    const found=t.match(/(?:1م1|1م2|2م|3م1|3م2|5م1|5م2|3ت)/g)||[];
+    return [...new Set(found)];
   }
   function matches(r){
-    const slots=(r.slots||[]).join(' ');
+    const wanted=normalizeClass2026(FILTERS.className);
+    const classMatch=!wanted || (r.slots||[]).some(v=>lessonClasses2026(v).includes(wanted));
     return (!FILTERS.name||norm(r.name).includes(norm(FILTERS.name))) &&
       (!FILTERS.dept||norm(r.dept).includes(norm(FILTERS.dept))) &&
       (!FILTERS.connection||norm(r.connection).includes(norm(FILTERS.connection))) &&
-      (!FILTERS.total||norm(r.total).includes(norm(FILTERS.total))) &&
-      (!FILTERS.className || (r.slots||[]).some(v=>classFilterMatch2026(v,FILTERS.className)));
+      (!FILTERS.total||norm(r.total).includes(norm(FILTERS.total))) && classMatch;
   }
   window.getFilteredRows2026=()=>rows.filter(matches);
   window.setScheduleFilter2026=(k,v)=>{const el=document.activeElement,pos=el&&typeof el.selectionStart==='number'?el.selectionStart:v.length;FILTERS[k]=v;renderSchedule();requestAnimationFrame(()=>{const n=document.querySelector('#schedule [data-filter-key=\"'+k+'\"]');if(n){n.focus();try{n.setSelectionRange(pos,pos)}catch(e){}}});};
@@ -1631,85 +1624,6 @@ window.pdfSimpleSection2026=async function(kind){
    pdf.save("حصر إجازات المعلمات.pdf");
  };
  loadLeaves2026(); setTimeout(renderLeaves2026,350);
-})();
-</script>
-
-
-<style id="sameDayTouchDragFix2026">
-/* دعم السحب على الهاتف والتابلت دون تغيير ألوان الجدول */
-#scheduleGrid .slot.touch-drag-source-2026{outline:3px solid #173B7A!important;position:relative;z-index:2}
-#scheduleGrid .slot.touch-drag-target-2026{outline:3px dashed #333!important;position:relative;z-index:2}
-@media (pointer:coarse){#scheduleGrid .slot[draggable="true"]{touch-action:none}}
-</style>
-<script id="sameDayTouchDragFixScript2026">
-(function(){
-  let touchDrag2026=null, suppressClickUntil2026=0;
-  const originalEditSlot2026=window.editSlot;
-  window.editSlot=function(r,s){
-    if(Date.now()<suppressClickUntil2026) return;
-    return originalEditSlot2026(r,s);
-  };
-  function cellFromPoint2026(x,y){
-    const el=document.elementFromPoint(x,y);
-    return el&&el.closest?el.closest('#scheduleGrid td.slot'):null;
-  }
-  function clearTouchMarks2026(){
-    document.querySelectorAll('#scheduleGrid .touch-drag-source-2026,#scheduleGrid .touch-drag-target-2026').forEach(el=>el.classList.remove('touch-drag-source-2026','touch-drag-target-2026'));
-  }
-  function sameDaySwap2026(sr,ss,tr,ts){
-    if(!canEdit() || !rows[sr] || !rows[tr]) return;
-    if(Math.floor(ss/4)!==Math.floor(ts/4)){
-      alert('يمكن سحب وتبديل الحصص داخل اليوم نفسه فقط.'); return;
-    }
-    if(sr===tr && ss===ts) return;
-    const from=rows[sr].slots, to=rows[tr].slots;
-    const moving=from[ss]||'', displaced=to[ts]||'';
-    if(!moving) return;
-    const c1=findScheduleConflict2026(tr,ts,moving);
-    if(c1 && c1.row!==sr){alert(conflictMessage2026(c1,ts));return;}
-    const c2=findScheduleConflict2026(sr,ss,displaced);
-    if(c2 && c2.row!==tr){alert(conflictMessage2026(c2,ss));return;}
-    [from[ss],to[ts]]=[displaced,moving];
-    recalcTeacherTotal2026(sr); recalcTeacherTotal2026(tr); saveRows();
-  }
-  function bindTouchDrag2026(){
-    document.querySelectorAll('#scheduleGrid td.slot').forEach(cell=>{
-      if(cell.dataset.touchDragBound2026==='1') return;
-      cell.dataset.touchDragBound2026='1';
-      cell.addEventListener('pointerdown',function(e){
-        if(e.pointerType==='mouse' || !canEdit() || !this.textContent.trim()) return;
-        touchDrag2026={id:e.pointerId,r:Number(this.dataset.r),s:Number(this.dataset.s),source:this,target:this,moved:false};
-        this.classList.add('touch-drag-source-2026');
-        try{this.setPointerCapture(e.pointerId)}catch(_){ }
-      });
-      cell.addEventListener('pointermove',function(e){
-        if(!touchDrag2026 || touchDrag2026.id!==e.pointerId) return;
-        touchDrag2026.moved=true; e.preventDefault();
-        const target=cellFromPoint2026(e.clientX,e.clientY);
-        document.querySelectorAll('#scheduleGrid .touch-drag-target-2026').forEach(x=>x.classList.remove('touch-drag-target-2026'));
-        if(target && Math.floor(Number(target.dataset.s)/4)===Math.floor(touchDrag2026.s/4)){
-          target.classList.add('touch-drag-target-2026'); touchDrag2026.target=target;
-        } else touchDrag2026.target=null;
-      },{passive:false});
-      cell.addEventListener('pointerup',function(e){
-        if(!touchDrag2026 || touchDrag2026.id!==e.pointerId) return;
-        const d=touchDrag2026, target=d.target||cellFromPoint2026(e.clientX,e.clientY);
-        touchDrag2026=null; clearTouchMarks2026();
-        if(d.moved){
-          suppressClickUntil2026=Date.now()+500;
-          if(target) sameDaySwap2026(d.r,d.s,Number(target.dataset.r),Number(target.dataset.s));
-        }
-      });
-      cell.addEventListener('pointercancel',function(){touchDrag2026=null;clearTouchMarks2026();});
-    });
-  }
-  const priorRenderSchedule2026=window.renderSchedule;
-  window.renderSchedule=function(){
-    const result=priorRenderSchedule2026.apply(this,arguments);
-    requestAnimationFrame(bindTouchDrag2026);
-    return result;
-  };
-  requestAnimationFrame(bindTouchDrag2026);
 })();
 </script>
 
