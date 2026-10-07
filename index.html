@@ -1778,3 +1778,10 @@ if ('serviceWorker' in navigator) {
  setTimeout(()=>{rebuildScopeChecks2026();renderPermissions();applySectionVisibility2026()},0);
 })();
 </script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function () {
+    navigator.serviceWorker.register('./service-worker.js');
+  });
+}
+</script>
