@@ -651,6 +651,7 @@ function swapSlotsSameDay2026(sr,ss,r,s){
       }
     }
   }
+  if(sr!==r && displaced && !confirm('سيتم تبديل الحصتين بين المعلمتين: '+(rows[sr].name||'')+' و'+(rows[r].name||'')+'\nهل توافق على التبديل؟')) return false;
   [from[ss],to[s]]=[displaced,moving];
   recalcTeacherTotal2026(sr);recalcTeacherTotal2026(r);
   saveRows();
@@ -690,39 +691,50 @@ function touchSlotEnd2026(ev){
 }
 function slotClick2026(r,s){ if(suppressSlotClick2026)return; editSlot(r,s); }
 
+let addingTeacher2026=false;
 function openTeacherModal(i){
-  if(!requireEdit()) return;
+  if(!requireEdit() || !rows[i]) return;
+  addingTeacher2026=false;
   editingTeacher=i;
   const r=rows[i];
-  mName.value=r.name||"";
-  mDept.value=r.dept||"";
-  mConn.value=r.connection||"";
-  mTotal.value=r.total||"";
-  teacherModal.classList.add("open");
+  document.getElementById('mName').value=r.name||'';
+  document.getElementById('mDept').value=r.dept||'';
+  document.getElementById('mConn').value=r.connection||'';
+  document.getElementById('mTotal').value=r.total||'';
+  document.querySelector('#teacherModal h3').textContent='تعديل بيانات المعلمة';
+  document.getElementById('teacherModal').classList.add('open');
 }
-
 function closeTeacherModal(){
-  teacherModal.classList.remove("open");
+  document.getElementById('teacherModal').classList.remove('open');
   editingTeacher=-1;
+  addingTeacher2026=false;
 }
-
 function saveTeacherModal(){
-  if(!requireEdit() || editingTeacher<0) return;
-  const r=rows[editingTeacher];
-  r.name=mName.value.trim();
-  r.dept=mDept.value.trim();
-  r.connection=mConn.value.trim();
-  r.total=mTotal.value.trim();
-  closeTeacherModal();
-  saveRows();
+  if(!requireEdit()) return;
+  const name=document.getElementById('mName').value.trim();
+  if(!name){alert('يرجى كتابة اسم المعلمة');return;}
+  const dept=document.getElementById('mDept').value.trim();
+  const connection=document.getElementById('mConn').value.trim()||'معين';
+  if(addingTeacher2026){
+    rows.push({n:rows.length+1,name,dept,connection,total:'0',slots:Array(20).fill('')});
+  }else{
+    if(editingTeacher<0 || !rows[editingTeacher])return;
+    const r=rows[editingTeacher];
+    r.name=name;r.dept=dept;r.connection=connection;
+    r.total=document.getElementById('mTotal').value.trim();
+  }
+  closeTeacherModal();saveRows();
 }
-
 function addTeacherFromSchedule(){
   if(!requireEdit()) return;
-  rows.push({n:rows.length+1,name:"معلمة جديدة",dept:"",connection:"معين",total:"0",slots:Array(20).fill("")});
-  const newIndex=rows.length-1;
-  saveRows();
-  openTeacherModal(newIndex);
+  editingTeacher=-1;addingTeacher2026=true;
+  document.getElementById('mName').value='';
+  document.getElementById('mDept').value='';
+  document.getElementById('mConn').value='معين';
+  document.getElementById('mTotal').value='0';
+  document.querySelector('#teacherModal h3').textContent='إضافة معلمة جديدة';
+  document.getElementById('teacherModal').classList.add('open');
+  document.getElementById('mName').focus();
 }
 
 function addTeacherManager(){
