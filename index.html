@@ -720,8 +720,9 @@ function saveTeacherModal(){
 function addTeacherFromSchedule(){
   if(!requireEdit()) return;
   rows.push({n:rows.length+1,name:"معلمة جديدة",dept:"",connection:"معين",total:"0",slots:Array(20).fill("")});
+  const newIndex=rows.length-1;
   saveRows();
-  openTeacherModal(rows.length-1);
+  openTeacherModal(newIndex);
 }
 
 function addTeacherManager(){
@@ -1372,7 +1373,7 @@ async function pdfSchedule2026(){
   const ENDPOINT=SB_URL+'/rest/v1/dar_quran_data';
   const CLOUD_ID='dar_quran_women2_main';
   const SYNC_KEYS=[ROWS_KEY,SUBJECTS_KEY,ADMINS_KEY,USERS_KEY,'daily_reserve_2026'];
-  let applyingRemote=false, pushTimer=null, lastRemoteStamp='';
+  let applyingRemote=false, pushTimer=null, lastRemoteStamp='', localPending=false, lastLocalWrite=0;
 
   function snapshot(){
     const d={};
@@ -1394,20 +1395,24 @@ async function pdfSchedule2026(){
     try{
       const r=await fetch(ENDPOINT,{method:'POST',headers:headers({'Prefer':'resolution=merge-duplicates,return=minimal'}),body:JSON.stringify({id:CLOUD_ID,data:snapshot(),updated_at:new Date().toISOString()})});
       if(!r.ok) throw new Error(await r.text());
+      lastRemoteStamp='';
+      localPending=false;
       status('متصلة — تم حفظ آخر تعديل سحابيًا ✓');
     }catch(e){ console.error('Cloud push',e); status('تعذر الاتصال بالسحابة. تحقق من الإنترنت.',false); }
   }
-  function queuePush(){ clearTimeout(pushTimer); pushTimer=setTimeout(pushCloud,450); }
+  function queuePush(){ localPending=true; lastLocalWrite=Date.now(); clearTimeout(pushTimer); pushTimer=setTimeout(pushCloud,450); }
   const nativeSet=Storage.prototype.setItem;
   Storage.prototype.setItem=function(k,v){ const out=nativeSet.call(this,k,v); if(this===localStorage && SYNC_KEYS.includes(k) && !applyingRemote) queuePush(); return out; };
 
   function applyData(d){
-    if(typeof clearScheduleUndo2026==='function')clearScheduleUndo2026();
+    const incomingRows=d[ROWS_KEY];
+    const changedRows=Array.isArray(incomingRows) && JSON.stringify(incomingRows)!==JSON.stringify(rows);
+    if(changedRows && typeof clearScheduleUndo2026==='function')clearScheduleUndo2026();
     applyingRemote=true;
     try{
       SYNC_KEYS.forEach(k=>{ if(Object.prototype.hasOwnProperty.call(d,k) && d[k]!==null) nativeSet.call(localStorage,k,JSON.stringify(d[k])); });
       rows=loadRows(); subjects=loadArray(SUBJECTS_KEY,subjects||[]); admins=loadArray(ADMINS_KEY,admins||[]);
-      renderAll(); if(typeof renderReserve2026==='function') renderReserve2026();
+      if(changedRows) renderAll(); if(typeof renderReserve2026==='function') renderReserve2026();
     }finally{ applyingRemote=false; }
   }
   async function pullCloud(first){
@@ -1417,6 +1422,7 @@ async function pdfSchedule2026(){
       const a=await r.json();
       if(!a.length){ if(first){ await pushCloud(); } return; }
       const stamp=a[0].updated_at||'';
+      if(localPending || Date.now()-lastLocalWrite<1800) return;
       if(stamp && stamp!==lastRemoteStamp){ lastRemoteStamp=stamp; applyData(a[0].data||{}); }
       status('متصلة — البيانات موحّدة بين الأجهزة ✓');
     }catch(e){ console.error('Cloud pull',e); status('تعذر الاتصال بالسحابة. تحقق من الإنترنت.',false); }
