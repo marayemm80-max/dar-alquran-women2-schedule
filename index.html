@@ -260,7 +260,7 @@ table.simple th,.grid .meta,#scheduleGrid thead tr:nth-child(3) th.period{backgr
   <h2>📅 الجدول الدراسي</h2>
   <div class="schedule-toolbar no-print">
     <button class="action edit-control" onclick="addTeacherFromSchedule()">+ إضافة معلمة</button>
-    <button class="edit-control" onclick="resetSchedule()">استعادة الجدول الأصلي</button>
+    <button class="edit-control" onclick="resetSchedule()">التراجع عن آخر تعديل</button>
     <button id="clearScheduleAdminBtn2026" class="danger admin-clear-2026" style="font-weight:800;padding:9px 13px" onclick="clearAllScheduleLessonsAdmin2026()">🗑️ تفريغ الجدول بالكامل</button>
     <button onclick="printSchedule2026()">طباعة</button>
     <button onclick="pdfSchedule2026()">تصدير PDF</button>
@@ -269,7 +269,7 @@ table.simple th,.grid .meta,#scheduleGrid thead tr:nth-child(3) th.period{backgr
   </div>
   <div class="hint no-print">
     للتعديل: اضغط على اسم المعلمة أو القسم أو نوع الارتباط أو النصاب. اضغط على خلية الحصة لتعديلها،
-    ويمكن سحب الحصة وإفلاتها في خلية أخرى. التغييرات تُحفظ تلقائياً.
+    ويمكن سحب الحصة وإفلاتها في خلية أخرى في اليوم نفسه أو يوم مختلف. التغييرات تُحفظ تلقائياً.
   </div>
   <div class="scroll"><table id="scheduleGrid" class="grid"></table></div>
 </section>
@@ -499,7 +499,13 @@ function recalcTeacherTotal2026(i){
   rows[i].total=String(slots.filter(isCountedLesson2026).length);
 }
 
+let lastScheduleUndo2026=null;
+function clearScheduleUndo2026(){lastScheduleUndo2026=null;}
 function saveRows(){
+  try {
+    const before=JSON.parse(localStorage.getItem(ROWS_KEY)||'null');
+    if(Array.isArray(before) && JSON.stringify(before)!==JSON.stringify(rows)) lastScheduleUndo2026=before;
+  }catch(e){}
   rows.forEach((r,i)=>{
     const t=String(r.total??'').trim();
     if(t==='' || /^\d+$/.test(t)) recalcTeacherTotal2026(i);
@@ -519,11 +525,13 @@ function saveAdmins(){
 }
 
 function home(){
+  clearScheduleUndo2026();
   document.querySelectorAll(".section").forEach(x=>x.classList.remove("active"));
   document.getElementById("home").style.display="block";
 }
 
 function show(id){
+  if(id!=="schedule") clearScheduleUndo2026();
   if(id==="permissions" && role()!=="admin"){ alert("الصلاحيات متاحة للمسؤول فقط."); return; }
   document.getElementById("home").style.display="none";
   document.querySelectorAll(".section").forEach(x=>x.classList.remove("active"));
@@ -621,20 +629,30 @@ function editSlot(ri,si){
 
 function swapSlotsSameDay2026(sr,ss,r,s){
   if(!canEdit() || !rows[sr] || !rows[r]) return false;
-  if(Math.floor(ss/4)!==Math.floor(s/4)){
-    alert("التبديل بالسحب متاح بين حصص اليوم نفسه فقط.");
-    return false;
-  }
   if(sr===r && ss===s) return false;
   const from=rows[sr].slots, to=rows[r].slots;
-  const moving=from[ss]||"", displaced=to[s]||"";
+  const moving=from[ss]||'', displaced=to[s]||'';
   if(!moving) return false;
-  const c1=findScheduleConflict2026(r,s,moving);
-  if(c1 && c1.row!==sr){ alert(conflictMessage2026(c1,s)); return false; }
-  const c2=findScheduleConflict2026(sr,ss,displaced);
-  if(c2 && c2.row!==r){ alert(conflictMessage2026(c2,ss)); return false; }
+  // فحص الجدول كما سيصبح بعد التبديل، وليس قبل التبديل.
+  const changes=[{r:sr,s:ss,v:displaced},{r,s,v:moving}];
+  const valueAfter=(i,j)=>{
+    const change=changes.find(c=>c.r===i&&c.s===j);
+    return change?change.v:((rows[i].slots||[])[j]||'');
+  };
+  for(const change of changes){
+    const key=normalizeClassKey2026(change.v);
+    if(!key)continue;
+    for(let i=0;i<rows.length;i++){
+      if(i===change.r)continue;
+      const other=valueAfter(i,change.s);
+      if(other&&normalizeClassKey2026(other)===key){
+        alert(conflictMessage2026({row:i,teacher:rows[i].name||'معلمة أخرى',lesson:other},change.s));
+        return false;
+      }
+    }
+  }
   [from[ss],to[s]]=[displaced,moving];
-  recalcTeacherTotal2026(sr); recalcTeacherTotal2026(r);
+  recalcTeacherTotal2026(sr);recalcTeacherTotal2026(r);
   saveRows();
   return true;
 }
@@ -726,10 +744,17 @@ function removeTeacher(i){
 
 function resetSchedule(){
   if(!requireEdit()) return;
-  if(confirm("استعادة الجدول الأصلي وإلغاء جميع تعديلات الجدول؟")){
-    rows=cloneSource();
-    saveRows();
+  if(!document.getElementById('schedule').classList.contains('active')){
+    alert('التراجع متاح فقط أثناء البقاء في صفحة الجدول الدراسي.');return;
   }
+  if(!lastScheduleUndo2026){alert('لا يوجد تعديل أخير يمكن التراجع عنه في هذه الجلسة.');return;}
+  if(!confirm('هل تريد التراجع عن آخر عملية تعديل فقط؟'))return;
+  const previous=lastScheduleUndo2026;
+  lastScheduleUndo2026=null;
+  rows=JSON.parse(JSON.stringify(previous));
+  // الحفظ المباشر يمنع اعتبار التراجع نفسه عملية قابلة للتراجع.
+  localStorage.setItem(ROWS_KEY,JSON.stringify(rows));
+  renderAll();
 }
 
 function clearAllScheduleLessonsAdmin2026(){
@@ -1088,12 +1113,14 @@ function doLogin(){
 }
 
 function logout(){
+  clearScheduleUndo2026();
   localStorage.removeItem("currentUser");
   localStorage.removeItem("loggedIn");
   location.reload();
 }
 
 function initApp(){
+  clearScheduleUndo2026();
   renderAll();
   const loggedIn=localStorage.getItem("loggedIn")==="yes";
   const a=currentAccount();
@@ -1375,6 +1402,7 @@ async function pdfSchedule2026(){
   Storage.prototype.setItem=function(k,v){ const out=nativeSet.call(this,k,v); if(this===localStorage && SYNC_KEYS.includes(k) && !applyingRemote) queuePush(); return out; };
 
   function applyData(d){
+    if(typeof clearScheduleUndo2026==='function')clearScheduleUndo2026();
     applyingRemote=true;
     try{
       SYNC_KEYS.forEach(k=>{ if(Object.prototype.hasOwnProperty.call(d,k) && d[k]!==null) nativeSet.call(localStorage,k,JSON.stringify(d[k])); });
@@ -1400,7 +1428,9 @@ async function pdfSchedule2026(){
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)pullCloud(false)});
 })();
 </script>
-
+<script id="scheduleUndoSessionGuard2026">
+window.addEventListener('pagehide',()=>{if(typeof clearScheduleUndo2026==='function')clearScheduleUndo2026();});
+</script>
 
 <style id="periodGray2026">
 /* رؤوس الحصص الأولى والثانية والثالثة والرابعة بالرمادي */
