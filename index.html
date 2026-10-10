@@ -718,6 +718,15 @@ function closeTeacherModal(){
   editingTeacher=-1;
   addingTeacher2026=false;
 }
+function insertTeacherByDept2026(teacher){
+  const norm=v=>String(v||'').trim().replace(/\s+/g,' ').toLowerCase();
+  const target=norm(teacher.dept);
+  let last=-1;
+  rows.forEach((r,i)=>{if(norm(r.dept)===target)last=i;});
+  if(last>=0)rows.splice(last+1,0,teacher);
+  else rows.push(teacher);
+  rows.forEach((r,i)=>r.n=i+1);
+}
 function saveTeacherModal(){
   if(!requireEdit()) return;
   const name=document.getElementById('mName').value.trim();
@@ -725,7 +734,7 @@ function saveTeacherModal(){
   const dept=document.getElementById('mDept').value.trim();
   const connection=document.getElementById('mConn').value.trim()||'معين';
   if(addingTeacher2026){
-    rows.push({n:rows.length+1,name,dept,connection,total:'0',slots:Array(20).fill('')});
+    insertTeacherByDept2026({n:rows.length+1,name,dept,connection,total:'0',slots:Array(20).fill('')});
   }else{
     if(editingTeacher<0 || !rows[editingTeacher])return;
     const r=rows[editingTeacher];
@@ -750,7 +759,7 @@ function addTeacherManager(){
   if(!requireEdit()) return;
   const name=teacherName.value.trim();
   if(!name) return alert("اكتب اسم المعلمة");
-  rows.push({n:rows.length+1,name,dept:teacherDept.value.trim(),connection:teacherConnection.value,total:"0",slots:Array(20).fill("")});
+  insertTeacherByDept2026({n:rows.length+1,name,dept:teacherDept.value.trim(),connection:teacherConnection.value,total:"0",slots:Array(20).fill("")});
   teacherName.value="";
   teacherDept.value="";
   saveRows();
@@ -832,7 +841,8 @@ function addAdmin(){
   if(!requireEdit()) return;
   const v=adminName.value.trim();
   if(!v) return;
-  admins.push(v);
+  admins.push({name:v,dept:(document.getElementById("adminDept2026")?.value||"").trim()});
+  document.getElementById("adminDept2026").value="";
   adminName.value="";
   saveAdmins();
 }
@@ -1737,6 +1747,72 @@ if ('serviceWorker' in navigator) {
     });
   });
 }
+</script>
+<script id="requestedFixes20261010">
+(function(){
+  const adminObj=x=>typeof x==='string'?{name:x,dept:''}:{name:String(x?.name||''),dept:String(x?.dept||'')};
+  const norm=x=>String(x||'').trim().replace(/\s+/g,' ').toLowerCase();
+  function setupAdminDept(){
+    const inp=document.getElementById('adminName');
+    if(inp&&!document.getElementById('adminDept2026')){const el=document.createElement('input');el.id='adminDept2026';el.placeholder='القسم';inp.insertAdjacentElement('afterend',el);}
+  }
+  const oldEditAdmin=window.editAdmin;
+  window.editAdmin=function(i){if(!requireEdit())return;const old=adminObj(admins[i]);const name=prompt('اسم الإدارية:',old.name);if(name===null||!name.trim())return;const dept=prompt('القسم:',old.dept);if(dept===null)return;admins[i]={name:name.trim(),dept:dept.trim()};saveAdmins();};
+  let adminSearch='';
+  window.setAdminFilter2026=function(v){adminSearch=v;renderAdmins();requestAnimationFrame(()=>{const el=document.getElementById('adminFilter2026');if(el){el.focus();try{el.setSelectionRange(v.length,v.length)}catch(e){}}});};
+  window.getFilteredAdmins2026=function(){return admins.map(adminObj).filter(x=>norm(x.name+' '+x.dept).includes(norm(adminSearch)));};
+  window.renderAdmins=function(){setupAdminDept();const table=document.querySelector('#admins table.simple');if(!table)return;
+    table.querySelector('thead').innerHTML='<tr><th>م</th><th>اسم الإدارية</th><th>القسم</th><th class="edit-control">إجراء</th></tr><tr class="filter-row no-print"><th></th><th colspan="2"><input id="adminFilter2026" class="filter-input" placeholder="فرز الاسم أو القسم" oninput="setAdminFilter2026(this.value)"></th><th></th></tr>';
+    const field=document.getElementById('adminFilter2026');field.value=adminSearch;
+    let n=0;adminList.innerHTML=admins.map((raw,i)=>{const x=adminObj(raw);return norm(x.name+' '+x.dept).includes(norm(adminSearch))?`<tr><td>${++n}</td><td>${esc(x.name)}</td><td>${esc(x.dept)}</td><td class="edit-control"><button onclick="editAdmin(${i})">تعديل</button> <button class="danger" onclick="deleteAdmin(${i})">حذف</button></td></tr>`:'';}).join('');
+    document.querySelectorAll('#admins .edit-control').forEach(el=>el.style.display=canEdit()?'':'none');
+  };
+  // The existing PDF renderer reads the filtered admin records; allow object-shaped entries.
+  const oldPdf=window.pdfSimpleSection2026;
+  window.pdfSimpleSection2026=async function(kind){
+    if(kind!=='admins')return oldPdf(kind);
+    const data=getFilteredAdmins2026();if(!data.length)return alert('لا توجد بيانات مطابقة.');
+    if(typeof html2canvas==='undefined'||!window.jspdf?.jsPDF)return alert('تعذر تحميل أداة PDF.');
+    const host=document.createElement('div');host.style.cssText='position:fixed;left:-99999px;top:0;background:white';document.body.appendChild(host);
+    host.innerHTML='<div id="adminPdfPage2026" style="width:1000px;padding:40px;background:white;direction:rtl;font-family:Tahoma,Arial"><h2 style="text-align:center">قائمة الإداريات</h2><h3 style="text-align:center">مركز دار القرآن غرب عبدالله المبارك نساء ٢</h3><table style="width:100%;border-collapse:collapse"><thead><tr><th>م</th><th>اسم الإدارية</th><th>القسم</th></tr></thead><tbody>'+data.map((x,i)=>`<tr><td>${i+1}</td><td>${esc(x.name)}</td><td>${esc(x.dept)}</td></tr>`).join('')+'</tbody></table></div>';
+    host.querySelectorAll('th,td').forEach(e=>e.style.cssText='border:1px solid #555;padding:12px;text-align:center');
+    try{const c=await html2canvas(host.firstElementChild,{scale:1.7,backgroundColor:'#fff'});const doc=new window.jspdf.jsPDF({orientation:'landscape',unit:'mm',format:'a4'});const w=287,h=c.height*287/c.width;doc.addImage(c.toDataURL('image/png'),'PNG',5,5,w,Math.min(h,195));doc.save('الإداريات_حسب_الفرز.pdf');}finally{host.remove();}
+  };
+  // Conflict checking for reserve entries: same teacher, day, and period.
+  function reserveConflict(date,sub,period,skip){
+    const day=new Date(date+'T12:00:00').getDay();
+    if(day<0||day>4)return 'تاريخ الاحتياط خارج أيام الجدول الدراسي (الأحد إلى الخميس).';
+    const pi=['الأولى','الثانية','الثالثة','الرابعة'].indexOf(period);if(pi<0)return 'الحصة غير معروفة.';
+    const teacher=rows.find(r=>norm(r.name)===norm(sub));
+    if(!teacher)return 'اسم معلمة الاحتياط غير موجود في جدول المعلمات؛ يرجى اختيار الاسم كما هو مسجل.';
+    const occupied=String(teacher.slots?.[day*4+pi]||'').trim();
+    if(occupied)return `⚠️ تعارض: المعلمة ${teacher.name} لديها حصة في ${['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس'][day]}، الحصة ${period}.\nالبيان: ${occupied}\nيرجى اختيار معلمة أخرى أو حصة أخرى.`;
+    const all=JSON.parse(localStorage.getItem('daily_reserve_2026')||'[]');
+    const match=all.find((x,i)=>i!==skip&&x.date===date&&x.period===period&&norm(x.sub)===norm(sub));
+    if(match)return `⚠️ تعارض: المعلمة ${sub} مسجلة مسبقاً في الاحتياط بالتاريخ والحصة نفسيهما.`;
+    return '';
+  }
+  let editing=-1;
+  window.editReserve2026=function(i){if(!requireEdit())return;const a=JSON.parse(localStorage.getItem('daily_reserve_2026')||'[]');const x=a[i];if(!x)return;
+    reserveDate.value=x.date;reserveAbsent.value=x.absent;reserveSub.value=x.sub;reservePeriod.value=x.period;reserveNotes.value=x.notes||'';
+    editing=i;const btn=document.getElementById('saveReserveButton2026');if(btn)btn.textContent='حفظ تعديل الاحتياط';
+    document.getElementById('reserve2026').scrollIntoView({behavior:'smooth',block:'start'});
+  };
+  window.addReserve2026=function(){if(!requireEdit())return;const date=reserveDate.value,absent=reserveAbsent.value.trim(),sub=reserveSub.value.trim(),period=reservePeriod.value,notes=reserveNotes.value.trim();if(!date||!absent||!sub)return alert('أدخل التاريخ والمعلمة الغائبة ومعلمة الاحتياط.');
+    const conflict=reserveConflict(date,sub,period,editing);if(conflict)return alert(conflict);
+    const a=JSON.parse(localStorage.getItem('daily_reserve_2026')||'[]');const item={date,absent,sub,period,notes};if(editing>=0&&editing<a.length)a[editing]=item;else a.push(item);
+    localStorage.setItem('daily_reserve_2026',JSON.stringify(a));editing=-1;
+    reserveDate.value=reserveAbsent.value=reserveSub.value=reserveNotes.value='';document.getElementById('saveReserveButton2026').textContent='إضافة الاحتياط';renderReserve2026();
+  };
+  window.renderReserve2026=function(){const b=document.getElementById('reserveBody');if(!b)return;const a=JSON.parse(localStorage.getItem('daily_reserve_2026')||'[]');
+    b.innerHTML=a.map((x,i)=>`<tr><td>${esc((['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'])[new Date(x.date+'T12:00:00').getDay()]||'')}</td><td>${esc(x.date)}</td><td>${esc(x.absent)}</td><td>${esc(x.sub)}</td><td>${esc(x.period)}</td><td>${esc(x.notes)}</td><td class="edit-control"><button onclick="editReserve2026(${i})">تعديل</button> <button class="danger" onclick="deleteReserve2026(${i})">حذف</button></td></tr>`).join('');
+    b.querySelectorAll('.edit-control').forEach(el=>el.style.display=canEdit()?'':'none');
+  };
+  function setupReserve(){const btn=document.querySelector('#reserve2026 button[onclick="addReserve2026()"]');if(btn)btn.id='saveReserveButton2026';}
+  // Initial reserve section is created on DOMContentLoaded in the original app.
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>{setupAdminDept();setupReserve();renderAdmins();});
+  else {setupAdminDept();setupReserve();renderAdmins();}
+})();
 </script>
 </body>
 </html>
