@@ -1900,7 +1900,7 @@ function exportArchivePdf2026(){
  const esc=v=>String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const head='<html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>أرشيف حركة الدوام</title><style>body{font-family:Tahoma,Arial;padding:24px;color:#173b7a}table{width:100%;border-collapse:collapse}td,th{border:1px solid #aaa;padding:8px;text-align:right}th{background:#e6ebf2}</style></head><body>';
  const rows=data.slice(1).map(row=>'<tr>'+row.map(x=>'<td>'+esc(x)+'</td>').join('')+'</tr>').join('');
- w.document.open();w.document.write('<!doctype html>'+head+'<h2>أرشيف حركة الدوام</h2><p>الفترة: '+esc(archiveFrom2026.value||'البداية')+' إلى '+esc(archiveTo2026.value||'النهاية')+'</p><table><thead><tr>'+data[0].map(x=>'<th>'+esc(x)+'</th>').join('')+'</tr></thead><tbody>'+rows+'</tbody></table><p>اختاري حفظ كملف PDF من نافذة الطباعة.</p></body></html>');w.document.close();w.focus();w.print();
+ w.document.open();w.document.write('<!doctype html>'+head+'<h2>أرشيف حركة الدوام</h2><p>الفترة: '+esc(archiveFrom2026.value||'البداية')+' إلى '+esc(archiveTo2026.value||'النهاية')+'</p><table><thead><tr>'+data[0].map(x=>'<th>'+esc(x)+'</th>').join('')+'</tr></thead><tbody>'+rows+'</tbody></table><p>اختاري حفظ كملف PDF من نافذة الطباعة.</p>\n</body></html>');w.document.close();w.focus();w.print();
 }
 </script>
 <script>
@@ -2006,6 +2006,95 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
     });
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',setup);else setup();
+})();
+</script>
+<script id="movementTripleNameAccounts2026">
+/* واجهة تجريبية: التحقق هنا على الجهاز فقط، ولا يحل محل Supabase Auth/RLS. */
+(function(){
+ const norm=s=>String(s||'').trim().replace(/\s+/g,' ');
+ const triple=s=>norm(s).split(' ').slice(0,3).join(' ');
+ const isManager=()=>typeof role==='function'&&role()==='admin';
+ const account=()=>typeof currentAccount==='function'?currentAccount():null;
+ const staffNames=()=>{
+  const result=[];
+  const add=v=>{const n=norm(v);if(n&&!result.includes(n))result.push(n)};
+  if(typeof rows!=='undefined'&&Array.isArray(rows))rows.forEach(r=>add(r.name));
+  try{const admins=JSON.parse(localStorage.getItem(ADMINS_KEY)||'[]');if(Array.isArray(admins))admins.forEach(a=>add(typeof a==='string'?a:(a.name||a.fullName||'')))}catch(e){}
+  return result.sort((a,b)=>a.localeCompare(b,'ar'));
+ };
+ function ownName(){
+  const a=account();if(!a||isManager())return '';
+  const u=norm(a.name), matches=staffNames().filter(n=>triple(n)===u);
+  return matches.length===1?matches[0]:'';
+ }
+ function setNameField(){
+  const old=document.getElementById('movementName2026');if(!old)return;
+  const admin=isManager(), previous=old.value;
+  if(admin){
+   if(old.tagName!=='SELECT'){
+    const select=document.createElement('select');select.id=old.id;old.replaceWith(select);
+   }
+   const el=document.getElementById('movementName2026');
+   const names=staffNames();el.replaceChildren();
+   const ph=document.createElement('option');ph.value='';ph.textContent='اختاري اسم الموظفة';el.appendChild(ph);
+   names.forEach(n=>{const o=document.createElement('option');o.value=n;o.textContent=n;el.appendChild(o)});
+   if(names.includes(previous))el.value=previous;
+   el.disabled=false;
+  }else{
+   if(old.tagName!=='INPUT'){
+    const input=document.createElement('input');input.id=old.id;input.readOnly=true;old.replaceWith(input);
+   }
+   const el=document.getElementById('movementName2026');el.readOnly=true;
+   el.value=ownName();el.placeholder=el.value?'اسم الموظفة تلقائياً':'لم يُربط الحساب باسم موظفة';
+  }
+  const notice=document.getElementById('movementAccountHint2026');
+  if(notice)notice.textContent=admin?'المسؤولة تختار اسم الموظفة من القائمة المسجلة.':'اسم الموظفة يظهر تلقائياً من حساب الدخول الثلاثي. إذا لم يظهر، راجعي مطابقة الاسم مع قائمة المعلمات والإداريات.';
+ }
+ const movementSection=document.getElementById('staffMovement2026');
+ if(movementSection&&!document.getElementById('movementAccountHint2026')){
+  const info=document.createElement('p');info.id='movementAccountHint2026';info.style.cssText='padding:8px 12px;background:#eef3fa;border-radius:8px';
+  movementSection.querySelector('.movement-panel')?.prepend(info);
+ }
+ const perm=document.getElementById('permissionName');
+ if(perm){perm.placeholder='الاسم الثلاثي بالعربية للموظفة';perm.setAttribute('dir','rtl');}
+ // امنع تسجيل اسم دخول غير ثلاثي للموظفات الجديدة؛ لا تغيّر حسابات المستخدمين الحالية.
+ const oldAdd=window.addPermission;
+ if(typeof oldAdd==='function')window.addPermission=function(){
+  const n=norm(document.getElementById('permissionName')?.value);
+  if(n!=='admin'&&n.split(' ').length!==3){alert('يرجى كتابة الاسم الثلاثي للموظفة باللغة العربية.');return;}
+  const matches=staffNames().filter(full=>triple(full)===n);
+  if(n!=='admin'&&matches.length!==1){alert(matches.length>1?'الاسم الثلاثي متكرر؛ يرجى معالجة التشابه قبل إنشاء الحساب.':'الاسم الثلاثي غير مطابق لقائمة المعلمات والإداريات؛ يرجى إضافته للقائمة أولاً.');return;}
+  return oldAdd.apply(this,arguments);
+ };
+ function allowed(entry){return isManager()||!!(ownName()&&norm(entry?.name)===ownName());}
+ const oldSave=window.saveStaffMovement2026;
+ if(typeof oldSave==='function')window.saveStaffMovement2026=function(){
+  if(!isManager()){
+   const n=ownName();if(!n){alert('لم نجد اسماً واحداً مطابقاً لحسابك في قائمة الموظفات. راجعي المسؤولة.');return;}
+   const ix=typeof editingStaffMovementIndex2026==='number'?editingStaffMovementIndex2026:null;
+   if(ix!==null&&!allowed(movementEntries2026()[ix])){alert('يمكنك تعديل حركاتك فقط.');return;}
+   document.getElementById('movementName2026').value=n;
+  }
+  return oldSave.apply(this,arguments);
+ };
+ for(const key of ['editStaffMovement2026','deleteStaffMovement2026']){
+  const original=window[key];if(typeof original!=='function')continue;
+  window[key]=function(index){if(!allowed(movementEntries2026()[index])){alert('يمكنك إدارة حركاتك فقط.');return;}return original.apply(this,arguments)};
+ }
+ const oldRender=window.renderStaffMovement2026;
+ if(typeof oldRender==='function')window.renderStaffMovement2026=function(){
+  oldRender.apply(this,arguments);
+  if(!isManager()){
+   const n=ownName(), table=document.getElementById('movementRows2026');
+   if(table)Array.from(table.children).forEach(tr=>{if(norm(tr.cells[0]?.textContent)!==n)tr.remove()});
+  }
+ };
+ const oldShow=window.show;
+ if(typeof oldShow==='function')window.show=function(id){const result=oldShow.apply(this,arguments);if(id==='staffMovement2026'){setNameField();window.renderStaffMovement2026?.()}return result};
+ const oldApply=window.applyRole;
+ if(typeof oldApply==='function')window.applyRole=function(){const result=oldApply.apply(this,arguments);setNameField();return result};
+ document.addEventListener('DOMContentLoaded',()=>setNameField());
+ window.addEventListener('storage',e=>{if([USERS_KEY,ROWS_KEY,ADMINS_KEY].includes(e.key))setNameField()});
 })();
 </script>
 </body>
