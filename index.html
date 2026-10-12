@@ -1865,7 +1865,12 @@ function saveStaffMovement2026(){
    movementName2026.value=mine;
    if(editingStaffMovementIndex2026!==null){alert('المعلمة تستطيع إضافة حركتها فقط.');return;}
  }
- const name=movementName2026.value.trim();if(!name){alert('أدخلي الاسم');return}const entries=movementEntries2026();const updating=editingStaffMovementIndex2026!==null;const original=updating?entries[editingStaffMovementIndex2026]:null;if(updating&&!original){alert('لم يتم العثور على الحركة');return}const stamp=original?{date:original.date,time:original.time}:movementNowKuwait2026();const entry={name,type:movementType2026.value,date:stamp.date,time:stamp.time,notes:movementNotes2026.value.trim()};if(updating){entries[editingStaffMovementIndex2026]=entry}else entries.unshift(entry);try{localStorage.setItem('staff_movement_demo_2026',JSON.stringify(entries))}catch(e){alert('تعذر حفظ الحركة على الجهاز');return}cancelStaffMovementEdit2026();renderStaffMovement2026();alert(updating?'تم حفظ التعديل تجريبياً على هذا الجهاز':'حُفظ تجريبياً على هذا الجهاز فقط')}
+ const name=movementName2026.value.trim();if(!name){alert('أدخلي الاسم');return}const entries=movementEntries2026();const updating=editingStaffMovementIndex2026!==null;const original=updating?entries[editingStaffMovementIndex2026]:null;if(updating&&!original){alert('لم يتم العثور على الحركة');return}const stamp=original?{date:original.date,time:original.time}:movementNowKuwait2026();
+// لا يُسمح بأكثر من حركة واحدة للموظفة نفسها في اليوم نفسه، بغض النظر عن نوع الحركة.
+const normalizeMovementName2026=v=>String(v||'').trim().replace(/[أإآ]/g,'ا').replace(/ى/g,'ي').replace(/\s+/g,' ').toLowerCase();
+const alreadyRegistered2026=entries.some((e,i)=>i!==editingStaffMovementIndex2026 && e.date===stamp.date && normalizeMovementName2026(e.name)===normalizeMovementName2026(name));
+if(alreadyRegistered2026){alert('سبق تسجيل حركة دوام لهذه الموظفة في هذا اليوم. لا يمكن تسجيل أكثر من حركة في اليوم نفسه، ويمكن للمسؤولة تعديل التسجيل الموجود.');return;}
+const entry={name,type:movementType2026.value,date:stamp.date,time:stamp.time,notes:movementNotes2026.value.trim()};if(updating){entries[editingStaffMovementIndex2026]=entry}else entries.unshift(entry);try{localStorage.setItem('staff_movement_demo_2026',JSON.stringify(entries))}catch(e){alert('تعذر حفظ الحركة على الجهاز');return}cancelStaffMovementEdit2026();renderStaffMovement2026();alert(updating?'تم حفظ التعديل تجريبياً على هذا الجهاز':'حُفظ تجريبياً على هذا الجهاز فقط')}
 
 
 document.addEventListener('DOMContentLoaded',()=>{refreshMovementClock2026();document.getElementById('movementName2026')?.addEventListener('focus',refreshMovementClock2026)});
