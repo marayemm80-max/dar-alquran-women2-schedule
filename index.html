@@ -252,7 +252,7 @@ table.simple th,.grid .meta,#scheduleGrid thead tr:nth-child(3) th.period{backgr
   <button onclick="show('dailySchedule2026');renderDailySchedule2026()">🌷 الجدول اليومي</button>
   <button onclick="show('leaves2026');renderLeaves2026()">🗂️ حصر الإجازات</button>
   <button onclick="show('staffMovement2026');renderStaffMovement2026()">🕒 حركة الدوام</button>
-  <button onclick="openMovementArchive2026()">🗂️ أرشيف الحركة</button>
+  <button id="movementArchiveNav2026" onclick="openMovementArchive2026()">🗂️ أرشيف الحركة</button>
   <button onclick="show('teachers')">المعلمات</button>
   <button onclick="show('subjects')">المواد</button>
   <button onclick="show('admins')">الإداريات</button>
@@ -281,8 +281,8 @@ table.simple th,.grid .meta,#scheduleGrid thead tr:nth-child(3) th.period{backgr
   </div>
 </section>
 
-<section id="movementArchive2026" class="section"><h2>🗂️ أرشيف حركة الدوام</h2><div class="movement-panel"><div class="movement-alert">أرشيف تجريبي محفوظ على هذا الجهاز فقط. لا توجد بعد حماية فعلية لحسابات المعلمات أو صلاحيات الإدارة عبر Supabase.</div><div class="movement-fields"><label>بحث باسم المعلمة<input id="archiveName2026" placeholder="اكتبي جزءاً من الاسم" oninput="renderMovementArchive2026()"></label><label>من تاريخ<input type="date" id="archiveFrom2026" onchange="renderMovementArchive2026()"></label><label>إلى تاريخ<input type="date" id="archiveTo2026" onchange="renderMovementArchive2026()"></label></div><div style="display:flex;gap:8px;flex-wrap:wrap;margin:12px 0"><button onclick="setArchiveRange2026('day')">اليوم</button><button onclick="setArchiveRange2026('week')">الأسبوع</button><button onclick="setArchiveRange2026('month')">الشهر</button><button onclick="setArchiveRange2026('all')">كل الفترات</button><button class="action" onclick="exportArchiveExcel2026()">📊 تصدير Excel</button><button class="action" onclick="exportArchivePdf2026()">📄 تصدير PDF</button></div><p id="archiveCount2026"></p><div style="overflow:auto"><table><thead><tr><th>الاسم</th><th>نوع الحركة</th><th>التاريخ</th><th>الوقت</th><th>ملاحظات</th></tr></thead><tbody id="archiveRows2026"></tbody></table></div></div></section>
-<section id="staffMovement2026" class="section"><h2>🕒 حركة الدوام</h2><div class="movement-panel"><div class="movement-alert">نسخة تجريبية: تحفظ الإدخالات على هذا الجهاز فقط. لا تدخلوا بيانات مرضية حقيقية قبل تفعيل حسابات Supabase Auth وسياسات RLS والتحقق منها.</div><div class="movement-fields"><label>الاسم<input id="movementName2026" placeholder="اسم الموظفة"></label><label>نوع الحركة<select id="movementType2026"><option>إذن بداية الدوام</option><option>إذن نهاية الدوام</option><option>مرضية</option><option>طارئة</option></select></label><label>تاريخ التسجيل (تلقائي)<input type="date" id="movementDate2026" readonly></label><label>وقت التسجيل (تلقائي)<input type="time" id="movementTime2026" readonly></label></div><label style="display:block;margin-top:10px">ملاحظات إدارية غير طبية<textarea id="movementNotes2026" style="width:100%" placeholder="ملاحظة اختيارية، دون تفاصيل صحية"></textarea></label><button class="action" type="button" onclick="exportTodayMovementsPdf2026()" style="background:#244f86;margin:8px 0">📄 تصدير PDF — كشف حركة الدوام اليومي للموظفات</button> <button class="action" id="movementSaveButton2026" onclick="saveStaffMovement2026()">حفظ تجريبي على هذا الجهاز</button> <button id="movementCancelEdit2026" type="button" style="display:none" onclick="cancelStaffMovementEdit2026()">إلغاء التعديل</button><div style="overflow:auto"><table><thead><tr><th>الاسم</th><th>الحركة</th><th>التاريخ</th><th>الوقت</th><th>ملاحظات</th><th>الإجراءات</th></tr></thead><tbody id="movementRows2026"></tbody></table></div></div></section>
+<section id="movementArchive2026" class="section"><h2>🗂️ أرشيف حركة الدوام</h2><div class="movement-panel"><div class="movement-alert">الأرشيف محفوظ على هذا الجهاز فقط، ولا تتم مزامنته بين الأجهزة حالياً.</div><div class="movement-fields"><label>بحث باسم المعلمة<input id="archiveName2026" placeholder="اكتبي جزءاً من الاسم" oninput="renderMovementArchive2026()"></label><label>من تاريخ<input type="date" id="archiveFrom2026" onchange="renderMovementArchive2026()"></label><label>إلى تاريخ<input type="date" id="archiveTo2026" onchange="renderMovementArchive2026()"></label></div><div style="display:flex;gap:8px;flex-wrap:wrap;margin:12px 0"><button onclick="setArchiveRange2026('day')">اليوم</button><button onclick="setArchiveRange2026('week')">الأسبوع</button><button onclick="setArchiveRange2026('month')">الشهر</button><button onclick="setArchiveRange2026('all')">كل الفترات</button><button class="action" onclick="exportArchiveExcel2026()">📊 تصدير Excel</button><button class="action" onclick="exportArchivePdf2026()">📄 تصدير PDF</button></div><p id="archiveCount2026"></p><div style="overflow:auto"><table><thead><tr><th>الاسم</th><th>نوع الحركة</th><th>التاريخ</th><th>الوقت</th><th>ملاحظات</th></tr></thead><tbody id="archiveRows2026"></tbody></table></div></div></section>
+<section id="staffMovement2026" class="section"><h2>🕒 حركة الدوام</h2><div class="movement-panel"><div class="movement-alert">تُحفظ سجلات حركة الدوام على هذا الجهاز فقط، ولا تتم مزامنتها بين الأجهزة حالياً. يُرجى عدم إدخال معلومات صحية تفصيلية.</div><div class="movement-fields"><label>الاسم<input id="movementName2026" placeholder="اسم الموظفة"></label><label>نوع الحركة<select id="movementType2026"><option>إذن بداية الدوام</option><option>إذن نهاية الدوام</option><option>مرضية</option><option>طارئة</option></select></label><label>تاريخ التسجيل (تلقائي)<input type="date" id="movementDate2026" readonly></label><label>وقت التسجيل (تلقائي)<input type="time" id="movementTime2026" readonly></label></div><label style="display:block;margin-top:10px">ملاحظات إدارية غير طبية<textarea id="movementNotes2026" style="width:100%" placeholder="ملاحظة اختيارية، دون تفاصيل صحية"></textarea></label><button class="action" type="button" onclick="exportTodayMovementsPdf2026()" style="background:#244f86;margin:8px 0">📄 تصدير PDF — كشف حركة الدوام اليومي للموظفات</button> <button class="action" id="movementSaveButton2026" onclick="saveStaffMovement2026()">حفظ الحركة</button> <button id="movementCancelEdit2026" type="button" style="display:none" onclick="cancelStaffMovementEdit2026()">إلغاء التعديل</button><div style="overflow:auto"><table><thead><tr><th>الاسم</th><th>الحركة</th><th>التاريخ</th><th>الوقت</th><th>ملاحظات</th><th>الإجراءات</th></tr></thead><tbody id="movementRows2026"></tbody></table></div></div></section>
 <section id="schedule" class="section">
   <h2>📅 الجدول الدراسي</h2>
   <div class="schedule-toolbar no-print"><span id="cloudSyncStatus2026" style="padding:8px;border-radius:6px;background:#fff3cd;border:1px solid #e4cc65">مزامنة الأجهزة: جارٍ التحقق...</span>
@@ -443,7 +443,7 @@ table.simple th,.grid .meta,#scheduleGrid thead tr:nth-child(3) th.period{backgr
 
 </div>
 
-<footer>نظام إدارة جدول حصص مركز دار القرآن غرب عبدالله المبارك نساء ٢</footer>
+
 
 <div id="teacherModal" class="modal">
   <div class="modalbox">
@@ -559,6 +559,7 @@ function home(){
 
 function show(id){
   if(id!=="schedule") clearScheduleUndo2026();
+  if(id==="movementArchive2026" && role()!=="admin"){alert("أرشيف حركة الدوام متاح للمسؤول فقط.");return;}
   if(id==="permissions" && role()!=="admin"){ alert("الصلاحيات متاحة للمسؤول فقط."); return; }
   document.getElementById("home").style.display="none";
   document.querySelectorAll(".section").forEach(x=>x.classList.remove("active"));
@@ -1125,6 +1126,7 @@ function applyRole(){
 
   const adminOnly=(a.role==="admin" || String(a.name||"").trim().toLowerCase()==="admin");
   permissionsNav.style.display=adminOnly?"inline-block":"none";
+  const archiveNav=document.getElementById("movementArchiveNav2026");if(archiveNav)archiveNav.style.display=adminOnly?"inline-block":"none";
   permissionsCard.style.display=adminOnly?"block":"none";
   const clearBtn2026=document.getElementById("clearScheduleAdminBtn2026");
   if(clearBtn2026) clearBtn2026.style.display=adminOnly?"inline-block":"none";
@@ -1851,9 +1853,9 @@ function movementNowKuwait2026(){const parts=new Intl.DateTimeFormat('en-GB',{ti
 function refreshMovementClock2026(){if(editingStaffMovementIndex2026!==null)return;const now=movementNowKuwait2026();document.getElementById("movementDate2026").value=now.date;document.getElementById("movementTime2026").value=now.time}
 
 function movementEntries2026(){try{const data=JSON.parse(localStorage.getItem('staff_movement_demo_2026')||'[]');return Array.isArray(data)?data:[]}catch(e){return []}}
-function cancelStaffMovementEdit2026(){editingStaffMovementIndex2026=null;document.getElementById('movementSaveButton2026').textContent='حفظ تجريبي على هذا الجهاز';document.getElementById('movementCancelEdit2026').style.display='none';movementName2026.value='';movementType2026.selectedIndex=0;movementTime2026.value='';movementNotes2026.value='';refreshMovementClock2026()}
+function cancelStaffMovementEdit2026(){editingStaffMovementIndex2026=null;document.getElementById('movementSaveButton2026').textContent='حفظ الحركة';document.getElementById('movementCancelEdit2026').style.display='none';movementName2026.value='';movementType2026.selectedIndex=0;movementTime2026.value='';movementNotes2026.value='';refreshMovementClock2026()}
 function editStaffMovement2026(index){const e=movementEntries2026()[index];if(!e)return;editingStaffMovementIndex2026=index;movementName2026.value=e.name||'';movementType2026.value=e.type||'إذن بداية الدوام';movementDate2026.value=e.date||'';movementTime2026.value=e.time||'';movementNotes2026.value=e.notes||'';document.getElementById('movementSaveButton2026').textContent='حفظ التعديل';document.getElementById('movementCancelEdit2026').style.display='inline-block';movementName2026.focus();document.getElementById('staffMovement2026').scrollIntoView({behavior:'smooth',block:'start'})}
-function deleteStaffMovement2026(index){const entries=movementEntries2026();if(!entries[index])return;if(!confirm('هل تريدين حذف هذه الحركة من النسخة التجريبية؟'))return;entries.splice(index,1);localStorage.setItem('staff_movement_demo_2026',JSON.stringify(entries));cancelStaffMovementEdit2026();renderStaffMovement2026()}
+function deleteStaffMovement2026(index){const entries=movementEntries2026();if(!entries[index])return;if(!confirm('هل تريدين حذف هذه الحركة؟'))return;entries.splice(index,1);localStorage.setItem('staff_movement_demo_2026',JSON.stringify(entries));cancelStaffMovementEdit2026();renderStaffMovement2026()}
 function renderStaffMovement2026(){const body=document.getElementById('movementRows2026');if(!body)return;const entries=movementEntries2026();body.replaceChildren();entries.filter(e=>e.date===movementNowKuwait2026().date).forEach((e)=>{const index=entries.indexOf(e);const tr=document.createElement('tr');[e.name,e.type,e.date,e.time,e.notes].forEach(v=>{const td=document.createElement('td');td.textContent=v||'—';tr.appendChild(td)});const td=document.createElement('td');td.style.whiteSpace='nowrap';const edit=document.createElement('button');edit.type='button';edit.textContent='✏️ تعديل';edit.style.margin='3px';edit.onclick=()=>editStaffMovement2026(index);const del=document.createElement('button');del.type='button';del.textContent='🗑️ حذف';del.className='danger';del.style.margin='3px';del.onclick=()=>deleteStaffMovement2026(index);td.append(edit,del);tr.appendChild(td);body.appendChild(tr)});if(!movementDate2026.value)refreshMovementClock2026()}
 function saveStaffMovement2026(){const name=movementName2026.value.trim();if(!name){alert('أدخلي الاسم');return}const entries=movementEntries2026();const updating=editingStaffMovementIndex2026!==null;const original=updating?entries[editingStaffMovementIndex2026]:null;if(updating&&!original){alert('لم يتم العثور على الحركة');return}const stamp=original?{date:original.date,time:original.time}:movementNowKuwait2026();const entry={name,type:movementType2026.value,date:stamp.date,time:stamp.time,notes:movementNotes2026.value.trim()};if(updating){entries[editingStaffMovementIndex2026]=entry}else entries.unshift(entry);try{localStorage.setItem('staff_movement_demo_2026',JSON.stringify(entries))}catch(e){alert('تعذر حفظ الحركة على الجهاز');return}cancelStaffMovementEdit2026();renderStaffMovement2026();alert(updating?'تم حفظ التعديل تجريبياً على هذا الجهاز':'حُفظ تجريبياً على هذا الجهاز فقط')}
 
@@ -1887,7 +1889,7 @@ async function exportTodayMovementsPdf2026(){
   pdf.save('كشف_حركة_الدوام_اليومي_للموظفات_'+today+'.pdf');
  }catch(err){console.error(err);alert('تعذر تصدير PDF.')}finally{host.remove()}
 }
-function openMovementArchive2026(){show('movementArchive2026');setArchiveRange2026('month')}
+function openMovementArchive2026(){if(role()!=='admin'){alert('أرشيف حركة الدوام متاح للمسؤول فقط.');return;}show('movementArchive2026');setArchiveRange2026('month')}
 function isoArchiveDate2026(d){return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-')}
 function setArchiveRange2026(period){const now=new Date(),start=new Date(now);if(period==='week')start.setDate(now.getDate()-6);if(period==='month')start.setMonth(now.getMonth()-1);archiveFrom2026.value=period==='all'?'':isoArchiveDate2026(start);archiveTo2026.value=period==='all'?'':isoArchiveDate2026(now);renderMovementArchive2026()}
 function filteredArchive2026(){const name=document.getElementById('archiveName2026').value.trim(),from=archiveFrom2026.value,to=archiveTo2026.value;return movementEntries2026().filter(e=>(!name||(e.name||'').includes(name))&&(!from||e.date>=from)&&(!to||e.date<=to)).sort((a,b)=>(b.date||'').localeCompare(a.date||''))}
@@ -2120,6 +2122,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
  const baseShow=window.show;
  window.show=function(id){
    if(id==='permissions'&&role()!=='admin')return baseShow(id);
+   if(id==='movementArchive2026'&&role()!=='admin'){alert('أرشيف حركة الدوام متاح للمسؤول فقط.');return;}
    const map={schedule:'schedule',dailySchedule2026:'daily',teachers:'teachers',leaves2026:'leaves',subjects:'subjects',admins:'admins',reserve2026:'reserve',staffMovement2026:'staffMovement',movementArchive2026:'staffMovement'};
    if(map[id]&&role()!=='admin'&&!hasScope2026(map[id])){alert('لا توجد لهذا المستخدم صلاحية الدخول إلى هذا القسم.');return;}
    return baseShow(id);
@@ -2140,6 +2143,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
     ["button[onclick*=\"movementArchive2026\"]",'staffMovement']
    ];
    navMap.forEach(([sel,sc])=>document.querySelectorAll('nav '+sel).forEach(el=>setVisible(el,isAdmin||hasScope2026(sc))));
+   setVisible(document.getElementById('movementArchiveNav2026'),isAdmin);
    const cardMap=[
     ["#home .card[onclick=\"show('schedule')\"]",'schedule'],
     ["#home .card[onclick*=\"dailySchedule2026\"]",'daily'],
