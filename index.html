@@ -224,6 +224,7 @@ table.simple th,.grid .meta,#scheduleGrid thead tr:nth-child(3) th.period{backgr
 #scheduleGrid .thu {background:#F7E1E8!important}
 }
 </style>
+<style id="movementStyle2026">#staffMovement2026 .movement-panel{background:white;border:1px solid #c5cbd5;border-radius:12px;padding:18px;max-width:1050px}#staffMovement2026 .movement-fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px}#staffMovement2026 label{display:flex;flex-direction:column;font-weight:bold}#staffMovement2026 textarea{padding:10px;min-height:75px;border:1px solid #aaa;border-radius:6px}#staffMovement2026 .movement-alert{background:#fff3cd;padding:10px;border-radius:8px;margin:12px 0}#staffMovement2026 table{width:100%;border-collapse:collapse;margin-top:12px}#staffMovement2026 td,#staffMovement2026 th{border:1px solid #ccc;padding:9px;text-align:right}#staffMovement2026 th{background:#c5cbd5}</style>
 </head>
 <body>
 
@@ -250,6 +251,8 @@ table.simple th,.grid .meta,#scheduleGrid thead tr:nth-child(3) th.period{backgr
   <button onclick="show('schedule')">الجدول الدراسي</button>
   <button onclick="show('dailySchedule2026');renderDailySchedule2026()">🌷 الجدول اليومي</button>
   <button onclick="show('leaves2026');renderLeaves2026()">🗂️ حصر الإجازات</button>
+  <button onclick="show('staffMovement2026');renderStaffMovement2026()">🕒 حركة الدوام</button>
+  <button onclick="openMovementArchive2026()">🗂️ أرشيف الحركة</button>
   <button onclick="show('teachers')">المعلمات</button>
   <button onclick="show('subjects')">المواد</button>
   <button onclick="show('admins')">الإداريات</button>
@@ -269,6 +272,7 @@ table.simple th,.grid .meta,#scheduleGrid thead tr:nth-child(3) th.period{backgr
     <div class="card" onclick="show('schedule')"><div class="icon">📅</div><h3>الجدول الدراسي</h3><p>عرض وتعديل وسحب وتبديل الحصص.</p></div>
     <div class="card daily-card-2026" onclick="show('dailySchedule2026');renderDailySchedule2026()"><div class="icon">🌷</div><h3>الجدول اليومي</h3><p>جداول الفصول مرتبطة تلقائياً بالجدول الأساسي.</p></div>
     <div class="card leave-card-2026" onclick="show('leaves2026');renderLeaves2026()"><div class="icon">🗂️</div><h3>حصر الإجازات</h3><p>إدارة إجازات المعلمات والفرز والتصدير PDF.</p></div>
+    <div class="card" onclick="show('staffMovement2026');renderStaffMovement2026()"><div class="icon">🕒</div><h3>حركة الدوام</h3><p>إذن بداية أو نهاية الدوام، مرضية أو طارئة.</p></div>
     <div class="card" onclick="show('teachers')"><div class="icon">👩‍🏫</div><h3>المعلمات</h3><p>إدارة أسماء المعلمات وبياناتهن.</p></div>
     <div class="card" onclick="show('subjects')"><div class="icon">📚</div><h3>المواد</h3><p>إضافة المواد وتعديلها وحذفها.</p></div>
     <div class="card" onclick="show('admins')"><div class="icon">👩‍💼</div><h3>الإداريات</h3><p>إدارة أسماء الإداريات.</p></div>
@@ -277,6 +281,8 @@ table.simple th,.grid .meta,#scheduleGrid thead tr:nth-child(3) th.period{backgr
   </div>
 </section>
 
+<section id="movementArchive2026" class="section"><h2>🗂️ أرشيف حركة الدوام</h2><div class="movement-panel"><div class="movement-alert">أرشيف تجريبي محفوظ على هذا الجهاز فقط. لا توجد بعد حماية فعلية لحسابات المعلمات أو صلاحيات الإدارة عبر Supabase.</div><div class="movement-fields"><label>بحث باسم المعلمة<input id="archiveName2026" placeholder="اكتبي جزءاً من الاسم" oninput="renderMovementArchive2026()"></label><label>من تاريخ<input type="date" id="archiveFrom2026" onchange="renderMovementArchive2026()"></label><label>إلى تاريخ<input type="date" id="archiveTo2026" onchange="renderMovementArchive2026()"></label></div><div style="display:flex;gap:8px;flex-wrap:wrap;margin:12px 0"><button onclick="setArchiveRange2026('day')">اليوم</button><button onclick="setArchiveRange2026('week')">الأسبوع</button><button onclick="setArchiveRange2026('month')">الشهر</button><button onclick="setArchiveRange2026('all')">كل الفترات</button><button class="action" onclick="exportArchiveExcel2026()">📊 تصدير Excel</button><button class="action" onclick="exportArchivePdf2026()">📄 تصدير PDF</button></div><p id="archiveCount2026"></p><div style="overflow:auto"><table><thead><tr><th>الاسم</th><th>نوع الحركة</th><th>التاريخ</th><th>الوقت</th><th>ملاحظات</th></tr></thead><tbody id="archiveRows2026"></tbody></table></div></div></section>
+<section id="staffMovement2026" class="section"><h2>🕒 حركة الدوام</h2><div class="movement-panel"><div class="movement-alert">نسخة تجريبية: تحفظ الإدخالات على هذا الجهاز فقط. لا تدخلوا بيانات مرضية حقيقية قبل تفعيل حسابات Supabase Auth وسياسات RLS والتحقق منها.</div><div class="movement-fields"><label>الاسم<input id="movementName2026" placeholder="اسم الموظفة"></label><label>نوع الحركة<select id="movementType2026"><option>إذن بداية الدوام</option><option>إذن نهاية الدوام</option><option>مرضية</option><option>طارئة</option></select></label><label>تاريخ التسجيل (تلقائي)<input type="date" id="movementDate2026" readonly></label><label>وقت التسجيل (تلقائي)<input type="time" id="movementTime2026" readonly></label></div><label style="display:block;margin-top:10px">ملاحظات إدارية غير طبية<textarea id="movementNotes2026" style="width:100%" placeholder="ملاحظة اختيارية، دون تفاصيل صحية"></textarea></label><button class="action" type="button" onclick="exportTodayMovementsPdf2026()" style="background:#244f86;margin:8px 0">📄 تصدير PDF — كشف حركة الدوام اليومي للموظفات</button> <button class="action" id="movementSaveButton2026" onclick="saveStaffMovement2026()">حفظ تجريبي على هذا الجهاز</button> <button id="movementCancelEdit2026" type="button" style="display:none" onclick="cancelStaffMovementEdit2026()">إلغاء التعديل</button><div style="overflow:auto"><table><thead><tr><th>الاسم</th><th>الحركة</th><th>التاريخ</th><th>الوقت</th><th>ملاحظات</th><th>الإجراءات</th></tr></thead><tbody id="movementRows2026"></tbody></table></div></div></section>
 <section id="schedule" class="section">
   <h2>📅 الجدول الدراسي</h2>
   <div class="schedule-toolbar no-print"><span id="cloudSyncStatus2026" style="padding:8px;border-radius:6px;background:#fff3cd;border:1px solid #e4cc65">مزامنة الأجهزة: جارٍ التحقق...</span>
@@ -1396,7 +1402,7 @@ async function pdfSchedule2026(){
  window.hasScope2026=function(scope){return role()==='admin'||userScopes2026().includes(scope);};
  const oldCanEdit=window.canEdit; window.canEdit=function(scope){const base=role()==='edit'||role()==='admin';return base&&(!scope||hasScope2026(scope));};
  window.requireScopeEdit2026=function(scope){if(!canEdit(scope)){alert('لا توجد لهذا المستخدم صلاحية تعديل هذا القسم.');return false}return true};
- const oldShow=window.show;window.show=function(id){if(id==='permissions'&&role()!=='admin')return oldShow(id);const map={schedule:'schedule',teachers:'teachers',reserve2026:'reserve'};if(map[id]&&role()!=='admin'&&!hasScope2026(map[id])){alert('لا توجد لهذا المستخدم صلاحية الدخول إلى هذا القسم.');return;}return oldShow(id);};
+ const oldShow=window.show;window.show=function(id){if(id==='permissions'&&role()!=='admin')return oldShow(id);const map={schedule:'schedule',teachers:'teachers',reserve2026:'reserve',staffMovement2026:'staffMovement',movementArchive2026:'staffMovement'};if(map[id]&&role()!=='admin'&&!hasScope2026(map[id])){alert('لا توجد لهذا المستخدم صلاحية الدخول إلى هذا القسم.');return;}return oldShow(id);};
  function decorate2026(){
    document.querySelectorAll('#scheduleGrid tbody tr').forEach(tr=>{const cells=tr.children;if(!cells.length)return;const dept=cells[2]?.textContent||'';const dc=deptClass2026(dept);if(dc)Array.from(cells).forEach(td=>td.classList.add(dc));Array.from(cells).forEach(td=>{if((td.textContent||'').includes('بالتناوب'))td.classList.add('alternate-2026');td.childNodes.forEach(n=>{if(n.nodeType===3)n.nodeValue=toArabicDigits2026(n.nodeValue)});});});
    document.querySelectorAll('#teacherList td,#reserveBody td').forEach(td=>{td.childNodes.forEach(n=>{if(n.nodeType===3)n.nodeValue=toArabicDigits2026(n.nodeValue)});});
@@ -1406,7 +1412,7 @@ async function pdfSchedule2026(){
  const roleSel=document.getElementById('permissionRole');if(roleSel){const wrap=document.createElement('div');wrap.id='permissionScopes2026';wrap.className='permission-scope-2026';wrap.innerHTML='<b>حدد الأقسام التي يسمح للمستخدم بالدخول إليها وتعديلها:</b><label><input type="checkbox" value="schedule"> الجدول الدراسي</label><label><input type="checkbox" value="teachers"> المعلمات</label><label><input type="checkbox" value="reserve"> جدول الاحتياط</label>';roleSel.insertAdjacentElement('afterend',wrap);}
  function selectedScopes(){return Array.from(document.querySelectorAll('#permissionScopes2026 input:checked')).map(x=>x.value)}
  window.addPermission=function(){if(role()!=='admin')return alert('هذه العملية للمسؤول فقط.');const name=permissionName.value.trim(),pass=permissionPass.value,userRole=permissionRole.value;if(!name)return alert('اكتب اسم المستخدم');if(!pass)return alert('اكتب كلمة المرور');if(name==='admin')return alert('اسم admin محجوز للمسؤول الرئيسي.');let users=[];try{users=JSON.parse(localStorage.getItem(USERS_KEY)||'[]')}catch(e){}const obj={name,pass,role:userRole,scopes:userRole==='admin'?['schedule','teachers','reserve']:selectedScopes()};const old=users.findIndex(x=>x.name===name);if(old>=0)users[old]=obj;else users.push(obj);localStorage.setItem(USERS_KEY,JSON.stringify(users));permissionName.value='';permissionPass.value='';renderPermissions();};
- window.renderPermissions=function(){const box=document.getElementById('permissionsList');if(!box)return;let users=[];try{users=JSON.parse(localStorage.getItem(USERS_KEY)||'[]')}catch(e){}const rl={view:'مشاهدة فقط',edit:'تعديل وإضافة',admin:'مسؤول كامل'},sl={schedule:'الجدول الدراسي',teachers:'المعلمات',reserve:'جدول الاحتياط'};box.innerHTML='<div class="panel"><b>admin</b> — مسؤول رئيسي</div>'+users.map((p,i)=>`<div class="panel"><b>${esc(p.name)}</b> — ${rl[p.role]||esc(p.role)}<br><small>الأقسام: ${(p.scopes||['schedule','teachers','reserve']).map(x=>sl[x]||x).join('، ')}</small> <button onclick="editPermission2026(${i})">تعديل</button> <button class="danger" onclick="deletePermission(${i})">حذف</button></div>`).join('');};
+ window.renderPermissions=function(){const box=document.getElementById('permissionsList');if(!box)return;let users=[];try{users=JSON.parse(localStorage.getItem(USERS_KEY)||'[]')}catch(e){}const rl={view:'مشاهدة فقط',edit:'تعديل وإضافة',admin:'مسؤول كامل'},sl={schedule:'الجدول الدراسي',teachers:'المعلمات',reserve:'جدول الاحتياط',staffMovement:'حركة الدوام'};box.innerHTML='<div class="panel"><b>admin</b> — مسؤول رئيسي</div>'+users.map((p,i)=>`<div class="panel"><b>${esc(p.name)}</b> — ${rl[p.role]||esc(p.role)}<br><small>الأقسام: ${(p.scopes||['schedule','teachers','reserve']).map(x=>sl[x]||x).join('، ')}</small> <button onclick="editPermission2026(${i})">تعديل</button> <button class="danger" onclick="deletePermission(${i})">حذف</button></div>`).join('');};
  window.editPermission2026=function(i){if(role()!=='admin')return;let users=JSON.parse(localStorage.getItem(USERS_KEY)||'[]'),p=users[i];const np=prompt('كلمة المرور الجديدة:',p.pass);if(np===null)return;const nr=prompt('الصلاحية: view أو edit أو admin',p.role);if(nr===null||!['view','edit','admin'].includes(nr))return;let scopes=p.scopes||['schedule','teachers','reserve'];if(nr!=='admin'){const raw=prompt('الأقسام المسموح بها مفصولة بفاصلة: schedule للجدول، teachers للمعلمات، reserve للاحتياط',scopes.join(','));if(raw===null)return;scopes=raw.split(',').map(x=>x.trim()).filter(x=>['schedule','teachers','reserve'].includes(x));}else scopes=['schedule','teachers','reserve'];p.pass=np;p.role=nr;p.scopes=scopes;localStorage.setItem(USERS_KEY,JSON.stringify(users));renderPermissions();};
  // Scope checks on editing entry points.
  const wrapFns={editSlot:'schedule',dragStart:'schedule',dropSlot:'schedule',openTeacherModal:'teachers',saveTeacherModal:'teachers',addTeacherFromSchedule:'schedule',addTeacherManager:'teachers',removeTeacher:'teachers',resetSchedule:'schedule',addReserve2026:'reserve',deleteReserve2026:'reserve'};
@@ -1424,7 +1430,7 @@ async function pdfSchedule2026(){
   const SB_KEY='sb_publishable_CpURFDtAk6StsmbsxevEIw_KxQlrrDo';
   const ENDPOINT=SB_URL+'/rest/v1/dar_quran_data';
   const CLOUD_ID='dar_quran_women2_pdf_roster_aligned_20261011_v2';
-  const SYNC_KEYS=[ROWS_KEY,SUBJECTS_KEY,ADMINS_KEY,USERS_KEY,'daily_reserve_2026'];
+  const SYNC_KEYS=[ROWS_KEY,SUBJECTS_KEY,ADMINS_KEY,USERS_KEY,'daily_reserve_2026','staff_movement_demo_2026'];
   let applyingRemote=false, pushTimer=null, lastRemoteStamp='', localPending=false, lastLocalWrite=0, writeVersion=0, writing=false;
 
   function snapshot(){
@@ -1466,7 +1472,7 @@ async function pdfSchedule2026(){
     try{
       SYNC_KEYS.forEach(k=>{ if(Object.prototype.hasOwnProperty.call(d,k) && d[k]!==null) nativeSet.call(localStorage,k,JSON.stringify(d[k])); });
       rows=loadRows(); subjects=loadArray(SUBJECTS_KEY,subjects||[]); admins=loadArray(ADMINS_KEY,admins||[]);
-      if(changedRows) renderAll(); if(typeof renderReserve2026==='function') renderReserve2026();
+      if(changedRows) renderAll(); if(typeof renderReserve2026==='function') renderReserve2026(); if(typeof renderStaffMovement2026==='function') renderStaffMovement2026(); if(typeof renderMovementArchive2026==='function') renderMovementArchive2026();
     }finally{ applyingRemote=false; }
   }
   async function pullCloud(first){
@@ -1823,6 +1829,7 @@ if ('serviceWorker' in navigator) {
     document.getElementById('reserve2026').scrollIntoView({behavior:'smooth',block:'start'});
   };
   window.addReserve2026=function(){if(!requireEdit())return;const date=reserveDate.value,absent=reserveAbsent.value.trim(),sub=reserveSub.value.trim(),period=reservePeriod.value,notes=reserveNotes.value.trim();if(!date||!absent||!sub)return alert('أدخل التاريخ والمعلمة الغائبة ومعلمة الاحتياط.');
+    const movementWarning=window.reserveMovementWarning2026?.(sub,date,period);if(movementWarning)return alert(movementWarning);
     const conflict=reserveConflict(date,sub,period,editing);if(conflict)return alert(conflict);
     const a=JSON.parse(localStorage.getItem('daily_reserve_2026')||'[]');const item={date,absent,sub,period,notes};if(editing>=0&&editing<a.length)a[editing]=item;else a.push(item);
     localStorage.setItem('daily_reserve_2026',JSON.stringify(a));editing=-1;
@@ -1838,6 +1845,169 @@ if ('serviceWorker' in navigator) {
   else {setupAdminDept();setupReserve();renderAdmins();}
 })();
 </script>
+<script id="staffMovementScript2026">
+let editingStaffMovementIndex2026=null;
+function movementNowKuwait2026(){const parts=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Kuwait',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date());const v=k=>parts.find(p=>p.type===k).value;return {date:`${v('year')}-${v('month')}-${v('day')}`,time:`${v('hour')}:${v('minute')}`}}
+function refreshMovementClock2026(){if(editingStaffMovementIndex2026!==null)return;const now=movementNowKuwait2026();document.getElementById("movementDate2026").value=now.date;document.getElementById("movementTime2026").value=now.time}
+
+function movementEntries2026(){try{const data=JSON.parse(localStorage.getItem('staff_movement_demo_2026')||'[]');return Array.isArray(data)?data:[]}catch(e){return []}}
+function cancelStaffMovementEdit2026(){editingStaffMovementIndex2026=null;document.getElementById('movementSaveButton2026').textContent='حفظ تجريبي على هذا الجهاز';document.getElementById('movementCancelEdit2026').style.display='none';movementName2026.value='';movementType2026.selectedIndex=0;movementTime2026.value='';movementNotes2026.value='';refreshMovementClock2026()}
+function editStaffMovement2026(index){const e=movementEntries2026()[index];if(!e)return;editingStaffMovementIndex2026=index;movementName2026.value=e.name||'';movementType2026.value=e.type||'إذن بداية الدوام';movementDate2026.value=e.date||'';movementTime2026.value=e.time||'';movementNotes2026.value=e.notes||'';document.getElementById('movementSaveButton2026').textContent='حفظ التعديل';document.getElementById('movementCancelEdit2026').style.display='inline-block';movementName2026.focus();document.getElementById('staffMovement2026').scrollIntoView({behavior:'smooth',block:'start'})}
+function deleteStaffMovement2026(index){const entries=movementEntries2026();if(!entries[index])return;if(!confirm('هل تريدين حذف هذه الحركة من النسخة التجريبية؟'))return;entries.splice(index,1);localStorage.setItem('staff_movement_demo_2026',JSON.stringify(entries));cancelStaffMovementEdit2026();renderStaffMovement2026()}
+function renderStaffMovement2026(){const body=document.getElementById('movementRows2026');if(!body)return;const entries=movementEntries2026();body.replaceChildren();entries.filter(e=>e.date===movementNowKuwait2026().date).forEach((e)=>{const index=entries.indexOf(e);const tr=document.createElement('tr');[e.name,e.type,e.date,e.time,e.notes].forEach(v=>{const td=document.createElement('td');td.textContent=v||'—';tr.appendChild(td)});const td=document.createElement('td');td.style.whiteSpace='nowrap';const edit=document.createElement('button');edit.type='button';edit.textContent='✏️ تعديل';edit.style.margin='3px';edit.onclick=()=>editStaffMovement2026(index);const del=document.createElement('button');del.type='button';del.textContent='🗑️ حذف';del.className='danger';del.style.margin='3px';del.onclick=()=>deleteStaffMovement2026(index);td.append(edit,del);tr.appendChild(td);body.appendChild(tr)});if(!movementDate2026.value)refreshMovementClock2026()}
+function saveStaffMovement2026(){const name=movementName2026.value.trim();if(!name){alert('أدخلي الاسم');return}const entries=movementEntries2026();const updating=editingStaffMovementIndex2026!==null;const original=updating?entries[editingStaffMovementIndex2026]:null;if(updating&&!original){alert('لم يتم العثور على الحركة');return}const stamp=original?{date:original.date,time:original.time}:movementNowKuwait2026();const entry={name,type:movementType2026.value,date:stamp.date,time:stamp.time,notes:movementNotes2026.value.trim()};if(updating){entries[editingStaffMovementIndex2026]=entry}else entries.unshift(entry);try{localStorage.setItem('staff_movement_demo_2026',JSON.stringify(entries))}catch(e){alert('تعذر حفظ الحركة على الجهاز');return}cancelStaffMovementEdit2026();renderStaffMovement2026();alert(updating?'تم حفظ التعديل تجريبياً على هذا الجهاز':'حُفظ تجريبياً على هذا الجهاز فقط')}
+
+
+document.addEventListener('DOMContentLoaded',()=>{refreshMovementClock2026();document.getElementById('movementName2026')?.addEventListener('focus',refreshMovementClock2026)});
+async function exportTodayMovementsPdf2026(){
+ if(typeof role==='function' && role()!=='admin'){alert('تصدير كشف حركة الدوام اليومي متاح للمسؤول الرئيسي فقط.');return;}
+ const today=movementNowKuwait2026().date;
+ // جميع حركات اليوم الظاهرة في جدول حركة الدوام، بما فيها المرضية والطارئة.
+ const entries=movementEntries2026().filter(e=>e.date===today);
+ if(!entries.length){alert('لا توجد حركات دوام مسجلة لهذا اليوم على هذا الجهاز.');return;}
+ if(typeof html2canvas==='undefined'||!window.jspdf?.jsPDF){alert('تعذر تحميل أداة PDF. تأكد من اتصال الإنترنت.');return;}
+ const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const logos=Array.from(document.querySelectorAll('.leave-head-2026 .leave-logo-2026 img')).map(im=>im.src);
+ const host=document.createElement('div');host.style.cssText='position:fixed;left:-18000px;top:0;width:940px;background:#fff;z-index:-1';
+ document.body.appendChild(host);
+ const {jsPDF}=window.jspdf;const pdf=new jsPDF({orientation:'portrait',unit:'mm',format:'a4',compress:true});
+ const pageSize=15;
+ try{
+  for(let start=0;start<entries.length;start+=pageSize){
+   const subset=entries.slice(start,start+pageSize);
+   const page=document.createElement('div');page.dir='rtl';page.style.cssText='background:#fff;color:#1c344f;font-family:Tahoma,Arial,sans-serif;width:940px;min-height:1200px;box-sizing:border-box;padding:34px 42px;display:flex;flex-direction:column';
+   const logo=(src)=>src?'<img src="'+src+'" style="width:94px;height:100px;object-fit:contain">':'<div style="width:94px"></div>';
+   const rows=subset.map((e,i)=>'<tr><td>'+(start+i+1)+'</td><td>'+esc(e.name)+'</td><td>'+esc(e.type)+'</td><td>'+esc(e.time)+'</td><td>'+esc(e.notes||'—')+'</td></tr>').join('');
+   page.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;gap:14px;border-bottom:3px solid #244d80;padding-bottom:14px">'+logo(logos[0])+'<div style="text-align:center;flex:1"><div style="font-size:19px;font-weight:bold;color:#183d70">مركز دار القرآن غرب عبدالله المبارك نساء ٢</div><h2 style="font-size:25px;color:#173c6d;margin:14px 0 4px">كشف حركة الدوام اليومي للموظفات</h2></div>'+logo(logos[1])+'</div><div style="display:flex;justify-content:space-between;margin:22px 0 15px;font-size:17px"><b>التاريخ: '+esc(today)+'</b><b>إجمالي الحركات: '+entries.length+'</b></div><table style="border-collapse:collapse;width:100%;table-layout:fixed;text-align:center;font-size:16px"><thead><tr style="background:#dce5f0;color:#19385e"><th style="width:6%">م</th><th style="width:29%">اسم الموظفة</th><th style="width:26%">نوع الحركة</th><th style="width:14%">وقت التسجيل</th><th style="width:25%">ملاحظات</th></tr></thead><tbody>'+rows+'</tbody></table><div style="margin-top:auto;padding-top:35px"><div style="display:flex;justify-content:space-between;gap:25px;text-align:center;font-size:15px"><div><b>إعداد ومتابعة</b><div style="margin-top:9px">أ. مريم العتيبي</div></div><div><b>مشرفة مركز دار القرآن غرب عبدالله المبارك</b><div style="margin-top:9px">أ. هيله العتيبي</div></div></div><div style="border-top:2px solid #244d80;margin-top:24px;padding-top:8px;text-align:center;color:#64748b;font-size:12px">نظام إدارة جدول حصص مركز دار القرآن غرب عبدالله المبارك نساء ٢ — صفحة '+(Math.floor(start/pageSize)+1)+' من '+Math.ceil(entries.length/pageSize)+'</div></div>';
+   const style=document.createElement('style');style.textContent='table th,table td{border:1px solid #9cadc2;padding:12px 7px;overflow-wrap:anywhere;vertical-align:middle}tbody tr:nth-child(even){background:#f3f6fb}';page.prepend(style);host.appendChild(page);
+   await Promise.all(Array.from(page.querySelectorAll('img')).map(im=>im.complete?Promise.resolve():new Promise(resolve=>{im.onload=resolve;im.onerror=resolve})));
+   const canvas=await html2canvas(page,{scale:1.5,backgroundColor:'#fff',useCORS:true,logging:false});
+   if(start)pdf.addPage();pdf.addImage(canvas.toDataURL('image/jpeg',.95),'JPEG',8,8,194,281,undefined,'FAST');page.remove();
+  }
+  pdf.save('كشف_حركة_الدوام_اليومي_للموظفات_'+today+'.pdf');
+ }catch(err){console.error(err);alert('تعذر تصدير PDF.')}finally{host.remove()}
+}
+function openMovementArchive2026(){show('movementArchive2026');setArchiveRange2026('month')}
+function isoArchiveDate2026(d){return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-')}
+function setArchiveRange2026(period){const now=new Date(),start=new Date(now);if(period==='week')start.setDate(now.getDate()-6);if(period==='month')start.setMonth(now.getMonth()-1);archiveFrom2026.value=period==='all'?'':isoArchiveDate2026(start);archiveTo2026.value=period==='all'?'':isoArchiveDate2026(now);renderMovementArchive2026()}
+function filteredArchive2026(){const name=document.getElementById('archiveName2026').value.trim(),from=archiveFrom2026.value,to=archiveTo2026.value;return movementEntries2026().filter(e=>(!name||(e.name||'').includes(name))&&(!from||e.date>=from)&&(!to||e.date<=to)).sort((a,b)=>(b.date||'').localeCompare(a.date||''))}
+function renderMovementArchive2026(){const rows=filteredArchive2026(),body=document.getElementById('archiveRows2026');body.replaceChildren();rows.forEach(e=>{const tr=document.createElement('tr');[e.name,e.type,e.date,e.time,e.notes].forEach(value=>{const td=document.createElement('td');td.textContent=value||'—';tr.appendChild(td)});body.appendChild(tr)});document.getElementById('archiveCount2026').textContent='عدد الحركات: '+rows.length}
+function archiveExportTable2026(){const rows=filteredArchive2026();if(!rows.length){alert('لا توجد حركات ضمن الفترة المحددة');return null}return [['الاسم','نوع الحركة','التاريخ','الوقت','ملاحظات'],...rows.map(e=>[e.name||'',e.type||'',e.date||'',e.time||'',e.notes||''])]}
+function exportArchiveExcel2026(){const data=archiveExportTable2026();if(!data)return;if(typeof XLSX==='undefined'){alert('تعذر تحميل مكتبة Excel');return}const wb=XLSX.utils.book_new();const ws=XLSX.utils.aoa_to_sheet(data);XLSX.utils.book_append_sheet(wb,ws,'حركة الدوام');XLSX.writeFile(wb,'staff_movement_archive.xlsx')}
+function exportArchivePdf2026(){
+ const data=archiveExportTable2026();if(!data)return;
+ const w=window.open('','_blank');if(!w){alert('اسمحي بفتح نافذة الطباعة');return}
+ const esc=v=>String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const head='<html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>أرشيف حركة الدوام</title><style>body{font-family:Tahoma,Arial;padding:24px;color:#173b7a}table{width:100%;border-collapse:collapse}td,th{border:1px solid #aaa;padding:8px;text-align:right}th{background:#e6ebf2}</style></head><body>';
+ const rows=data.slice(1).map(row=>'<tr>'+row.map(x=>'<td>'+esc(x)+'</td>').join('')+'</tr>').join('');
+ w.document.open();w.document.write('<!doctype html>'+head+'<h2>أرشيف حركة الدوام</h2><p>الفترة: '+esc(archiveFrom2026.value||'البداية')+' إلى '+esc(archiveTo2026.value||'النهاية')+'</p><table><thead><tr>'+data[0].map(x=>'<th>'+esc(x)+'</th>').join('')+'</tr></thead><tbody>'+rows+'</tbody></table><p>اختاري حفظ كملف PDF من نافذة الطباعة.</p></body></html>');w.document.close();w.focus();w.print();
+}
+</script>
+<script>
+(function(){
+const normalize=v=>String(v||'').trim().replace(/[أإآ]/g,'ا').replace(/ى/g,'ي').replace(/\s+/g,' ').toLowerCase();
+function movements(){try{return JSON.parse(localStorage.getItem('staff_movement_demo_2026')||'[]')}catch{return []}}
+function matching(name,date){return movements().filter(x=>normalize(x.name)===normalize(name)&&x.date===date)}
+window.reserveMovementWarning2026=function(name,date,period){
+ const m=matching(name,date);if(!m.length)return '';
+ const types=[...new Set(m.map(x=>x.type))].join('، ');
+ return '⚠️ توجد حركة دوام مسجلة للمعلمة في هذا التاريخ: '+types+'\nلا يمكن تأكيد توفرها للحصة '+period+' تلقائياً، لأن حركة الدوام لا تسجل وقت بداية ونهاية الإذن. راجعي الإذن قبل تكليفها بالاحتياط.';
+};
+function status(){
+ const name=document.getElementById('reserveSub')?.value||'';
+ const date=document.getElementById('reserveDate')?.value||'';
+ const el=document.getElementById('reserveMovementStatus2026');if(!el)return;
+ if(!name||!date){el.textContent='ابحثي باسم المعلمة وحددي التاريخ لعرض حركة الدوام.';return}
+ const m=matching(name,date);
+ el.textContent=m.length?'⚠️ حركة دوام مسجلة: '+[...new Set(m.map(x=>x.type))].join('، ')+' — يلزم التحقق من توقيت الإذن قبل الاحتياط.':'لا توجد حركة دوام مسجلة لهذا الاسم والتاريخ على هذا الجهاز (ليس تأكيداً للتوفر).';
+}
+function init(){const sub=document.getElementById('reserveSub');if(!sub||document.getElementById('reserveMovementStatus2026'))return;
+ const box=document.createElement('div');box.style.cssText='padding:10px;border:1px solid #bcc8d9;border-radius:8px;margin:8px 0;background:#f3f6fa';
+ box.innerHTML='<label>🔎 بحث باسم المعلمة <input id="reserveTeacherSearch2026" placeholder="اكتبي اسم المعلمة" style="max-width:270px"></label> <select id="reserveTeacherChoices2026" style="max-width:290px"><option value="">اختاري المعلمة</option></select><div id="reserveMovementStatus2026" style="margin-top:8px;font-weight:bold"></div>';
+ sub.closest('.panel')?.insertAdjacentElement('afterend',box);
+ const search=box.querySelector('#reserveTeacherSearch2026'),choices=box.querySelector('#reserveTeacherChoices2026');
+ function populate(){const term=normalize(search.value);let names=[];try{if(typeof rows!=='undefined'&&Array.isArray(rows))names=rows.map(r=>r.name)}catch(e){}
+ if(!names.length){document.querySelectorAll('#schedule tbody tr').forEach(tr=>{const cell=tr.querySelector('td');if(cell)names.push(cell.textContent)})}
+ names=[...new Set(names.filter(Boolean))].filter(n=>!term||normalize(n).includes(term)).slice(0,100);
+ choices.innerHTML='<option value="">اختاري المعلمة</option>'+names.map(n=>'<option></option>').join('');names.forEach((n,i)=>{choices.options[i+1].value=n;choices.options[i+1].textContent=n});
+ }
+ search.addEventListener('input',populate);choices.addEventListener('change',()=>{sub.value=choices.value;status()});sub.addEventListener('input',status);document.getElementById('reserveDate')?.addEventListener('change',status);document.getElementById('reservePeriod')?.addEventListener('change',status);populate();status();
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
+})();
+</script>
+</body></html>');w.document.close();w.focus();setTimeout(()=>w.print(),400)}
+</script>
+
+<script>
+(function(){
+const normalize=v=>String(v||'').trim().replace(/[أإآ]/g,'ا').replace(/ى/g,'ي').replace(/\s+/g,' ').toLowerCase();
+function movements(){try{return JSON.parse(localStorage.getItem('staff_movement_demo_2026')||'[]')}catch{return []}}
+function matching(name,date){return movements().filter(x=>normalize(x.name)===normalize(name)&&x.date===date)}
+window.reserveMovementWarning2026=function(name,date,period){
+ const m=matching(name,date);if(!m.length)return '';
+ const types=[...new Set(m.map(x=>x.type))].join('، ');
+ return '⚠️ توجد حركة دوام مسجلة للمعلمة في هذا التاريخ: '+types+'\nلا يمكن تأكيد توفرها للحصة '+period+' تلقائياً، لأن حركة الدوام لا تسجل وقت بداية ونهاية الإذن. راجعي الإذن قبل تكليفها بالاحتياط.';
+};
+function status(){
+ const name=document.getElementById('reserveSub')?.value||'';
+ const date=document.getElementById('reserveDate')?.value||'';
+ const el=document.getElementById('reserveMovementStatus2026');if(!el)return;
+ if(!name||!date){el.textContent='ابحثي باسم المعلمة وحددي التاريخ لعرض حركة الدوام.';return}
+ const m=matching(name,date);
+ el.textContent=m.length?'⚠️ حركة دوام مسجلة: '+[...new Set(m.map(x=>x.type))].join('، ')+' — يلزم التحقق من توقيت الإذن قبل الاحتياط.':'لا توجد حركة دوام مسجلة لهذا الاسم والتاريخ على هذا الجهاز (ليس تأكيداً للتوفر).';
+}
+function init(){const sub=document.getElementById('reserveSub');if(!sub||document.getElementById('reserveMovementStatus2026'))return;
+ const box=document.createElement('div');box.style.cssText='padding:10px;border:1px solid #bcc8d9;border-radius:8px;margin:8px 0;background:#f3f6fa';
+ box.innerHTML='<label>🔎 بحث باسم المعلمة <input id="reserveTeacherSearch2026" placeholder="اكتبي اسم المعلمة" style="max-width:270px"></label> <select id="reserveTeacherChoices2026" style="max-width:290px"><option value="">اختاري المعلمة</option></select><div id="reserveMovementStatus2026" style="margin-top:8px;font-weight:bold"></div>';
+ sub.closest('.panel')?.insertAdjacentElement('afterend',box);
+ const search=box.querySelector('#reserveTeacherSearch2026'),choices=box.querySelector('#reserveTeacherChoices2026');
+ function populate(){const term=normalize(search.value);let names=[];try{if(typeof rows!=='undefined'&&Array.isArray(rows))names=rows.map(r=>r.name)}catch(e){}
+ if(!names.length){document.querySelectorAll('#schedule tbody tr').forEach(tr=>{const cell=tr.querySelector('td');if(cell)names.push(cell.textContent)})}
+ names=[...new Set(names.filter(Boolean))].filter(n=>!term||normalize(n).includes(term)).slice(0,100);
+ choices.innerHTML='<option value="">اختاري المعلمة</option>'+names.map(n=>'<option></option>').join('');names.forEach((n,i)=>{choices.options[i+1].value=n;choices.options[i+1].textContent=n});
+ }
+ search.addEventListener('input',populate);choices.addEventListener('change',()=>{sub.value=choices.value;status()});sub.addEventListener('input',status);document.getElementById('reserveDate')?.addEventListener('change',status);document.getElementById('reservePeriod')?.addEventListener('change',status);populate();status();
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
+})();
+</script>
+
+<!-- 2026-10-12: inline teacher filtering for daily reserve -->
+<script id="reserveInlineTeacherFilter2026">
+(function(){
+  const norm=s=>String(s||'').trim().replace(/[أإآ]/g,'ا').replace(/ى/g,'ي').replace(/\s+/g,' ').toLowerCase();
+  function getNames(){
+    let names=[];
+    try{if(typeof rows!=='undefined'&&Array.isArray(rows))names=rows.map(r=>typeof r==='string'?r:(r.name||r.teacher||r['المعلمة']||''));}catch(e){}
+    if(!names.length){document.querySelectorAll('#schedule tbody tr').forEach(tr=>{let c=tr.querySelector('td');if(c)names.push(c.textContent.trim());});}
+    return [...new Set(names.map(x=>String(x||'').trim()).filter(Boolean))];
+  }
+  function setup(){
+    const absent=document.getElementById('reserveAbsent'),sub=document.getElementById('reserveSub');
+    if(!absent||!sub)return;
+    // Keep filtering in the original teacher fields rather than a separate search panel.
+    document.querySelectorAll('#reserveTeacherSearch2026,#reserveTeacherChoices2026,#reserveMovementStatus2026').forEach(el=>{
+      if(el.id==='reserveMovementStatus2026')return;
+      const panel=el.closest('div');
+      if(panel&&panel.querySelector('#reserveTeacherSearch2026'))panel.style.display='none';
+    });
+    [absent,sub].forEach((input,i)=>{
+      const list=document.createElement('datalist');list.id='reserveTeacherInlineList2026_'+i;
+      document.body.appendChild(list);input.setAttribute('list',list.id);
+      input.setAttribute('autocomplete','off');
+      input.placeholder=i?'ابحثي عن معلمة الاحتياط':'ابحثي عن المعلمة الغائبة';
+      function update(){
+        const q=norm(input.value),names=getNames();
+        const matches=names.filter(n=>!q||norm(n).includes(q)).slice(0,150);
+        list.replaceChildren(...matches.map(name=>{const option=document.createElement('option');option.value=name;return option}));
+      }
+      input.addEventListener('input',update);input.addEventListener('focus',update);update();
+    });
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',setup);else setup();
+})();
+</script>
 </body>
 </html>
 
@@ -1847,8 +2017,8 @@ if ('serviceWorker' in navigator) {
 </style>
 <script id="privacyScopesScript20261007">
 (function(){
- const ALL_SCOPES_2026=['schedule','daily','teachers','leaves','subjects','admins','reserve'];
- const SCOPE_LABELS_2026={schedule:'الجدول الدراسي',daily:'الجدول اليومي',teachers:'المعلمات',leaves:'حصر الإجازات',subjects:'المواد',admins:'الإداريات',reserve:'جدول الاحتياط'};
+ const ALL_SCOPES_2026=['schedule','daily','teachers','leaves','subjects','admins','reserve','staffMovement'];
+ const SCOPE_LABELS_2026={schedule:'الجدول الدراسي',daily:'الجدول اليومي',teachers:'المعلمات',leaves:'حصر الإجازات',subjects:'المواد',admins:'الإداريات',reserve:'جدول الاحتياط',staffMovement:'حركة الدوام'};
  window.userScopes2026=function(){
    const a=currentAccount(); if(!a)return[];
    if(a.role==='admin'||String(a.name||'').trim().toLowerCase()==='admin')return ALL_SCOPES_2026.slice();
@@ -1861,7 +2031,7 @@ if ('serviceWorker' in navigator) {
  const baseShow=window.show;
  window.show=function(id){
    if(id==='permissions'&&role()!=='admin')return baseShow(id);
-   const map={schedule:'schedule',dailySchedule2026:'daily',teachers:'teachers',leaves2026:'leaves',subjects:'subjects',admins:'admins',reserve2026:'reserve'};
+   const map={schedule:'schedule',dailySchedule2026:'daily',teachers:'teachers',leaves2026:'leaves',subjects:'subjects',admins:'admins',reserve2026:'reserve',staffMovement2026:'staffMovement',movementArchive2026:'staffMovement'};
    if(map[id]&&role()!=='admin'&&!hasScope2026(map[id])){alert('لا توجد لهذا المستخدم صلاحية الدخول إلى هذا القسم.');return;}
    return baseShow(id);
  };
@@ -1876,7 +2046,9 @@ if ('serviceWorker' in navigator) {
     ["button[onclick=\"show('teachers')\"]",'teachers'],
     ["button[onclick=\"show('subjects')\"]",'subjects'],
     ["button[onclick=\"show('admins')\"]",'admins'],
-    ['#reserveNav2026','reserve']
+    ['#reserveNav2026','reserve'],
+    ["button[onclick*=\"staffMovement2026\"]",'staffMovement'],
+    ["button[onclick*=\"movementArchive2026\"]",'staffMovement']
    ];
    navMap.forEach(([sel,sc])=>document.querySelectorAll('nav '+sel).forEach(el=>setVisible(el,isAdmin||hasScope2026(sc))));
    const cardMap=[
@@ -1886,7 +2058,9 @@ if ('serviceWorker' in navigator) {
     ["#home .card[onclick=\"show('teachers')\"]",'teachers'],
     ["#home .card[onclick=\"show('subjects')\"]",'subjects'],
     ["#home .card[onclick=\"show('admins')\"]",'admins'],
-    ['#reserveCard2026','reserve']
+    ['#reserveCard2026','reserve'],
+    ["#home .card[onclick*=\"staffMovement2026\"]",'staffMovement'],
+    ["#home .card[onclick*=\"movementArchive2026\"]",'staffMovement']
    ];
    cardMap.forEach(([sel,sc])=>document.querySelectorAll(sel).forEach(el=>setVisible(el,isAdmin||hasScope2026(sc))));
  }
@@ -1920,13 +2094,13 @@ if ('serviceWorker' in navigator) {
    let scopes=ALL_SCOPES_2026.slice();
    if(nr!=='admin'){
      const current=Array.isArray(p.scopes)?p.scopes:[];
-     const raw=prompt('اكتب رموز الأقسام المطلوبة مفصولة بفاصلة:\nschedule=الجدول الدراسي, daily=الجدول اليومي, teachers=المعلمات, leaves=حصر الإجازات, subjects=المواد, admins=الإداريات, reserve=جدول الاحتياط',current.join(','));
+     const raw=prompt('اكتب رموز الأقسام المطلوبة مفصولة بفاصلة:\nschedule=الجدول الدراسي, daily=الجدول اليومي, teachers=المعلمات, leaves=حصر الإجازات, subjects=المواد, admins=الإداريات, reserve=جدول الاحتياط, staffMovement=حركة الدوام',current.join(','));
      if(raw===null)return;scopes=raw.split(',').map(x=>x.trim()).filter(x=>ALL_SCOPES_2026.includes(x));
    }
    p.pass=np;p.role=nr;p.scopes=scopes;localStorage.setItem(USERS_KEY,JSON.stringify(users));renderPermissions();
  };
 
- const editFns={addSubject:'subjects',removeSubject:'subjects',addAdmin:'admins',removeAdmin:'admins',openLeaveModal2026:'leaves',saveLeave2026:'leaves',deleteLeave2026:'leaves'};
+ const editFns={saveStaffMovement2026:'staffMovement',deleteStaffMovement2026:'staffMovement',editStaffMovement2026:'staffMovement',addSubject:'subjects',removeSubject:'subjects',addAdmin:'admins',removeAdmin:'admins',openLeaveModal2026:'leaves',saveLeave2026:'leaves',deleteLeave2026:'leaves'};
  Object.entries(editFns).forEach(([n,sc])=>{const fn=window[n];if(typeof fn==='function')window[n]=function(){if(!requireScopeEdit2026(sc))return;return fn.apply(this,arguments)}});
 
  const oldApplyRole=window.applyRole;
@@ -1941,4 +2115,27 @@ if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./service-worker.js');
   });
 }
+</script>
+
+<!-- ربط حركة الدوام بأوقات الحصص الرسمية 2026-2027 -->
+<script id="movementPeriodRules2026">
+(function(){
+ const normalize=v=>String(v||'').trim().replace(/[أإآ]/g,'ا').replace(/ى/g,'ي').replace(/\s+/g,' ').toLowerCase();
+ const times={'الأولى':['08:30','09:10'],'الثانية':['09:10','09:50'],'الثالثة':['10:10','10:50'],'الرابعة':['10:50','11:30']};
+ function entries(){try{return JSON.parse(localStorage.getItem('staff_movement_demo_2026')||'[]')}catch(e){return []}}
+ function assess(name,date,period){
+  const m=entries().filter(x=>normalize(x.name)===normalize(name)&&x.date===date);
+  const t=times[period];if(!m.length)return {blocked:false,message:'لا توجد حركة دوام مسجلة لهذا الاسم والتاريخ على هذا الجهاز (ليس تأكيداً للتوفر).'};
+  const types=[...new Set(m.map(x=>x.type))];
+  if(!t)return {blocked:true,message:'⚠️ حركة دوام: '+types.join('، ')+' — تعذر تحديد وقت الحصة؛ راجعي التكليف.'};
+  const blocked=m.some(x=>x.type==='مرضية'||x.type==='طارئة'||(x.type==='إذن بداية الدوام'&&t[0]<'10:00')||(x.type==='إذن نهاية الدوام'&&t[1]>'10:00'));
+  return {blocked,message:(blocked?'⛔ غير متاحة للاحتياط':'✅ لا يتعارض الإذن مع وقت الحصة')+' — '+period+' ('+t.join('–')+') — الحركة: '+types.join('، ')+(blocked?'؛ يُمنع التكليف في هذه الحصة.':'؛ راجعي الجدول الأساسي قبل التكليف.')};
+ }
+ window.reserveMovementWarning2026=function(name,date,period){const a=assess(name,date,period);return a.blocked?a.message:''};
+ function update(){const el=document.getElementById('reserveMovementStatus2026');if(!el)return;const name=document.getElementById('reserveSub')?.value||'',date=document.getElementById('reserveDate')?.value||'',period=document.getElementById('reservePeriod')?.value||'';if(!name||!date){el.textContent='اختاري المعلمة والتاريخ والحصة لمعرفة تعارض الإذن.';return}const a=assess(name,date,period);el.textContent=a.message;el.style.color=a.blocked?'#a92525':'#17643b'}
+ document.addEventListener('change',e=>{if(['reserveTeacherChoices2026','reserveDate','reservePeriod','reserveSub'].includes(e.target.id))setTimeout(update,0)});
+ document.addEventListener('input',e=>{if(e.target.id==='reserveSub')setTimeout(update,0)});
+ document.addEventListener('click',e=>{if(e.target.closest('button')?.textContent?.includes('الاحتياط'))setTimeout(update,50)});
+ window.addEventListener('storage',e=>{if(e.key==='staff_movement_demo_2026')update()});
+})();
 </script>
