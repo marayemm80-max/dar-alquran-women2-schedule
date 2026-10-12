@@ -282,7 +282,7 @@ table.simple th,.grid .meta,#scheduleGrid thead tr:nth-child(3) th.period{backgr
 </section>
 
 <section id="movementArchive2026" class="section"><h2>🗂️ أرشيف حركة الدوام</h2><div class="movement-panel"><div class="movement-alert">أرشيف تجريبي محفوظ على هذا الجهاز فقط. لا توجد بعد حماية فعلية لحسابات المعلمات أو صلاحيات الإدارة عبر Supabase.</div><div class="movement-fields"><label>بحث باسم المعلمة<input id="archiveName2026" placeholder="اكتبي جزءاً من الاسم" oninput="renderMovementArchive2026()"></label><label>من تاريخ<input type="date" id="archiveFrom2026" onchange="renderMovementArchive2026()"></label><label>إلى تاريخ<input type="date" id="archiveTo2026" onchange="renderMovementArchive2026()"></label></div><div style="display:flex;gap:8px;flex-wrap:wrap;margin:12px 0"><button onclick="setArchiveRange2026('day')">اليوم</button><button onclick="setArchiveRange2026('week')">الأسبوع</button><button onclick="setArchiveRange2026('month')">الشهر</button><button onclick="setArchiveRange2026('all')">كل الفترات</button><button class="action" onclick="exportArchiveExcel2026()">📊 تصدير Excel</button><button class="action" onclick="exportArchivePdf2026()">📄 تصدير PDF</button></div><p id="archiveCount2026"></p><div style="overflow:auto"><table><thead><tr><th>الاسم</th><th>نوع الحركة</th><th>التاريخ</th><th>الوقت</th><th>ملاحظات</th></tr></thead><tbody id="archiveRows2026"></tbody></table></div></div></section>
-<section id="staffMovement2026" class="section"><h2>🕒 حركة الدوام</h2><div class="movement-panel"><div class="movement-alert">نسخة تجريبية: تحفظ الإدخالات على هذا الجهاز فقط. لا تدخلوا بيانات مرضية حقيقية قبل تفعيل حسابات Supabase Auth وسياسات RLS والتحقق منها.</div><div class="movement-fields"><label>الاسم<input id="movementName2026" placeholder="اسم الموظفة"></label><label>نوع الحركة<select id="movementType2026"><option>إذن بداية الدوام</option><option>إذن نهاية الدوام</option><option>مرضية</option><option>طارئة</option></select></label><label>تاريخ التسجيل (تلقائي)<input type="date" id="movementDate2026" readonly></label><label>وقت التسجيل (تلقائي)<input type="time" id="movementTime2026" readonly></label></div><label style="display:block;margin-top:10px">ملاحظات إدارية غير طبية<textarea id="movementNotes2026" style="width:100%" placeholder="ملاحظة اختيارية، دون تفاصيل صحية"></textarea></label><button class="action" type="button" onclick="exportTodayMovementsPdf2026()" style="background:#244f86;margin:8px 0">📄 تصدير PDF — كشف أذونات اليوم للمسؤول</button> <button class="action" id="movementSaveButton2026" onclick="saveStaffMovement2026()">حفظ تجريبي على هذا الجهاز</button> <button id="movementCancelEdit2026" type="button" style="display:none" onclick="cancelStaffMovementEdit2026()">إلغاء التعديل</button><div style="overflow:auto"><table><thead><tr><th>الاسم</th><th>الحركة</th><th>التاريخ</th><th>الوقت</th><th>ملاحظات</th><th>الإجراءات</th></tr></thead><tbody id="movementRows2026"></tbody></table></div></div></section>
+<section id="staffMovement2026" class="section"><h2>🕒 حركة الدوام</h2><div class="movement-panel"><div class="movement-alert">نسخة تجريبية: تحفظ الإدخالات على هذا الجهاز فقط. لا تدخلوا بيانات مرضية حقيقية قبل تفعيل حسابات Supabase Auth وسياسات RLS والتحقق منها.</div><div class="movement-fields"><label>الاسم<input id="movementName2026" placeholder="اسم الموظفة"></label><label>نوع الحركة<select id="movementType2026"><option>إذن بداية الدوام</option><option>إذن نهاية الدوام</option><option>مرضية</option><option>طارئة</option></select></label><label>تاريخ التسجيل (تلقائي)<input type="date" id="movementDate2026" readonly></label><label>وقت التسجيل (تلقائي)<input type="time" id="movementTime2026" readonly></label></div><label style="display:block;margin-top:10px">ملاحظات إدارية غير طبية<textarea id="movementNotes2026" style="width:100%" placeholder="ملاحظة اختيارية، دون تفاصيل صحية"></textarea></label><button class="action" type="button" onclick="exportTodayMovementsPdf2026()" style="background:#244f86;margin:8px 0">📄 تصدير PDF — كشف حركة الدوام اليومي للموظفات</button> <button class="action" id="movementSaveButton2026" onclick="saveStaffMovement2026()">حفظ تجريبي على هذا الجهاز</button> <button id="movementCancelEdit2026" type="button" style="display:none" onclick="cancelStaffMovementEdit2026()">إلغاء التعديل</button><div style="overflow:auto"><table><thead><tr><th>الاسم</th><th>الحركة</th><th>التاريخ</th><th>الوقت</th><th>ملاحظات</th><th>الإجراءات</th></tr></thead><tbody id="movementRows2026"></tbody></table></div></div></section>
 <section id="schedule" class="section">
   <h2>📅 الجدول الدراسي</h2>
   <div class="schedule-toolbar no-print"><span id="cloudSyncStatus2026" style="padding:8px;border-radius:6px;background:#fff3cd;border:1px solid #e4cc65">مزامنة الأجهزة: جارٍ التحقق...</span>
@@ -1860,27 +1860,31 @@ function saveStaffMovement2026(){const name=movementName2026.value.trim();if(!na
 
 document.addEventListener('DOMContentLoaded',()=>{refreshMovementClock2026();document.getElementById('movementName2026')?.addEventListener('focus',refreshMovementClock2026)});
 async function exportTodayMovementsPdf2026(){
- // هذا الكشف متاح للمسؤول الرئيسي فقط، ولا يتضمن سوى السجلات المحفوظة على هذا الجهاز.
- if(typeof role==='function' && role()!=='admin'){alert('تصدير كشف أذونات اليوم متاح للمسؤول الرئيسي فقط.');return;}
+ if(typeof role==='function' && role()!=='admin'){alert('تصدير كشف حركة الدوام اليومي متاح للمسؤول الرئيسي فقط.');return;}
  const today=movementNowKuwait2026().date;
- const entries=movementEntries2026().filter(e=>e.date===today && String(e.type||'').includes('إذن'));
- if(!entries.length){alert('لا توجد أذونات مسجلة لهذا اليوم على هذا الجهاز.');return;}
+ // جميع حركات اليوم الظاهرة في جدول حركة الدوام، بما فيها المرضية والطارئة.
+ const entries=movementEntries2026().filter(e=>e.date===today);
+ if(!entries.length){alert('لا توجد حركات دوام مسجلة لهذا اليوم على هذا الجهاز.');return;}
  if(typeof html2canvas==='undefined'||!window.jspdf?.jsPDF){alert('تعذر تحميل أداة PDF. تأكد من اتصال الإنترنت.');return;}
- const escapeHtml=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
- const host=document.createElement('div');host.style.cssText='position:fixed;top:0;left:-16000px;width:940px;z-index:-1;background:white';
- const page=document.createElement('div');page.dir='rtl';page.style.cssText='background:#fff;color:#20334d;font-family:Tahoma,Arial,sans-serif;padding:34px;width:940px;box-sizing:border-box';
- const rows=entries.map((e,i)=>'<tr><td>'+(i+1)+'</td><td>'+escapeHtml(e.name)+'</td><td>'+escapeHtml(e.type)+'</td><td>'+escapeHtml(e.time)+'</td><td>'+escapeHtml(e.notes||'—')+'</td></tr>').join('');
- page.innerHTML='<div style="text-align:center;border-bottom:3px solid #284e83;padding-bottom:14px"><h2 style="margin:0 0 10px;color:#23477d">مركز دار القرآن غرب عبدالله المبارك نساء ٢</h2><h3 style="margin:0">كشف أذونات حركة الدوام اليومي</h3></div><div style="display:flex;justify-content:space-between;margin:19px 0;font-size:17px"><b>التاريخ: '+escapeHtml(today)+'</b><b>عدد الأذونات: '+entries.length+'</b></div><table style="border-collapse:collapse;width:100%;font-size:16px;text-align:right"><thead><tr style="background:#dce5f0;color:#19385e"><th>م</th><th>اسم الموظفة</th><th>نوع الإذن</th><th>وقت التسجيل</th><th>ملاحظات</th></tr></thead><tbody>'+rows+'</tbody></table><p style="margin-top:25px;color:#596477;font-size:13px">كشف من السجلات المحفوظة على هذا الجهاز وقت التصدير.</p>';
- const style=document.createElement('style');style.textContent='table th, table td {border:1px solid #a9b8cc;padding:11px 9px;vertical-align:top} tbody tr:nth-child(even){background:#f3f6fb}';page.prepend(style);host.appendChild(page);document.body.appendChild(host);
+ const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const logos=Array.from(document.querySelectorAll('.leave-head-2026 .leave-logo-2026 img')).map(im=>im.src);
+ const host=document.createElement('div');host.style.cssText='position:fixed;left:-18000px;top:0;width:940px;background:#fff;z-index:-1';
+ document.body.appendChild(host);
+ const {jsPDF}=window.jspdf;const pdf=new jsPDF({orientation:'portrait',unit:'mm',format:'a4',compress:true});
+ const pageSize=15;
  try{
-  const {jsPDF}=window.jspdf;const pdf=new jsPDF({orientation:'portrait',unit:'mm',format:'a4',compress:true});
-  const canvas=await html2canvas(page,{scale:1.5,backgroundColor:'#fff',useCORS:true});
-  const img=canvas.toDataURL('image/jpeg',.94), pageWidth=210, pageHeight=297, margin=8;
-  const displayWidth=pageWidth-2*margin,displayHeight=canvas.height*displayWidth/canvas.width;
-  const sliceHeightPx=Math.floor((pageHeight-2*margin)*canvas.width/displayWidth);
-  if(displayHeight<=pageHeight-2*margin){pdf.addImage(img,'JPEG',margin,margin,displayWidth,displayHeight,undefined,'FAST')}
-  else {let pos=0;while(pos<canvas.height){const part=document.createElement('canvas');part.width=canvas.width;part.height=Math.min(sliceHeightPx,canvas.height-pos);part.getContext('2d').drawImage(canvas,0,pos,canvas.width,part.height,0,0,canvas.width,part.height);if(pos)pdf.addPage();pdf.addImage(part.toDataURL('image/jpeg',.94),'JPEG',margin,margin,displayWidth,part.height*displayWidth/canvas.width,undefined,'FAST');pos+=part.height}}
-  pdf.save('كشف_أذونات_اليوم_'+today+'.pdf');
+  for(let start=0;start<entries.length;start+=pageSize){
+   const subset=entries.slice(start,start+pageSize);
+   const page=document.createElement('div');page.dir='rtl';page.style.cssText='background:#fff;color:#1c344f;font-family:Tahoma,Arial,sans-serif;width:940px;min-height:1200px;box-sizing:border-box;padding:34px 42px;display:flex;flex-direction:column';
+   const logo=(src)=>src?'<img src="'+src+'" style="width:94px;height:100px;object-fit:contain">':'<div style="width:94px"></div>';
+   const rows=subset.map((e,i)=>'<tr><td>'+(start+i+1)+'</td><td>'+esc(e.name)+'</td><td>'+esc(e.type)+'</td><td>'+esc(e.time)+'</td><td>'+esc(e.notes||'—')+'</td></tr>').join('');
+   page.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;gap:14px;border-bottom:3px solid #244d80;padding-bottom:14px">'+logo(logos[0])+'<div style="text-align:center;flex:1"><div style="font-size:19px;font-weight:bold;color:#183d70">مركز دار القرآن غرب عبدالله المبارك نساء ٢</div><h2 style="font-size:25px;color:#173c6d;margin:14px 0 4px">كشف حركة الدوام اليومي للموظفات</h2></div>'+logo(logos[1])+'</div><div style="display:flex;justify-content:space-between;margin:22px 0 15px;font-size:17px"><b>التاريخ: '+esc(today)+'</b><b>إجمالي الحركات: '+entries.length+'</b></div><table style="border-collapse:collapse;width:100%;table-layout:fixed;text-align:center;font-size:16px"><thead><tr style="background:#dce5f0;color:#19385e"><th style="width:6%">م</th><th style="width:29%">اسم الموظفة</th><th style="width:26%">نوع الحركة</th><th style="width:14%">وقت التسجيل</th><th style="width:25%">ملاحظات</th></tr></thead><tbody>'+rows+'</tbody></table><div style="margin-top:auto;padding-top:35px"><div style="display:flex;justify-content:space-between;gap:25px;text-align:center;font-size:15px"><div><b>إعداد ومتابعة</b><div style="margin-top:9px">أ. مريم العتيبي</div></div><div><b>مشرفة مركز دار القرآن غرب عبدالله المبارك</b><div style="margin-top:9px">أ. هيله العتيبي</div></div></div><div style="border-top:2px solid #244d80;margin-top:24px;padding-top:8px;text-align:center;color:#64748b;font-size:12px">نظام إدارة جدول حصص مركز دار القرآن غرب عبدالله المبارك نساء ٢ — صفحة '+(Math.floor(start/pageSize)+1)+' من '+Math.ceil(entries.length/pageSize)+'</div></div>';
+   const style=document.createElement('style');style.textContent='table th,table td{border:1px solid #9cadc2;padding:12px 7px;overflow-wrap:anywhere;vertical-align:middle}tbody tr:nth-child(even){background:#f3f6fb}';page.prepend(style);host.appendChild(page);
+   await Promise.all(Array.from(page.querySelectorAll('img')).map(im=>im.complete?Promise.resolve():new Promise(resolve=>{im.onload=resolve;im.onerror=resolve})));
+   const canvas=await html2canvas(page,{scale:1.5,backgroundColor:'#fff',useCORS:true,logging:false});
+   if(start)pdf.addPage();pdf.addImage(canvas.toDataURL('image/jpeg',.95),'JPEG',8,8,194,281,undefined,'FAST');page.remove();
+  }
+  pdf.save('كشف_حركة_الدوام_اليومي_للموظفات_'+today+'.pdf');
  }catch(err){console.error(err);alert('تعذر تصدير PDF.')}finally{host.remove()}
 }
 function openMovementArchive2026(){show('movementArchive2026');setArchiveRange2026('month')}
@@ -1966,6 +1970,42 @@ function init(){const sub=document.getElementById('reserveSub');if(!sub||documen
  search.addEventListener('input',populate);choices.addEventListener('change',()=>{sub.value=choices.value;status()});sub.addEventListener('input',status);document.getElementById('reserveDate')?.addEventListener('change',status);document.getElementById('reservePeriod')?.addEventListener('change',status);populate();status();
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
+})();
+</script>
+
+<!-- 2026-10-12: inline teacher filtering for daily reserve -->
+<script id="reserveInlineTeacherFilter2026">
+(function(){
+  const norm=s=>String(s||'').trim().replace(/[أإآ]/g,'ا').replace(/ى/g,'ي').replace(/\s+/g,' ').toLowerCase();
+  function getNames(){
+    let names=[];
+    try{if(typeof rows!=='undefined'&&Array.isArray(rows))names=rows.map(r=>typeof r==='string'?r:(r.name||r.teacher||r['المعلمة']||''));}catch(e){}
+    if(!names.length){document.querySelectorAll('#schedule tbody tr').forEach(tr=>{let c=tr.querySelector('td');if(c)names.push(c.textContent.trim());});}
+    return [...new Set(names.map(x=>String(x||'').trim()).filter(Boolean))];
+  }
+  function setup(){
+    const absent=document.getElementById('reserveAbsent'),sub=document.getElementById('reserveSub');
+    if(!absent||!sub)return;
+    // Keep filtering in the original teacher fields rather than a separate search panel.
+    document.querySelectorAll('#reserveTeacherSearch2026,#reserveTeacherChoices2026,#reserveMovementStatus2026').forEach(el=>{
+      if(el.id==='reserveMovementStatus2026')return;
+      const panel=el.closest('div');
+      if(panel&&panel.querySelector('#reserveTeacherSearch2026'))panel.style.display='none';
+    });
+    [absent,sub].forEach((input,i)=>{
+      const list=document.createElement('datalist');list.id='reserveTeacherInlineList2026_'+i;
+      document.body.appendChild(list);input.setAttribute('list',list.id);
+      input.setAttribute('autocomplete','off');
+      input.placeholder=i?'ابحثي عن معلمة الاحتياط':'ابحثي عن المعلمة الغائبة';
+      function update(){
+        const q=norm(input.value),names=getNames();
+        const matches=names.filter(n=>!q||norm(n).includes(q)).slice(0,150);
+        list.replaceChildren(...matches.map(name=>{const option=document.createElement('option');option.value=name;return option}));
+      }
+      input.addEventListener('input',update);input.addEventListener('focus',update);update();
+    });
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',setup);else setup();
 })();
 </script>
 </body>
