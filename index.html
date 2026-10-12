@@ -566,6 +566,7 @@ function show(id){
   document.getElementById(id).classList.add("active");
 }
 
+function normalizeTeacherNameAccess2026(v){return String(v||'').trim().replace(/[أإآ]/g,'ا').replace(/ى/g,'ي').replace(/\\s+/g,' ').toLowerCase()}
 function renderSchedule(){
   let h='<thead>';
   h+='<tr><th rowspan="3" class="meta num">م</th><th rowspan="3" class="meta name">الاسم</th><th rowspan="3" class="meta dept">القسم</th><th rowspan="3" class="meta conn">نوع الارتباط</th><th colspan="20" class="meta">أيام الأسبوع</th><th rowspan="3" class="meta total">إجمالي<br>نصاب الحصص</th><th rowspan="3" class="meta actioncol no-print edit-control">إجراء</th></tr>';
@@ -576,6 +577,7 @@ function renderSchedule(){
   h+='</tr></thead><tbody>';
 
   rows.forEach((r,ri)=>{
+    if(role()==='view' && normalizeTeacherNameAccess2026(r.name)!==normalizeTeacherNameAccess2026((currentAccount()||{}).name))return;
     h+=`<tr><td>${ri+1}</td>`;
     h+=`<td class="edit name" onclick="openTeacherModal(${ri})">${esc(r.name)}</td>`;
     h+=`<td class="edit" onclick="openTeacherModal(${ri})">${esc(r.dept)}</td>`;
@@ -1404,7 +1406,7 @@ async function pdfSchedule2026(){
  window.hasScope2026=function(scope){return role()==='admin'||userScopes2026().includes(scope);};
  const oldCanEdit=window.canEdit; window.canEdit=function(scope){const base=role()==='edit'||role()==='admin';return base&&(!scope||hasScope2026(scope));};
  window.requireScopeEdit2026=function(scope){if(!canEdit(scope)){alert('لا توجد لهذا المستخدم صلاحية تعديل هذا القسم.');return false}return true};
- const oldShow=window.show;window.show=function(id){if(id==='permissions'&&role()!=='admin')return oldShow(id);const map={schedule:'schedule',teachers:'teachers',reserve2026:'reserve',staffMovement2026:'staffMovement',movementArchive2026:'staffMovement'};if(map[id]&&role()!=='admin'&&!hasScope2026(map[id])){alert('لا توجد لهذا المستخدم صلاحية الدخول إلى هذا القسم.');return;}return oldShow(id);};
+ const oldShow=window.show;window.show=function(id){if(id==='permissions'&&role()!=='admin')return oldShow(id);const map={schedule:'schedule',teachers:'teachers',reserve2026:'reserve',staffMovement2026:'staffMovement',movementArchive2026:'staffMovement'};if(map[id]&&role()!=='admin'&&!(id==='staffMovement2026'&&role()==='view')&&!hasScope2026(map[id])){alert('لا توجد لهذا المستخدم صلاحية الدخول إلى هذا القسم.');return;}return oldShow(id);};
  function decorate2026(){
    document.querySelectorAll('#scheduleGrid tbody tr').forEach(tr=>{const cells=tr.children;if(!cells.length)return;const dept=cells[2]?.textContent||'';const dc=deptClass2026(dept);if(dc)Array.from(cells).forEach(td=>td.classList.add(dc));Array.from(cells).forEach(td=>{if((td.textContent||'').includes('بالتناوب'))td.classList.add('alternate-2026');td.childNodes.forEach(n=>{if(n.nodeType===3)n.nodeValue=toArabicDigits2026(n.nodeValue)});});});
    document.querySelectorAll('#teacherList td,#reserveBody td').forEach(td=>{td.childNodes.forEach(n=>{if(n.nodeType===3)n.nodeValue=toArabicDigits2026(n.nodeValue)});});
@@ -1856,8 +1858,14 @@ function movementEntries2026(){try{const data=JSON.parse(localStorage.getItem('s
 function cancelStaffMovementEdit2026(){editingStaffMovementIndex2026=null;document.getElementById('movementSaveButton2026').textContent='حفظ الحركة';document.getElementById('movementCancelEdit2026').style.display='none';movementName2026.value='';movementType2026.selectedIndex=0;movementTime2026.value='';movementNotes2026.value='';refreshMovementClock2026()}
 function editStaffMovement2026(index){const e=movementEntries2026()[index];if(!e)return;editingStaffMovementIndex2026=index;movementName2026.value=e.name||'';movementType2026.value=e.type||'إذن بداية الدوام';movementDate2026.value=e.date||'';movementTime2026.value=e.time||'';movementNotes2026.value=e.notes||'';document.getElementById('movementSaveButton2026').textContent='حفظ التعديل';document.getElementById('movementCancelEdit2026').style.display='inline-block';movementName2026.focus();document.getElementById('staffMovement2026').scrollIntoView({behavior:'smooth',block:'start'})}
 function deleteStaffMovement2026(index){const entries=movementEntries2026();if(!entries[index])return;if(!confirm('هل تريدين حذف هذه الحركة؟'))return;entries.splice(index,1);localStorage.setItem('staff_movement_demo_2026',JSON.stringify(entries));cancelStaffMovementEdit2026();renderStaffMovement2026()}
-function renderStaffMovement2026(){const body=document.getElementById('movementRows2026');if(!body)return;const entries=movementEntries2026();body.replaceChildren();entries.filter(e=>e.date===movementNowKuwait2026().date).forEach((e)=>{const index=entries.indexOf(e);const tr=document.createElement('tr');[e.name,e.type,e.date,e.time,e.notes].forEach(v=>{const td=document.createElement('td');td.textContent=v||'—';tr.appendChild(td)});const td=document.createElement('td');td.style.whiteSpace='nowrap';const edit=document.createElement('button');edit.type='button';edit.textContent='✏️ تعديل';edit.style.margin='3px';edit.onclick=()=>editStaffMovement2026(index);const del=document.createElement('button');del.type='button';del.textContent='🗑️ حذف';del.className='danger';del.style.margin='3px';del.onclick=()=>deleteStaffMovement2026(index);td.append(edit,del);tr.appendChild(td);body.appendChild(tr)});if(!movementDate2026.value)refreshMovementClock2026()}
-function saveStaffMovement2026(){const name=movementName2026.value.trim();if(!name){alert('أدخلي الاسم');return}const entries=movementEntries2026();const updating=editingStaffMovementIndex2026!==null;const original=updating?entries[editingStaffMovementIndex2026]:null;if(updating&&!original){alert('لم يتم العثور على الحركة');return}const stamp=original?{date:original.date,time:original.time}:movementNowKuwait2026();const entry={name,type:movementType2026.value,date:stamp.date,time:stamp.time,notes:movementNotes2026.value.trim()};if(updating){entries[editingStaffMovementIndex2026]=entry}else entries.unshift(entry);try{localStorage.setItem('staff_movement_demo_2026',JSON.stringify(entries))}catch(e){alert('تعذر حفظ الحركة على الجهاز');return}cancelStaffMovementEdit2026();renderStaffMovement2026();alert(updating?'تم حفظ التعديل تجريبياً على هذا الجهاز':'حُفظ تجريبياً على هذا الجهاز فقط')}
+function renderStaffMovement2026(){const body=document.getElementById('movementRows2026');if(!body)return;const entries=movementEntries2026();body.replaceChildren();entries.filter(e=>e.date===movementNowKuwait2026().date && (role()!=='view'||normalizeTeacherNameAccess2026(e.name)===normalizeTeacherNameAccess2026((currentAccount()||{}).name))).forEach((e)=>{const index=entries.indexOf(e);const tr=document.createElement('tr');[e.name,e.type,e.date,e.time,e.notes].forEach(v=>{const td=document.createElement('td');td.textContent=v||'—';tr.appendChild(td)});const td=document.createElement('td');td.style.whiteSpace='nowrap';const edit=document.createElement('button');edit.type='button';edit.textContent='✏️ تعديل';edit.style.margin='3px';edit.onclick=()=>editStaffMovement2026(index);const del=document.createElement('button');del.type='button';del.textContent='🗑️ حذف';del.className='danger';del.style.margin='3px';del.onclick=()=>deleteStaffMovement2026(index);if(role()!=='view')td.append(edit,del);tr.appendChild(td);body.appendChild(tr)});if(!movementDate2026.value)refreshMovementClock2026()}
+function saveStaffMovement2026(){
+ if(role()==='view'){
+   const mine=(currentAccount()||{}).name||'';
+   movementName2026.value=mine;
+   if(editingStaffMovementIndex2026!==null){alert('المعلمة تستطيع إضافة حركتها فقط.');return;}
+ }
+ const name=movementName2026.value.trim();if(!name){alert('أدخلي الاسم');return}const entries=movementEntries2026();const updating=editingStaffMovementIndex2026!==null;const original=updating?entries[editingStaffMovementIndex2026]:null;if(updating&&!original){alert('لم يتم العثور على الحركة');return}const stamp=original?{date:original.date,time:original.time}:movementNowKuwait2026();const entry={name,type:movementType2026.value,date:stamp.date,time:stamp.time,notes:movementNotes2026.value.trim()};if(updating){entries[editingStaffMovementIndex2026]=entry}else entries.unshift(entry);try{localStorage.setItem('staff_movement_demo_2026',JSON.stringify(entries))}catch(e){alert('تعذر حفظ الحركة على الجهاز');return}cancelStaffMovementEdit2026();renderStaffMovement2026();alert(updating?'تم حفظ التعديل تجريبياً على هذا الجهاز':'حُفظ تجريبياً على هذا الجهاز فقط')}
 
 
 document.addEventListener('DOMContentLoaded',()=>{refreshMovementClock2026();document.getElementById('movementName2026')?.addEventListener('focus',refreshMovementClock2026)});
@@ -2099,6 +2107,35 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
  window.addEventListener('storage',e=>{if([USERS_KEY,ROWS_KEY,ADMINS_KEY].includes(e.key))setNameField()});
 })();
 </script>
+
+<script id="teacherViewOnlyFinal2026">
+(function(){
+ const oldApply=window.applyRole;
+ window.applyRole=function(){
+   if(typeof oldApply==='function')oldApply();
+   const viewer=role()==='view';
+   const input=document.getElementById('movementName2026');
+   if(input){
+     if(viewer){input.value=(currentAccount()||{}).name||'';input.readOnly=true;}
+     else input.readOnly=false;
+   }
+   const exportBtn=document.querySelector('#staffMovement2026 button[onclick="exportTodayMovementsPdf2026()"]');
+   if(exportBtn)exportBtn.style.display=viewer?'none':'';
+   const reserveSave=document.getElementById('saveReserveButton2026');
+   if(reserveSave)reserveSave.style.display=viewer?'none':'';
+   const reserveCard=document.getElementById('reserveCard2026');
+   if(reserveCard && viewer && !hasScope2026('reserve'))reserveCard.style.display='none';
+   renderStaffMovement2026();
+ };
+ const oldRenderMovement=window.renderStaffMovement2026;
+ window.renderStaffMovement2026=function(){
+   if(typeof oldRenderMovement==='function')oldRenderMovement();
+   const viewer=role()==='view';
+   const input=document.getElementById('movementName2026');
+   if(viewer && input){input.value=(currentAccount()||{}).name||'';input.readOnly=true;}
+ };
+})();
+</script>
 </body>
 </html>
 
@@ -2124,7 +2161,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
    if(id==='permissions'&&role()!=='admin')return baseShow(id);
    if(id==='movementArchive2026'&&role()!=='admin'){alert('أرشيف حركة الدوام متاح للمسؤول فقط.');return;}
    const map={schedule:'schedule',dailySchedule2026:'daily',teachers:'teachers',leaves2026:'leaves',subjects:'subjects',admins:'admins',reserve2026:'reserve',staffMovement2026:'staffMovement',movementArchive2026:'staffMovement'};
-   if(map[id]&&role()!=='admin'&&!hasScope2026(map[id])){alert('لا توجد لهذا المستخدم صلاحية الدخول إلى هذا القسم.');return;}
+   if(map[id]&&role()!=='admin'&&!(id==='staffMovement2026'&&role()==='view')&&!hasScope2026(map[id])){alert('لا توجد لهذا المستخدم صلاحية الدخول إلى هذا القسم.');return;}
    return baseShow(id);
  };
 
@@ -2142,7 +2179,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
     ["button[onclick*=\"staffMovement2026\"]",'staffMovement'],
     ["button[onclick*=\"movementArchive2026\"]",'staffMovement']
    ];
-   navMap.forEach(([sel,sc])=>document.querySelectorAll('nav '+sel).forEach(el=>setVisible(el,isAdmin||hasScope2026(sc))));
+   navMap.forEach(([sel,sc])=>document.querySelectorAll('nav '+sel).forEach(el=>setVisible(el,isAdmin||hasScope2026(sc)||(sc==='staffMovement'&&role()==='view'))));
    setVisible(document.getElementById('movementArchiveNav2026'),isAdmin);
    const cardMap=[
     ["#home .card[onclick=\"show('schedule')\"]",'schedule'],
@@ -2155,7 +2192,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
     ["#home .card[onclick*=\"staffMovement2026\"]",'staffMovement'],
     ["#home .card[onclick*=\"movementArchive2026\"]",'staffMovement']
    ];
-   cardMap.forEach(([sel,sc])=>document.querySelectorAll(sel).forEach(el=>setVisible(el,isAdmin||hasScope2026(sc))));
+   cardMap.forEach(([sel,sc])=>document.querySelectorAll(sel).forEach(el=>setVisible(el,isAdmin||hasScope2026(sc)||(sc==='staffMovement'&&role()==='view'))));
  }
 
  function rebuildScopeChecks2026(){
@@ -2193,7 +2230,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
    p.pass=np;p.role=nr;p.scopes=scopes;localStorage.setItem(USERS_KEY,JSON.stringify(users));renderPermissions();
  };
 
- const editFns={saveStaffMovement2026:'staffMovement',deleteStaffMovement2026:'staffMovement',editStaffMovement2026:'staffMovement',addSubject:'subjects',removeSubject:'subjects',addAdmin:'admins',removeAdmin:'admins',openLeaveModal2026:'leaves',saveLeave2026:'leaves',deleteLeave2026:'leaves'};
+ const editFns={deleteStaffMovement2026:'staffMovement',editStaffMovement2026:'staffMovement',addSubject:'subjects',removeSubject:'subjects',addAdmin:'admins',removeAdmin:'admins',openLeaveModal2026:'leaves',saveLeave2026:'leaves',deleteLeave2026:'leaves'};
  Object.entries(editFns).forEach(([n,sc])=>{const fn=window[n];if(typeof fn==='function')window[n]=function(){if(!requireScopeEdit2026(sc))return;return fn.apply(this,arguments)}});
 
  const oldApplyRole=window.applyRole;
