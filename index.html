@@ -2050,7 +2050,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
  };
  function ownName(){
   const a=account();if(!a||isManager())return '';
-  const u=norm(a.name), matches=staffNames().filter(n=>triple(n)===u);
+  const u=triple(a.name), matches=staffNames().filter(n=>triple(n)===u);
   return matches.length===1?matches[0]:'';
  }
  function setNameField(){
@@ -2092,7 +2092,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   if(n!=='admin'&&matches.length!==1){alert(matches.length>1?'الاسم الثلاثي متكرر؛ يرجى معالجة التشابه قبل إنشاء الحساب.':'الاسم الثلاثي غير مطابق لقائمة المعلمات والإداريات؛ يرجى إضافته للقائمة أولاً.');return;}
   return oldAdd.apply(this,arguments);
  };
- function allowed(entry){return isManager()||!!(ownName()&&norm(entry?.name)===ownName());}
+ function allowed(entry){return isManager()||!!(entry&&movementIsMine2026(entry)&&entry.date===movementNowKuwait2026().date);}
  const oldSave=window.saveStaffMovement2026;
  if(typeof oldSave==='function')window.saveStaffMovement2026=function(){
   if(!isManager()){
@@ -2132,7 +2132,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
    const viewer=role()==='view';
    const input=document.getElementById('movementName2026');
    if(input){
-     if(viewer){input.value=(currentAccount()||{}).name||'';input.readOnly=true;}
+     if(viewer){input.value=movementIdentity2026()?.full||'';input.readOnly=true;}
      else input.readOnly=false;
    }
    const exportBtn=document.querySelector('#staffMovement2026 button[onclick="exportTodayMovementsPdf2026()"]');
@@ -2148,7 +2148,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
    if(typeof oldRenderMovement==='function')oldRenderMovement();
    const viewer=role()==='view';
    const input=document.getElementById('movementName2026');
-   if(viewer && input){input.value=(currentAccount()||{}).name||'';input.readOnly=true;}
+   if(viewer && input){input.value=movementIdentity2026()?.full||'';input.readOnly=true;}
  };
 })();
 </script>
@@ -2247,7 +2247,13 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
  };
 
  const editFns={deleteStaffMovement2026:'staffMovement',editStaffMovement2026:'staffMovement',addSubject:'subjects',removeSubject:'subjects',addAdmin:'admins',removeAdmin:'admins',openLeaveModal2026:'leaves',saveLeave2026:'leaves',deleteLeave2026:'leaves'};
- Object.entries(editFns).forEach(([n,sc])=>{const fn=window[n];if(typeof fn==='function')window[n]=function(){if(!requireScopeEdit2026(sc))return;return fn.apply(this,arguments)}});
+ Object.entries(editFns).forEach(([n,sc])=>{const fn=window[n];if(typeof fn==='function')window[n]=function(index){
+   if(sc==='staffMovement' && role()!=='admin'){
+     const entry=movementEntries2026()[index];
+     if(!currentAccount()||!entry||!movementIsMine2026(entry)||entry.date!==movementNowKuwait2026().date){alert('يمكنك تعديل وحذف حركة دوامك لليوم فقط.');return;}
+   }else if(!requireScopeEdit2026(sc))return;
+   return fn.apply(this,arguments);
+ }});
 
  const oldApplyRole=window.applyRole;
  window.applyRole=function(){if(typeof oldApplyRole==='function')oldApplyRole();applySectionVisibility2026();};
