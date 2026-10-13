@@ -2334,7 +2334,7 @@ if ('serviceWorker' in navigator) {
    if(!Array.isArray(body))throw new Error('SERVER');portalEntries=body;
    try{sessionStorage.setItem(SECRET,adminKey)}catch(e){}
    renderStaffMovement2026();if(document.getElementById('movementArchive2026')?.classList.contains('active'))renderMovementArchive2026();
-   status('متصلة — '+portalEntries.length+' حركة نهائية مسجلة.');
+   const todayCount=movementEntries2026().filter(x=>x.date===movementNowKuwait2026().date).length;status('متصلة — حركات اليوم: '+todayCount.toLocaleString('ar-KW')+' | إجمالي الحركات لجميع التواريخ: '+movementEntries2026().length.toLocaleString('ar-KW'));
   }catch(e){status('لم يكتمل الاتصال بمتابعة الموظفات. تحققي من ملف التفعيل والمفتاح والإنترنت.');if(interactive)alert('تعذر الربط. شغّلي ملف activate_trial.sql في مشروع Supabase أولًا، ثم تحققي من مفتاح المسؤولة.')}finally{pulling=false}
  }
  const render=window.renderStaffMovement2026;
