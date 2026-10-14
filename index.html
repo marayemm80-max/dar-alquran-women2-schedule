@@ -2301,7 +2301,16 @@ if ('serviceWorker' in navigator) {
  const KEY='sb_publishable_CpURFDtAk6StsmbsxevEIw_KxQlrrDo';
  const SECRET='dq_trial_admin_session_v1';
  let portalEntries=[],pulling=false,deleting=false,search='';
- let adminKey='';try{adminKey=sessionStorage.getItem(SECRET)||''}catch(e){}
+ let adminKey='';try{adminKey=localStorage.getItem(SECRET)||sessionStorage.getItem(SECRET)||''}catch(e){}
+ // The private setup guide passes the key once; never embed it in public files.
+ const setupParams=new URLSearchParams(location.hash.slice(1));
+ let pendingKey=setupParams.get('dq-followup')||'';
+ if(pendingKey){history.replaceState(null,'',location.pathname+location.search);}
+ function rememberFollowup(){
+  if(role()!=='admin')return;
+  if(pendingKey){adminKey=pendingKey;pendingKey='';}
+  if(adminKey)try{localStorage.setItem(SECRET,adminKey)}catch(e){}
+ }
  const oldEntries=window.movementEntries2026;
  // Immutable portal entries never enter the existing whole-document sync snapshot.
  window.movementEntries2026=function(){
@@ -2312,10 +2321,10 @@ if ('serviceWorker' in navigator) {
  function setup(){
   const panel=document.querySelector('#staffMovement2026 .movement-panel');if(!panel||document.getElementById('trialPanel2026'))return;
   const box=document.createElement('div');box.id='trialPanel2026';box.className='panel';
-  box.innerHTML='<b>متابعة رابط الموظفات — المعلمات والإداريات</b><p>الحركات المرسلة من الرابط نهائية، وتظهر هنا وفي الأرشيف بعد ربط متابعة المسؤولة.</p><div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" id="trialConnect2026">ربط متابعة الموظفات</button><button type="button" id="trialCopy2026">نسخ رابط الموظفات</button><button type="button" id="trialImport2026">إضافة كشف الإداريات (١٤٤)</button><button type="button" id="trialDisconnect2026">فصل متابعة التجربة</button></div><p id="trialStatus2026" role="status"></p>';
+  box.innerHTML='<b>متابعة رابط الموظفات — المعلمات والإداريات</b><p>الحركات المرسلة من الرابط نهائية، وتظهر هنا وفي الأرشيف تلقائيًا بعد دخول المسؤولة على الجهاز المهيّأ.</p><div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" id="trialConnect2026">تحديث متابعة الموظفات</button><button type="button" id="trialCopy2026">نسخ رابط الموظفات</button><button type="button" id="trialImport2026">إضافة كشف الإداريات (١٤٤)</button><button type="button" id="trialDisconnect2026">فصل المتابعة عن هذا الجهاز</button></div><p id="trialStatus2026" role="status"></p>';
   panel.prepend(box);
-  document.getElementById('trialConnect2026').onclick=async()=>{if(role()!=='admin')return;const value=prompt('أدخلي مفتاح متابعة المسؤولة من دليل الربط:',adminKey);if(value===null)return;adminKey=value.trim();await pull(true)};
-  document.getElementById('trialDisconnect2026').onclick=()=>{adminKey='';portalEntries=[];try{sessionStorage.removeItem(SECRET)}catch(e){}renderStaffMovement2026();status('تم فصل المتابعة على هذا الجهاز.')};
+  document.getElementById('trialConnect2026').onclick=async()=>{if(role()!=='admin')return;rememberFollowup();if(!adminKey)return alert('افتحي دليل التحديث الخاص واضغطي تهيئة المتابعة على هذا الجهاز مرة واحدة.');await pull(true)};
+  document.getElementById('trialDisconnect2026').onclick=()=>{adminKey='';portalEntries=[];try{sessionStorage.removeItem(SECRET);localStorage.removeItem(SECRET)}catch(e){}renderStaffMovement2026();status('تم فصل المتابعة على هذا الجهاز.')};
   document.getElementById('trialCopy2026').onclick=async()=>{const url=new URL('attendance.html',location.href);if(url.protocol==='file:')return alert('ارفعي الملفين إلى الموقع أولًا؛ لا يمكن إرسال رابط ملف محلي للموظفات.');try{await navigator.clipboard.writeText(url.href);alert('تم نسخ رابط الموظفات')}catch(e){prompt('انسخي رابط الموظفات:',url.href)}};
   document.getElementById('trialImport2026').onclick=()=>{
    if(role()!=='admin')return;
@@ -2326,13 +2335,14 @@ if ('serviceWorker' in navigator) {
   };
  }
  async function pull(interactive=false){
+  rememberFollowup();
   if(role()!=='admin'||!adminKey||pulling||deleting)return;
   pulling=true;status('جارٍ تحميل الحركات النهائية…');
   try{
    const response=await fetch(API+'dq_trial_admin_entries',{method:'POST',headers:{apikey:KEY,Authorization:'Bearer '+KEY,'Content-Type':'application/json'},body:JSON.stringify({p_key:adminKey}),signal:AbortSignal.timeout(20000)});
    const body=await response.json();if(!response.ok)throw new Error(body.message||'SERVER');
    if(!Array.isArray(body))throw new Error('SERVER');portalEntries=body;
-   try{sessionStorage.setItem(SECRET,adminKey)}catch(e){}
+   try{localStorage.setItem(SECRET,adminKey)}catch(e){}
    renderStaffMovement2026();if(document.getElementById('movementArchive2026')?.classList.contains('active'))renderMovementArchive2026();
    const todayCount=movementEntries2026().filter(x=>x.date===movementNowKuwait2026().date).length;status('متصلة — حركات اليوم: '+todayCount.toLocaleString('ar-KW')+' | إجمالي الحركات لجميع التواريخ: '+movementEntries2026().length.toLocaleString('ar-KW'));
   }catch(e){status('لم يكتمل الاتصال بمتابعة الموظفات. تحققي من ملف التفعيل والمفتاح والإنترنت.');if(interactive)alert('تعذر الربط. شغّلي ملف activate_trial.sql في مشروع Supabase أولًا، ثم تحققي من مفتاح المسؤولة.')}finally{pulling=false}
