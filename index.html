@@ -1150,30 +1150,34 @@ function renderAll(){
   if(currentAccount()) applyRole();
 }
 
-function doLogin(){
-  const user=loginUser.value.trim();
-  const pass=loginPass.value;
+async function doLogin(){
+  if(window.dqLoginBusy2026)return;
+  window.dqLoginBusy2026=true;
+  const user=loginUser.value.trim(),pass=loginPass.value;
   let account=null;
-
-  if(user==="admin" && pass==="1980"){
-    account={name:"admin",role:"admin"};
-  }else{
-    let users=[];
-    try{ users=JSON.parse(localStorage.getItem(USERS_KEY)||"[]"); }catch(e){}
-    account=users.find(p=>p.name===user && p.pass===pass)||null;
-  }
-
-  if(!account){
-    loginError.textContent="اسم المستخدم أو كلمة المرور غير صحيحة";
-    return;
-  }
-
-  localStorage.setItem("currentUser",JSON.stringify(account));
-  localStorage.setItem("loggedIn","yes");
-  loginScreen.style.display="none";
-  loginError.textContent="";
-  renderAll();
-  home();
+  loginError.textContent='جارٍ التحقق من الدخول…';
+  try{
+    const result=await window.dqMainRpc2026('dq_main_admin_login',{p_user:user,p_password:pass});
+    if(result.token&&result.role==='admin'){
+      account={name:result.name,role:'admin'};
+      window.dqAdminToken2026=result.token;
+      try{sessionStorage.setItem('dq_main_admin_token_v2',result.token)}catch(e){}
+    }else{
+      let users=[];try{users=JSON.parse(localStorage.getItem(USERS_KEY)||'[]')}catch(e){}
+      account=users.find(p=>p.name===user&&p.pass===pass&&p.role!=='admin')||null;
+      if(!account){loginError.textContent='اسم المستخدم أو كلمة المرور غير صحيحة';return;}
+      window.dqAdminToken2026='';try{sessionStorage.removeItem('dq_main_admin_token_v2')}catch(e){}
+    }
+    localStorage.setItem('currentUser',JSON.stringify(account));localStorage.setItem('loggedIn','yes');
+    loginScreen.style.display='none';loginError.textContent='';loginPass.value='';renderAll();home();
+    window.refreshMainFollowup2026?.();
+  }catch(e){
+    // Existing non-administrator accounts retain their local login during outages.
+    let users=[];try{users=JSON.parse(localStorage.getItem(USERS_KEY)||'[]')}catch(ignore){}
+    account=users.find(p=>p.name===user&&p.pass===pass&&p.role!=='admin')||null;
+    if(account){window.dqAdminToken2026='';try{sessionStorage.removeItem('dq_main_admin_token_v2')}catch(ignore){}localStorage.setItem('currentUser',JSON.stringify(account));localStorage.setItem('loggedIn','yes');loginScreen.style.display='none';loginError.textContent='';loginPass.value='';renderAll();home();}
+    else loginError.textContent='تعذر التحقق من حساب المسؤولة. تأكدي من الإنترنت وتفعيل ملف ربط الدخول الأساسي.';
+  }finally{window.dqLoginBusy2026=false;}
 }
 
 function logout(){
@@ -2293,24 +2297,29 @@ if ('serviceWorker' in navigator) {
 })();
 </script>
 
+<script id="mainAdminServerAuth2026">
+(function(){
+ const TOKEN='dq_main_admin_token_v2';
+ window.dqAdminToken2026='';try{window.dqAdminToken2026=sessionStorage.getItem(TOKEN)||''}catch(e){}
+ window.dqMainRpc2026=async function(name,args){
+  const key='sb_publishable_CpURFDtAk6StsmbsxevEIw_KxQlrrDo';
+  const response=await fetch('https://dticcjibqumkerjwcsae.supabase.co/rest/v1/rpc/'+name,{method:'POST',headers:{apikey:key,Authorization:'Bearer '+key,'Content-Type':'application/json'},body:JSON.stringify(args),signal:AbortSignal.timeout(20000)});
+  const result=await response.json();if(!response.ok)throw new Error(result.message||'SERVER');return result;
+ };
+ window.expireMainAdmin2026=function(){window.dqAdminToken2026='';try{sessionStorage.removeItem(TOKEN)}catch(e){}if(role()==='admin'){loginScreen.style.display='flex';loginError.textContent='انتهت جلسة المسؤولة. سجّلي الدخول بكلمة مرور البرنامج الأساسية.';}};
+ const oldLogout=window.logout;
+ window.logout=async function(){const t=window.dqAdminToken2026;window.dqAdminToken2026='';try{sessionStorage.removeItem(TOKEN)}catch(e){}if(t)try{await window.dqMainRpc2026('dq_main_admin_logout',{p_token:t})}catch(e){}oldLogout();};
+ if(role()==='admin'&&!window.dqAdminToken2026){loginScreen.style.display='flex';loginError.textContent='سجّلي الدخول بحساب المسؤولة لتفعيل المتابعة تلقائيًا.';}
+})();
+</script>
 <script id="unifiedMovementTrial2026">
 (function(){
  'use strict';
  const roster=[{"n": 1, "name": "أبرار فالح لافي جزاء", "dept": "المالية", "phone": "55965444", "staffId": "a-001"}, {"n": 2, "name": "أسيل مسير هلال الشمري", "dept": "توجيه فني", "phone": "66707061", "staffId": "a-002"}, {"n": 3, "name": "البندري راشد مانع العجمي", "dept": "توجيه فني", "phone": "51773338", "staffId": "a-003"}, {"n": 4, "name": "الجازي نصار صالح المطيري", "dept": "شؤون الدارسين", "phone": "99718169", "staffId": "a-004"}, {"n": 5, "name": "العنود راشد صالح الغنيم", "dept": "توجيه فني", "phone": "55009754", "staffId": "a-005"}, {"n": 6, "name": "العنود عايض مناحي المطيري", "dept": "تواصل", "phone": "67752901", "staffId": "a-006"}, {"n": 7, "name": "أمار مطر علي المطيري", "dept": "المالية", "phone": "99975486", "staffId": "a-007"}, {"n": 8, "name": "انتصار مذكر هزاع المطيري", "dept": "المالية", "phone": "66682855", "staffId": "a-008"}, {"n": 9, "name": "أنفال حمد حمود المطيري", "dept": "احتياط", "phone": "51116733", "staffId": "a-009"}, {"n": 10, "name": "أمينه مشلح عبدي غازي", "dept": "كنترول", "phone": "66273257", "staffId": "a-010"}, {"n": 11, "name": "إيمان سعد بداح الرشيدي", "dept": "تواصل", "phone": "51654244", "staffId": "a-011"}, {"n": 12, "name": "أسماء بطيحان قريان المطيري", "dept": "تواصل", "phone": "67019990", "staffId": "a-012"}, {"n": 13, "name": "أسماء عويضه بحيران الصانع", "dept": "شؤون الدارسين", "phone": "90907196", "staffId": "a-013"}, {"n": 14, "name": "أسماء علي ضيف الله المطيري", "dept": "تواصل", "phone": "55772787", "staffId": "a-014"}, {"n": 15, "name": "أشواق فالح ذعار عواد", "dept": "احتياط", "phone": "52223359", "staffId": "a-015"}, {"n": 16, "name": "أشواق محمد صالح المطيري", "dept": "توجيه فني", "phone": "50255305", "staffId": "a-016"}, {"n": 17, "name": "أماني براك باتل الرشيدي", "dept": "تواصل", "phone": "65696206", "staffId": "a-017"}, {"n": 18, "name": "أماني منصور حمدي العازمي", "dept": "تواصل", "phone": "98879927", "staffId": "a-018"}, {"n": 19, "name": "أمل عبدالله حمد الحفير", "dept": "إشراف", "phone": "99921231", "staffId": "a-019"}, {"n": 20, "name": "أمل علي مطلق المطيري", "dept": "القسم الإداري", "phone": "97740877", "staffId": "a-020"}, {"n": 21, "name": "أمنه عتيق سلطان العتيبي", "dept": "المالية", "phone": "97317783", "staffId": "a-021"}, {"n": 22, "name": "أنوار خالد جهجاه الرشيدي", "dept": "الأرشيف", "phone": "55698935", "staffId": "a-022"}, {"n": 23, "name": "أنوار سالم عايض العازمي", "dept": "كنترول", "phone": "55333582", "staffId": "a-023"}, {"n": 24, "name": "آيه أحمد هلال العجمي", "dept": "المالية", "phone": "67086076", "staffId": "a-024"}, {"n": 25, "name": "بدرية نمر سوباط الفضلي", "dept": "توجيه فني", "phone": "99742769", "staffId": "a-025"}, {"n": 26, "name": "بدريه ملفي مجبل المطيري", "dept": "المالية", "phone": "55358581", "staffId": "a-026"}, {"n": 27, "name": "بشاير أحمد سالم العبيد", "dept": "القسم الإداري", "phone": "99414784", "staffId": "a-027"}, {"n": 28, "name": "بشاير باتل حسن الرشيدي", "dept": "المالية", "phone": "66600852", "staffId": "a-028"}, {"n": 29, "name": "بشاير براك مطلق البنيان", "dept": "تواصل", "phone": "60944453", "staffId": "a-029"}, {"n": 30, "name": "بشاير حمود حمد الجلاوي", "dept": "المالية", "phone": "55070081", "staffId": "a-030"}, {"n": 31, "name": "بشاير مزيد مناور المطيري", "dept": "الجدول", "phone": "94945595", "staffId": "a-031"}, {"n": 32, "name": "بشاير ناصر مخلد المطيري", "dept": "الجدول", "phone": "96088023", "staffId": "a-032"}, {"n": 33, "name": "تحرير سعيد حميد العنزي", "dept": "احتياط", "phone": "51595103", "staffId": "a-033"}, {"n": 34, "name": "تهاني نصار رجعان العازمي", "dept": "المالية", "phone": "94916829", "staffId": "a-034"}, {"n": 35, "name": "جواهر سعود خلف الرشيدي", "dept": "التوجيه", "phone": "66685226", "staffId": "a-035"}, {"n": 36, "name": "جواهر راشد المري", "dept": "شؤون الدارسين", "phone": "51119330", "staffId": "a-036"}, {"n": 37, "name": "حصة سعد مبارك المطيري", "dept": "المالية", "phone": "50632111", "staffId": "a-037"}, {"n": 38, "name": "حصه فالح فهيد المطيري", "dept": "تواصل", "phone": "99639914", "staffId": "a-038"}, {"n": 39, "name": "حنان بداي غلاب الديحاني", "dept": "احتياط", "phone": "55489222", "staffId": "a-039"}, {"n": 40, "name": "حنان عايض مزيد المطيري", "dept": "الجدول", "phone": "56579732", "staffId": "a-040"}, {"n": 41, "name": "حورية فهد سعدون المطيري", "dept": "إشراف", "phone": "96611337", "staffId": "a-041"}, {"n": 42, "name": "خزنة احمد سعد الصنوين", "dept": "تواصل", "phone": "51315151", "staffId": "a-042"}, {"n": 43, "name": "خلود جاسم محمد العازمي", "dept": "توجيه فني", "phone": "98777437", "staffId": "a-043"}, {"n": 44, "name": "دانه احمد يعقوب درباس", "dept": "توجيه فني", "phone": "67779874", "staffId": "a-044"}, {"n": 45, "name": "دانه حسن دهيس المطيري", "dept": "كنترول", "phone": "98917758", "staffId": "a-045"}, {"n": 46, "name": "دانه حمود ثقل الهاجري", "dept": "إشراف", "phone": "66883627", "staffId": "a-046"}, {"n": 47, "name": "دانه زيد صالح المطيري", "dept": "احتياط", "phone": "55228576", "staffId": "a-047"}, {"n": 48, "name": "دانه فيصل شاي الهجري", "dept": "القسم الإداري", "phone": "56627176", "staffId": "a-048"}, {"n": 49, "name": "دلال سعود رشيدة الشمري", "dept": "تواصل", "phone": "96676117", "staffId": "a-049"}, {"n": 50, "name": "دلال شباب سلمان المطيري", "dept": "إشراف", "phone": "99749696", "staffId": "a-050"}, {"n": 51, "name": "دلال غازي هزاع المطيري", "dept": "تواصل", "phone": "50653800", "staffId": "a-051"}, {"n": 52, "name": "دلال فرج السبيعي", "dept": "شؤون الدارسين", "phone": "97591575", "staffId": "a-052"}, {"n": 53, "name": "دلال قاسم صفر", "dept": "كنترول", "phone": "98079474", "staffId": "a-053"}, {"n": 54, "name": "رحمة محمد سالم المري", "dept": "تواصل", "phone": "51059090", "staffId": "a-054"}, {"n": 55, "name": "روان رشيد مطلق المطيري", "dept": "شؤون الدارسين", "phone": "55264922", "staffId": "a-055"}, {"n": 56, "name": "روان مبارك عايض الشلاحي", "dept": "الجدول", "phone": "52226540", "staffId": "a-056"}, {"n": 57, "name": "رومية فريح سعد الرشيدي", "dept": "القسم الإداري", "phone": "51218729", "staffId": "a-057"}, {"n": 58, "name": "ريم إبراهيم نويران الرشيدي", "dept": "شؤون الدارسين", "phone": "50226942", "staffId": "a-058"}, {"n": 59, "name": "ريم بحيران عايض الصانع", "dept": "القسم الإداري", "phone": "99381874", "staffId": "a-059"}, {"n": 60, "name": "ريم سعد نوار العتيبي", "dept": "القسم الإداري", "phone": "508677775", "staffId": "a-060"}, {"n": 61, "name": "ريم مرزوق ناصر العازمي", "dept": "تواصل", "phone": "66255239", "staffId": "a-061"}, {"n": 62, "name": "ريم مهدي عبدالله الدوسري", "dept": "شؤون الدارسين", "phone": "51095553", "staffId": "a-062"}, {"n": 63, "name": "ريم نواف مرداس البصمان", "dept": "شؤون الدارسين", "phone": "50830155", "staffId": "a-063"}, {"n": 64, "name": "زينب حمد صدعان الصوابر", "dept": "المالية", "phone": "51190066", "staffId": "a-064"}, {"n": 65, "name": "سارة غازي مطر الديحاني", "dept": "شؤون الدارسين", "phone": "55017798", "staffId": "a-065"}, {"n": 66, "name": "ساره غازي فلاح المطيري", "dept": "شؤون الدارسين", "phone": "97313300", "staffId": "a-066"}, {"n": 67, "name": "سارة مشعل رافع الديحاني", "dept": "شؤون الدارسين", "phone": "51423222", "staffId": "a-067"}, {"n": 68, "name": "ساره محمد ناصر الدوسري", "dept": "شؤون الدارسين", "phone": "99046966", "staffId": "a-068"}, {"n": 69, "name": "ساره عبدالعزيز براز مسعود", "dept": "احتياط", "phone": "50995629", "staffId": "a-069"}, {"n": 70, "name": "ساره عبدالله محمد الهبيدة", "dept": "إشراف", "phone": "94995166", "staffId": "a-070"}, {"n": 71, "name": "ساره فرحان رمضان العنزي", "dept": "تواصل", "phone": "94438238", "staffId": "a-071"}, {"n": 72, "name": "ساره محمد عبدالله العليم", "dept": "احتياط", "phone": "65055551", "staffId": "a-072"}, {"n": 73, "name": "شروق مشعل فهد المطيري", "dept": "كنترول", "phone": "67777985", "staffId": "a-073"}, {"n": 74, "name": "شوق سليمان حويان الديحاني", "dept": "تواصل", "phone": "95542881", "staffId": "a-074"}, {"n": 75, "name": "شيمة محمد سالم المري", "dept": "شؤون الدارسين", "phone": "66947111", "staffId": "a-075"}, {"n": 76, "name": "صيته فهد رتيبان العجمي", "dept": "توجيه فني", "phone": "98883942", "staffId": "a-076"}, {"n": 77, "name": "عاليه الحميدي محصان المطيري", "dept": "توجيه فني", "phone": "55806990", "staffId": "a-077"}, {"n": 78, "name": "عايشه عيد نادر القحطاني", "dept": "توجيه فني", "phone": "55516216", "staffId": "a-078"}, {"n": 79, "name": "عائشة فارس فراج السبيعي", "dept": "شؤون الدارسين", "phone": "50888307", "staffId": "a-079"}, {"n": 80, "name": "عائشة موسى حمد الرشيدي", "dept": "تواصل", "phone": "55466398", "staffId": "a-080"}, {"n": 81, "name": "عبير محمد أحمد حبيب", "dept": "تواصل", "phone": "51126858", "staffId": "a-081"}, {"n": 82, "name": "عبير مهناء حذيفه المطيري", "dept": "القسم الإداري", "phone": "97926785", "staffId": "a-082"}, {"n": 83, "name": "عتقه سعود بدهان المطيري", "dept": "شؤون الدارسين", "phone": "61000786", "staffId": "a-083"}, {"n": 84, "name": "غدير خليفة محمد العنزي", "dept": "شؤون الدارسين", "phone": "55220988", "staffId": "a-084"}, {"n": 85, "name": "غنيمه عوض مبارك العازمي", "dept": "كنترول", "phone": "97922346", "staffId": "a-085"}, {"n": 86, "name": "فاطمة خالد متروك العتيبي", "dept": "الجدول", "phone": "91110325", "staffId": "a-086"}, {"n": 87, "name": "فاطمه زبن محمد المطيري", "dept": "المالية", "phone": "90017665", "staffId": "a-087"}, {"n": 88, "name": "فاطمه عبدالله عياد العتيبي", "dept": "المالية", "phone": "97450007", "staffId": "a-088"}, {"n": 89, "name": "فاطمه محمد دغيم المحيش الرشيدي", "dept": "توجيه فني", "phone": "99566313", "staffId": "a-089"}, {"n": 90, "name": "فاطمه علي فهيد المري", "dept": "شؤون الدارسين", "phone": "55883200", "staffId": "a-090"}, {"n": 91, "name": "فوزية بندر رماح القحطاني", "dept": "احتياط", "phone": "55775559", "staffId": "a-091"}, {"n": 92, "name": "كفايه جمعان فالح العازمي", "dept": "القسم الإداري", "phone": "99249939", "staffId": "a-092"}, {"n": 93, "name": "لولوة سعود عيد العنزي", "dept": "", "phone": "94913940", "staffId": "a-093"}, {"n": 94, "name": "مثايل عوض عشوي العنزي", "dept": "توجيه فني", "phone": "65044011", "staffId": "a-094"}, {"n": 95, "name": "مرام عوض عشوي العنزي", "dept": "إشراف", "phone": "55448142", "staffId": "a-095"}, {"n": 96, "name": "مريم شباط سعد الميموني", "dept": "مجلس", "phone": "55989553", "staffId": "a-096"}, {"n": 97, "name": "مريم فهد عبدالرحمن العقيلي", "dept": "شؤون الدارسين", "phone": "51234390", "staffId": "a-097"}, {"n": 98, "name": "مريم مبارك عبدالله العازمي", "dept": "إشراف", "phone": "98559155", "staffId": "a-098"}, {"n": 99, "name": "مريم مجبل صالح العازمي", "dept": "إشراف", "phone": "99711243", "staffId": "a-099"}, {"n": 100, "name": "مريم مزيد المطيري", "dept": "التواصل", "phone": "66160443", "staffId": "a-100"}, {"n": 101, "name": "مشاعل عزيز سعدون بعيجان المطيري", "dept": "القسم الإداري", "phone": "51513139", "staffId": "a-101"}, {"n": 102, "name": "مشاعل عواض قطيم المطيري", "dept": "المالية", "phone": "94010173", "staffId": "a-102"}, {"n": 103, "name": "مضاوي مطر لافي العازمي", "dept": "توجيه فني", "phone": "65105100", "staffId": "a-103"}, {"n": 104, "name": "معالي حسين خلف المطيري", "dept": "إشراف", "phone": "97836661", "staffId": "a-104"}, {"n": 105, "name": "منار حمدي مضحي الرشيدي", "dept": "توجيه فني", "phone": "58881626", "staffId": "a-105"}, {"n": 106, "name": "منال ناصر منور العارضي", "dept": "", "phone": "96784390", "staffId": "a-106"}, {"n": 107, "name": "مناير ماجد مسعد المطيري", "dept": "شؤون الدارسين", "phone": "51019120", "staffId": "a-107"}, {"n": 108, "name": "منى حمود محمد الصواغ", "dept": "إشراف", "phone": "99469319", "staffId": "a-108"}, {"n": 109, "name": "منى سعد عايش زبن المطيري", "dept": "إشراف", "phone": "96927979", "staffId": "a-109"}, {"n": 110, "name": "منى سند سعد السيحان", "dept": "تواصل", "phone": "92292218", "staffId": "a-110"}, {"n": 111, "name": "منيفة سيف خنيفر الرشيدي", "dept": "تواصل", "phone": "58883212", "staffId": "a-111"}, {"n": 112, "name": "مها عيد مطلق المطيري", "dept": "القسم الإداري", "phone": "50683080", "staffId": "a-112"}, {"n": 113, "name": "مها فواز مفرح الرشيدي", "dept": "", "phone": "92204188", "staffId": "a-113"}, {"n": 114, "name": "مها مطلق عبدالله الرشيدي", "dept": "المالية", "phone": "99560683", "staffId": "a-114"}, {"n": 115, "name": "مهاء عبدالله منير المطيري", "dept": "تواصل", "phone": "58857808", "staffId": "a-115"}, {"n": 116, "name": "مهدية عوض رشيد العنزي", "dept": "شؤون الدارسين", "phone": "98052295", "staffId": "a-116"}, {"n": 117, "name": "موضي سعود المطيري", "dept": "القسم الإداري", "phone": "50240321", "staffId": "a-117"}, {"n": 118, "name": "موضي محسن عواض المطيري", "dept": "إشراف", "phone": "55444620", "staffId": "a-118"}, {"n": 119, "name": "موضي منصور محمد العجي", "dept": "تواصل", "phone": "66655634", "staffId": "a-119"}, {"n": 120, "name": "مي ناصر تركي المطيري", "dept": "توجيه فني", "phone": "55066547", "staffId": "a-120"}, {"n": 121, "name": "نجاح خويلد مرزوق المطيري", "dept": "المالية", "phone": "97778299", "staffId": "a-121"}, {"n": 122, "name": "نجا حمد مهدي القحطاني", "dept": "احتياط", "phone": "60660647", "staffId": "a-122"}, {"n": 123, "name": "نوال مرزوق سعيد زومان العازمي", "dept": "تواصل", "phone": "97305026", "staffId": "a-123"}, {"n": 124, "name": "نورا خالد عبدالله المطيري", "dept": "احتياط", "phone": "92223505", "staffId": "a-124"}, {"n": 125, "name": "نوره راشد علي شليل", "dept": "المالية", "phone": "55535284", "staffId": "a-125"}, {"n": 126, "name": "نوره زيد عبدالله الغضوري", "dept": "تواصل", "phone": "55112687", "staffId": "a-126"}, {"n": 127, "name": "نوره عبدالعزيز بندر الدويش", "dept": "القسم الإداري", "phone": "56685555", "staffId": "a-127"}, {"n": 128, "name": "نوره عبدالله سعد العتيبي", "dept": "القسم الإداري", "phone": "50550870", "staffId": "a-128"}, {"n": 129, "name": "نوره عبدالله محمد الهاجري", "dept": "احتياط", "phone": "68887964", "staffId": "a-129"}, {"n": 130, "name": "نوره فهد عبدالرحمن العقيلي", "dept": "إشراف", "phone": "50859505", "staffId": "a-130"}, {"n": 131, "name": "نوره مزيد صايطي العارضي", "dept": "تواصل", "phone": "51058138", "staffId": "a-131"}, {"n": 132, "name": "نوره مفرح طماح السبيعي", "dept": "تواصل", "phone": "99484698", "staffId": "a-132"}, {"n": 133, "name": "نوير مرضي مبارك العازمي", "dept": "إشراف", "phone": "96905272", "staffId": "a-133"}, {"n": 134, "name": "هاجر برجس ذاير المطيري", "dept": "شؤون الدارسين", "phone": "65118102", "staffId": "a-134"}, {"n": 135, "name": "هاجر راشد مانع العجمي", "dept": "احتياط", "phone": "55228393", "staffId": "a-135"}, {"n": 136, "name": "هبه مرزوق سعد العازمي", "dept": "القسم الإداري", "phone": "58885503", "staffId": "a-136"}, {"n": 137, "name": "هديل خالد نزال العازمي", "dept": "الجدول", "phone": "55763333", "staffId": "a-137"}, {"n": 138, "name": "هدى عباد عبدالله الديحاني", "dept": "شؤون الدارسين", "phone": "55232302", "staffId": "a-138"}, {"n": 139, "name": "وسمية سعود مطلق المطيري", "dept": "تواصل", "phone": "65865810", "staffId": "a-139"}, {"n": 140, "name": "وسميه محمد محمد العجمي", "dept": "القسم الإداري", "phone": "50862164", "staffId": "a-140"}, {"n": 141, "name": "وسم مفلح قبلان العنزي", "dept": "توجيه فني", "phone": "94144103", "staffId": "a-141"}, {"n": 142, "name": "ورود رياض العنزي", "dept": "القسم الإداري", "phone": "65528662", "staffId": "a-142"}, {"n": 143, "name": "وضحه فيصل سعود الرشود", "dept": "توجيه فني", "phone": "69393937", "staffId": "a-143"}, {"n": 144, "name": "وضحه محمد سالم المري", "dept": "احتياط", "phone": "56600111", "staffId": "a-144"}];
  const API='https://dticcjibqumkerjwcsae.supabase.co/rest/v1/rpc/';
  const KEY='sb_publishable_CpURFDtAk6StsmbsxevEIw_KxQlrrDo';
- const SECRET='dq_trial_admin_session_v1';
  let portalEntries=[],pulling=false,deleting=false,search='';
- let adminKey='';try{adminKey=localStorage.getItem(SECRET)||sessionStorage.getItem(SECRET)||''}catch(e){}
- // The private setup guide passes the key once; never embed it in public files.
- const setupParams=new URLSearchParams(location.hash.slice(1));
- let pendingKey=setupParams.get('dq-followup')||'';
- if(pendingKey){history.replaceState(null,'',location.pathname+location.search);}
- function rememberFollowup(){
-  if(role()!=='admin')return;
-  if(pendingKey){adminKey=pendingKey;pendingKey='';}
-  if(adminKey)try{localStorage.setItem(SECRET,adminKey)}catch(e){}
- }
+ function mainToken(){return window.dqAdminToken2026||''}
  const oldEntries=window.movementEntries2026;
  // Immutable portal entries never enter the existing whole-document sync snapshot.
  window.movementEntries2026=function(){
@@ -2321,10 +2330,9 @@ if ('serviceWorker' in navigator) {
  function setup(){
   const panel=document.querySelector('#staffMovement2026 .movement-panel');if(!panel||document.getElementById('trialPanel2026'))return;
   const box=document.createElement('div');box.id='trialPanel2026';box.className='panel';
-  box.innerHTML='<b>متابعة رابط الموظفات — المعلمات والإداريات</b><p>الحركات المرسلة من الرابط نهائية، وتظهر هنا وفي الأرشيف تلقائيًا بعد دخول المسؤولة على الجهاز المهيّأ.</p><div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" id="trialConnect2026">تحديث متابعة الموظفات</button><button type="button" id="trialCopy2026">نسخ رابط الموظفات</button><button type="button" id="trialImport2026">إضافة كشف الإداريات (١٤٤)</button><button type="button" id="trialDisconnect2026">فصل المتابعة عن هذا الجهاز</button></div><p id="trialStatus2026" role="status"></p>';
+  box.innerHTML='<b>متابعة رابط الموظفات — المعلمات والإداريات</b><p>الحركات المرسلة من الرابط نهائية، وتظهر هنا وفي الأرشيف تلقائيًا بعد دخول المسؤولة من أي جهاز.</p><div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" id="trialConnect2026">تحديث متابعة الموظفات</button><button type="button" id="trialCopy2026">نسخ رابط الموظفات</button><button type="button" id="trialImport2026">إضافة كشف الإداريات (١٤٤)</button></div><p id="trialStatus2026" role="status"></p>';
   panel.prepend(box);
-  document.getElementById('trialConnect2026').onclick=async()=>{if(role()!=='admin')return;rememberFollowup();if(!adminKey)return alert('افتحي دليل التحديث الخاص واضغطي تهيئة المتابعة على هذا الجهاز مرة واحدة.');await pull(true)};
-  document.getElementById('trialDisconnect2026').onclick=()=>{adminKey='';portalEntries=[];try{sessionStorage.removeItem(SECRET);localStorage.removeItem(SECRET)}catch(e){}renderStaffMovement2026();status('تم فصل المتابعة على هذا الجهاز.')};
+  document.getElementById('trialConnect2026').onclick=async()=>{if(role()==='admin')await pull(true)};
   document.getElementById('trialCopy2026').onclick=async()=>{const url=new URL('attendance.html',location.href);if(url.protocol==='file:')return alert('ارفعي الملفين إلى الموقع أولًا؛ لا يمكن إرسال رابط ملف محلي للموظفات.');try{await navigator.clipboard.writeText(url.href);alert('تم نسخ رابط الموظفات')}catch(e){prompt('انسخي رابط الموظفات:',url.href)}};
   document.getElementById('trialImport2026').onclick=()=>{
    if(role()!=='admin')return;
@@ -2335,17 +2343,15 @@ if ('serviceWorker' in navigator) {
   };
  }
  async function pull(interactive=false){
-  rememberFollowup();
-  if(role()!=='admin'||!adminKey||pulling||deleting)return;
+  if(role()!=='admin'||!mainToken()||pulling||deleting)return;
   pulling=true;status('جارٍ تحميل الحركات النهائية…');
   try{
-   const response=await fetch(API+'dq_trial_admin_entries',{method:'POST',headers:{apikey:KEY,Authorization:'Bearer '+KEY,'Content-Type':'application/json'},body:JSON.stringify({p_key:adminKey}),signal:AbortSignal.timeout(20000)});
-   const body=await response.json();if(!response.ok)throw new Error(body.message||'SERVER');
+   const response=await fetch(API+'dq_main_admin_entries',{method:'POST',headers:{apikey:KEY,Authorization:'Bearer '+KEY,'Content-Type':'application/json'},body:JSON.stringify({p_token:mainToken()}),signal:AbortSignal.timeout(20000)});
+   const body=await response.json();if(!response.ok){if(String(body.message||'').includes('ADMIN_SESSION_EXPIRED')){portalEntries=[];window.expireMainAdmin2026();}throw new Error(body.message||'SERVER');}
    if(!Array.isArray(body))throw new Error('SERVER');portalEntries=body;
-   try{localStorage.setItem(SECRET,adminKey)}catch(e){}
    renderStaffMovement2026();if(document.getElementById('movementArchive2026')?.classList.contains('active'))renderMovementArchive2026();
    const todayCount=movementEntries2026().filter(x=>x.date===movementNowKuwait2026().date).length;status('متصلة — حركات اليوم: '+todayCount.toLocaleString('ar-KW')+' | إجمالي الحركات لجميع التواريخ: '+movementEntries2026().length.toLocaleString('ar-KW'));
-  }catch(e){status('لم يكتمل الاتصال بمتابعة الموظفات. تحققي من ملف التفعيل والمفتاح والإنترنت.');if(interactive)alert('تعذر الربط. شغّلي ملف activate_trial.sql في مشروع Supabase أولًا، ثم تحققي من مفتاح المسؤولة.')}finally{pulling=false}
+  }catch(e){status('لم يكتمل الاتصال بالمتابعة. تحققي من الدخول الأساسي والإنترنت.');if(interactive)alert('تعذر تحميل المتابعة. تأكدي من تفعيل ملف ربط الدخول الأساسي، ثم سجّلي الدخول بحساب المسؤولة.')}finally{pulling=false}
  }
  const render=window.renderStaffMovement2026;
  window.renderStaffMovement2026=function(){
@@ -2424,15 +2430,15 @@ if ('serviceWorker' in navigator) {
   if(pulling)return alert('انتظري اكتمال تحديث الحركات ثم أعيدي المحاولة.');
   if(!selected.length)return alert('لا توجد حركات للحذف.');
   const remote=selected.filter(x=>x.portal),local=new Set(selected.filter(x=>!x.portal).map(fingerprint));
-  if(remote.length&&!adminKey)return alert('اربطي متابعة الموظفات بمفتاح المسؤولة أولًا.');
+  if(remote.length&&!mainToken())return window.expireMainAdmin2026();
   if(remote.some(x=>!x.registeredAt))return alert('شغّلي ملف تفعيل الحذف أولًا، ثم انتظري تحديث الحركات وأعيدي المحاولة.');
   const message=selected.length===1?'حذف حركة '+selected[0].name+' بتاريخ '+selected[0].date+'؟':'حذف جميع الحركات المعروضة ('+selected.length+' حركة) حسب الاسم والفترة المحددين؟';
   if(!confirm(message+'\nسيظهر الحذف على الأجهزة الأخرى، ولا يمكن التراجع عنه.'))return;
   deleting=true;
   try{
    if(remote.length){
-    const response=await fetch(API+'dq_trial_admin_delete_entries',{method:'POST',headers:{apikey:KEY,Authorization:'Bearer '+KEY,'Content-Type':'application/json'},body:JSON.stringify({p_key:adminKey,p_entries:remote.map(x=>({staffId:x.staffId,date:x.date,registeredAt:x.registeredAt}))}),signal:AbortSignal.timeout(20000)});
-    const body=await response.json();if(!response.ok)throw new Error(body.message||'SERVER');
+    const response=await fetch(API+'dq_main_admin_delete_entries',{method:'POST',headers:{apikey:KEY,Authorization:'Bearer '+KEY,'Content-Type':'application/json'},body:JSON.stringify({p_token:mainToken(),p_entries:remote.map(x=>({staffId:x.staffId,date:x.date,registeredAt:x.registeredAt}))}),signal:AbortSignal.timeout(20000)});
+    const body=await response.json();if(!response.ok){if(String(body.message||'').includes('ADMIN_SESSION_EXPIRED')){portalEntries=[];window.expireMainAdmin2026();}throw new Error(body.message||'SERVER');}
     const removed=new Set((body.deletedIds||[]));portalEntries=portalEntries.filter(x=>!removed.has(x.id));
    }
    if(local.size){const remaining=oldEntries().filter(x=>!local.has(fingerprint(x)));localStorage.setItem('staff_movement_demo_2026',JSON.stringify(remaining));}
@@ -2462,6 +2468,7 @@ if ('serviceWorker' in navigator) {
   if(section&&!button){button=document.createElement('button');button.id='todayDeleteAll2026';button.type='button';button.className='danger no-print';button.textContent='حذف جميع حركات اليوم';button.onclick=window.deleteTodayAll2026;section.querySelector('.movement-panel').appendChild(button);}if(button)button.style.display=manager?'':'none';
  };
 
+ window.refreshMainFollowup2026=()=>pull();
  setup();setInterval(()=>{if(role()==='admin')pull();else portalEntries=[]},5000);
  window.addEventListener('focus',()=>pull());setTimeout(()=>pull(),1200);
 })();
@@ -2477,5 +2484,26 @@ if ('serviceWorker' in navigator) {
  window.addEventListener('storage',update);
  document.addEventListener('DOMContentLoaded',update);
  update();
+})();
+</script>
+<script id="mainAdminPermissionSync2026">
+(function(){
+ let saving=false;
+ for(const name of ['addPermission','editPermission2026','deletePermission']){
+  const original=window[name];if(typeof original!=='function')continue;
+  window[name]=async function(){
+   if(role()!=='admin')return original.apply(this,arguments);
+   if(saving)return alert('انتظري اكتمال حفظ الصلاحيات.');
+   if(!window.dqAdminToken2026)return window.expireMainAdmin2026();
+   saving=true;
+   const before=localStorage.getItem(USERS_KEY)||'[]';
+   try{
+    original.apply(this,arguments);
+    const after=localStorage.getItem(USERS_KEY)||'[]';if(after===before)return;
+    await window.dqMainRpc2026('dq_main_admin_save_accounts',{p_token:window.dqAdminToken2026,p_accounts:JSON.parse(after)});
+   }catch(e){localStorage.setItem(USERS_KEY,before);renderPermissions();alert('لم يتم حفظ تغيير الصلاحيات. تحققي من الإنترنت والدخول ثم أعيدي المحاولة.');if(String(e.message).includes('ADMIN_SESSION_EXPIRED'))window.expireMainAdmin2026();}
+   finally{saving=false;}
+  };
+ }
 })();
 </script>
