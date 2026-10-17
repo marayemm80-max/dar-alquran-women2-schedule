@@ -478,6 +478,18 @@ function rosterCanonicalName20261017(v){
  const matches=TEACHER_ROSTER_UPDATE_20261017.filter(x=>[x.name,...x.aliases].some(n=>rosterNorm20261017(n)===key));
  return matches.length===1?matches[0].name:String(v||'');
 }
+function groupTeacherRowsByDept20261017(list){
+ const groups=new Map(),unassigned=[];
+ for(const row of list){
+  const key=rosterNorm20261017(row.dept).replace(/ـ/g,'');
+  if(!key){unassigned.push(row);continue;}
+  if(!groups.has(key))groups.set(key,[]);
+  groups.get(key).push(row);
+ }
+ const ordered=[...groups.values()].flat().concat(unassigned);
+ ordered.forEach((r,i)=>r.n=i+1);
+ return ordered;
+}
 function updateTeacherRoster20261017(list){
  const out=JSON.parse(JSON.stringify(list));
  const previouslyApplied=out.some(r=>r.rosterUpdate20261017);
@@ -496,7 +508,7 @@ function updateTeacherRoster20261017(list){
  TEACHER_ROSTER_UPDATE_20261017.filter(x=>x.isNew&&!previouslyApplied&&!matched.has(x.name)).forEach(x=>{
   out.push({n:out.length+1,name:x.name,phone:x.phone,dept:'',connection:'',total:'0',slots:Array(20).fill(''),rosterUpdate20261017:true,rosterAliases20261017:[]});
  });
- return out;
+ return groupTeacherRowsByDept20261017(out);
 }
 
 let rows=loadRows();
@@ -568,6 +580,7 @@ function recalcTeacherTotal2026(i){
 let lastScheduleUndo2026=null;
 function clearScheduleUndo2026(){lastScheduleUndo2026=null;}
 function saveRows(){
+  rows=groupTeacherRowsByDept20261017(rows);
   try {
     const before=JSON.parse(localStorage.getItem(ROWS_KEY)||'null');
     if(Array.isArray(before) && JSON.stringify(before)!==JSON.stringify(rows)) lastScheduleUndo2026=before;
@@ -2283,12 +2296,12 @@ window.openWhatsAppCodes2026=open;window.whatsAppCodesCore2026={phone};decorate(
    rows=updateTeacherRoster20261017(rows);
    localStorage.setItem(ROWS_KEY,JSON.stringify(rows));
    renderAll();
-   document.getElementById('teacherRosterUpdateNote20261017').textContent='تم اعتماد الأسماء والهواتف؛ تابعي حالة المزامنة للتأكد من الحفظ السحابي.';
+   document.getElementById('teacherRosterUpdateNote20261017').textContent='تم اعتماد الأسماء والهواتف وتجميع المعلمات حسب القسم؛ تابعي حالة المزامنة للتأكد من الحفظ السحابي.';
   }finally{btn.disabled=false;}
  }
  function setup(){
   const panel=document.createElement('div');panel.className='panel';panel.id='teacherRosterUpdatePanel20261017';
-  panel.innerHTML='<button id="saveTeacherRosterUpdateButton20261017">اعتماد تحديث أسماء المعلمات والهواتف</button><small id="teacherRosterUpdateNote20261017">كشف ١٧ أكتوبر ٢٠٢٦ — الأسماء والهواتف فقط، مع الحفاظ على الحصص وترتيب المعلمات.</small>';
+  panel.innerHTML='<button id="saveTeacherRosterUpdateButton20261017">اعتماد تحديث المعلمات وترتيب الأقسام</button><small id="teacherRosterUpdateNote20261017">كشف ١٧ أكتوبر ٢٠٢٦ — كل معلمة ضمن قسمها، مع انتقال صف حصصها كاملًا دون تغيير محتواه.</small>';
   const host=document.getElementById('teachers');if(!host)return;host.prepend(panel);
   panel.querySelector('button').onclick=persist;
   function visibility(){panel.hidden=role()!=='admin';}
