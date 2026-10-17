@@ -308,11 +308,12 @@ table.simple th,.grid .meta,#scheduleGrid thead tr:nth-child(3) th.period{backgr
   <div class="panel no-print edit-control">
     <input id="teacherName" placeholder="اسم المعلمة">
     <input id="teacherDept" placeholder="القسم">
+    <input id="teacherPhone2026" type="tel" dir="ltr" inputmode="tel" placeholder="رقم الهاتف — 00965 تلقائيًا" aria-label="رقم هاتف المعلمة">
     <select id="teacherConnection"><option>معين</option><option>مكلفة</option><option>محفظة</option></select>
     <button class="action" onclick="addTeacherManager()">إضافة معلمة</button>
   </div>
   <table class="simple">
-    <thead><tr><th>م</th><th>اسم المعلمة</th><th>القسم</th><th>نوع الارتباط</th><th>النصاب</th><th class="edit-control">إجراء</th></tr></thead>
+    <thead><tr><th>م</th><th>اسم المعلمة</th><th>القسم</th><th>نوع الارتباط</th><th>رقم الهاتف</th><th>النصاب</th><th class="edit-control">إجراء</th></tr></thead>
     <tbody id="teacherList"></tbody>
   </table>
 </section>
@@ -451,6 +452,7 @@ table.simple th,.grid .meta,#scheduleGrid thead tr:nth-child(3) th.period{backgr
     <h3>تعديل بيانات المعلمة</h3>
     <label>الاسم</label><input id="mName">
     <label>القسم</label><input id="mDept">
+    <label for="mPhone2026">رقم الهاتف — مفتاح الكويت 00965 تلقائيًا</label><input id="mPhone2026" type="tel" dir="ltr" inputmode="tel" placeholder="رقم الهاتف">
     <label>نوع الارتباط</label><input id="mConn">
     <label>إجمالي النصاب</label><input id="mTotal">
     <div class="modalrow"><button class="action" onclick="saveTeacherModal()">حفظ</button><button onclick="closeTeacherModal()">إلغاء</button></div>
@@ -731,6 +733,13 @@ function touchSlotEnd2026(ev){
 }
 function slotClick2026(r,s){ if(suppressSlotClick2026)return; editSlot(r,s); }
 
+function normalizeTeacherPhone2026(value){
+ let v=String(value||'').trim().replace(/[٠-٩]/g,c=>String('٠١٢٣٤٥٦٧٨٩'.indexOf(c))).replace(/[۰-۹]/g,c=>String('۰۱۲۳۴۵۶۷۸۹'.indexOf(c))).replace(/[\s()+.\-]/g,'');
+ if(!v)return '';
+ if(v.startsWith('00965'))v=v.slice(5);else if(v.startsWith('965')&&v.length===11)v=v.slice(3);
+ if(!/^[569]\d{7}$/.test(v)){alert('يرجى إدخال رقم هاتف كويتي صحيح من ٨ أرقام. يُضاف مفتاح 00965 تلقائيًا.');return null;}
+ return '00965'+v;
+}
 let addingTeacher2026=false;
 function openTeacherModal(i){
   if(!requireEdit() || !rows[i]) return;
@@ -739,6 +748,7 @@ function openTeacherModal(i){
   const r=rows[i];
   document.getElementById('mName').value=r.name||'';
   document.getElementById('mDept').value=r.dept||'';
+  document.getElementById('mPhone2026').value=r.phone||'';
   document.getElementById('mConn').value=r.connection||'';
   document.getElementById('mTotal').value=r.total||'';
   document.querySelector('#teacherModal h3').textContent='تعديل بيانات المعلمة';
@@ -764,12 +774,13 @@ function saveTeacherModal(){
   if(!name){alert('يرجى كتابة اسم المعلمة');return;}
   const dept=document.getElementById('mDept').value.trim();
   const connection=document.getElementById('mConn').value.trim()||'معين';
+  const phone=normalizeTeacherPhone2026(document.getElementById('mPhone2026').value);if(phone===null)return;
   if(addingTeacher2026){
-    insertTeacherByDept2026({n:rows.length+1,name,dept,connection,total:'0',slots:Array(20).fill('')});
+    insertTeacherByDept2026({n:rows.length+1,name,dept,connection,phone,total:'0',slots:Array(20).fill('')});
   }else{
     if(editingTeacher<0 || !rows[editingTeacher])return;
     const r=rows[editingTeacher];
-    r.name=name;r.dept=dept;r.connection=connection;
+    r.name=name;r.dept=dept;r.connection=connection;r.phone=phone;
     r.total=document.getElementById('mTotal').value.trim();
   }
   closeTeacherModal();saveRows();
@@ -779,6 +790,7 @@ function addTeacherFromSchedule(){
   editingTeacher=-1;addingTeacher2026=true;
   document.getElementById('mName').value='';
   document.getElementById('mDept').value='';
+  document.getElementById('mPhone2026').value='';
   document.getElementById('mConn').value='معين';
   document.getElementById('mTotal').value='0';
   document.querySelector('#teacherModal h3').textContent='إضافة معلمة جديدة';
@@ -790,9 +802,11 @@ function addTeacherManager(){
   if(!requireEdit()) return;
   const name=teacherName.value.trim();
   if(!name) return alert("اكتب اسم المعلمة");
-  insertTeacherByDept2026({n:rows.length+1,name,dept:teacherDept.value.trim(),connection:teacherConnection.value,total:"0",slots:Array(20).fill("")});
+  const phone=normalizeTeacherPhone2026(document.getElementById("teacherPhone2026").value);if(phone===null)return;
+  insertTeacherByDept2026({n:rows.length+1,name,dept:teacherDept.value.trim(),connection:teacherConnection.value,phone,total:"0",slots:Array(20).fill("")});
   teacherName.value="";
   teacherDept.value="";
+  document.getElementById("teacherPhone2026").value="";
   saveRows();
 }
 
@@ -839,7 +853,7 @@ function clearAllScheduleLessonsAdmin2026(){
 }
 
 function renderTeachers(){
-  teacherList.innerHTML=rows.map((r,i)=>`<tr><td>${i+1}</td><td>${esc(r.name)}</td><td>${esc(r.dept)}</td><td>${esc(r.connection)}</td><td>${esc(r.total)}</td><td class="edit-control"><button onclick="openTeacherModal(${i})">تعديل</button> <button class="danger" onclick="removeTeacher(${i})">حذف</button></td></tr>`).join("");
+  teacherList.innerHTML=rows.map((r,i)=>`<tr><td>${i+1}</td><td>${esc(r.name)}</td><td>${esc(r.dept)}</td><td>${esc(r.connection)}</td><td dir="ltr">${esc(r.phone||'')}</td><td>${esc(r.total)}</td><td class="edit-control"><button onclick="openTeacherModal(${i})">تعديل</button> <button class="danger" onclick="removeTeacher(${i})">حذف</button></td></tr>`).join("");
 }
 
 function addSubject(){
@@ -1329,9 +1343,13 @@ async function pdfSchedule2026(){
     document.querySelectorAll('.edit-control').forEach(el=>el.style.display=canEdit()?'':'none');
   };
 
+  let teacherPhoneFilter2026='';
+  const teacherMatches2026=r=>matches(r)&&(!teacherPhoneFilter2026||String(r.phone||'').includes(teacherPhoneFilter2026));
+  window.getFilteredTeacherList2026=()=>rows.filter(teacherMatches2026);
+  window.filterTeacherPhone2026=value=>{teacherPhoneFilter2026=value.replace(/[٠-٩]/g,c=>String('٠١٢٣٤٥٦٧٨٩'.indexOf(c)));const pos=document.getElementById('teacherPhoneFilter2026')?.selectionStart;renderTeachers();requestAnimationFrame(()=>{const e=document.getElementById('teacherPhoneFilter2026');if(e){e.focus();if(pos!==null&&pos!==undefined)e.setSelectionRange(pos,pos)}})};
   window.renderTeachers=function(){
-    const table=document.querySelector('#teachers table.simple'); if(table){table.querySelector('thead').innerHTML='<tr><th>م</th><th>اسم المعلمة</th><th>القسم</th><th>نوع الارتباط</th><th>النصاب</th><th class="edit-control">إجراء</th></tr><tr class="filter-row no-print"><th></th><th><input class="filter-input" data-teacher-filter-key="name" placeholder="فرز الاسم" value="'+esc(FILTERS.name)+'" oninput="FILTER_TEACHER(\'name\',this.value)"></th><th><input class="filter-input" data-teacher-filter-key="dept" placeholder="فرز القسم" value="'+esc(FILTERS.dept)+'" oninput="FILTER_TEACHER(\'dept\',this.value)"></th><th><input class="filter-input" data-teacher-filter-key="connection" placeholder="فرز الارتباط" value="'+esc(FILTERS.connection)+'" oninput="FILTER_TEACHER(\'connection\',this.value)"></th><th><input class="filter-input" data-teacher-filter-key="total" placeholder="فرز النصاب" value="'+esc(FILTERS.total)+'" oninput="FILTER_TEACHER(\'total\',this.value)"></th><th></th></tr>';}
-    let teacherNo=0; teacherList.innerHTML=rows.map((r,i)=>matches(r)?`<tr><td>${++teacherNo}</td><td>${esc(r.name)}</td><td>${esc(r.dept)}</td><td>${esc(r.connection)}</td><td>${esc(r.total)}</td><td class="edit-control"><button onclick="openTeacherModal(${i})">تعديل</button> <button class="danger" onclick="removeTeacher(${i})">حذف</button></td></tr>`:'').join('');
+    const table=document.querySelector('#teachers table.simple'); if(table){table.querySelector('thead').innerHTML='<tr><th>م</th><th>اسم المعلمة</th><th>القسم</th><th>نوع الارتباط</th><th>رقم الهاتف</th><th>النصاب</th><th class="edit-control">إجراء</th></tr><tr class="filter-row no-print"><th></th><th><input class="filter-input" data-teacher-filter-key="name" placeholder="فرز الاسم" value="'+esc(FILTERS.name)+'" oninput="FILTER_TEACHER(\'name\',this.value)"></th><th><input class="filter-input" data-teacher-filter-key="dept" placeholder="فرز القسم" value="'+esc(FILTERS.dept)+'" oninput="FILTER_TEACHER(\'dept\',this.value)"></th><th><input class="filter-input" data-teacher-filter-key="connection" placeholder="فرز الارتباط" value="'+esc(FILTERS.connection)+'" oninput="FILTER_TEACHER(\'connection\',this.value)"></th><th><input class="filter-input" id="teacherPhoneFilter2026" dir="ltr" type="text" inputmode="tel" placeholder="فرز الهاتف" value="'+esc(teacherPhoneFilter2026)+'" oninput="filterTeacherPhone2026(this.value)"></th><th><input class="filter-input" data-teacher-filter-key="total" placeholder="فرز النصاب" value="'+esc(FILTERS.total)+'" oninput="FILTER_TEACHER(\'total\',this.value)"></th><th></th></tr>';}
+    let teacherNo=0; teacherList.innerHTML=rows.map((r,i)=>teacherMatches2026(r)?`<tr><td>${++teacherNo}</td><td>${esc(r.name)}</td><td>${esc(r.dept)}</td><td>${esc(r.connection)}</td><td dir="ltr">${esc(r.phone||'')}</td><td>${esc(r.total)}</td><td class="edit-control"><button onclick="openTeacherModal(${i})">تعديل</button> <button class="danger" onclick="removeTeacher(${i})">حذف</button></td></tr>`:'').join('');
     document.querySelectorAll('.edit-control').forEach(el=>el.style.display=canEdit()?'':'none');
   };
   window.FILTER_TEACHER=(k,v)=>{const el=document.activeElement,pos=el&&typeof el.selectionStart==='number'?el.selectionStart:v.length;FILTERS[k]=v;renderTeachers();requestAnimationFrame(()=>{const n=document.querySelector('#teachers [data-teacher-filter-key=\"'+k+'\"]');if(n){n.focus();try{n.setSelectionRange(pos,pos)}catch(e){}}});};
@@ -1517,7 +1535,7 @@ window.addEventListener('pagehide',()=>{if(typeof clearScheduleUndo2026==='funct
 window.pdfSimpleSection2026=async function(kind){
   if(typeof html2canvas==='undefined'||!window.jspdf||!window.jspdf.jsPDF){alert('تعذر تحميل أداة PDF. تأكد من اتصال الإنترنت.');return;}
   const cfg={
-    teachers:{title:'قائمة المعلمات',headers:['م','اسم المعلمة','القسم','نوع الارتباط','النصاب'],rows:()=>rows.map((r,i)=>[i+1,r.name,r.dept,r.connection,r.total]),file:'المعلمات.pdf'},
+    teachers:{title:'قائمة المعلمات',headers:['م','اسم المعلمة','القسم','نوع الارتباط','رقم الهاتف','النصاب'],rows:()=>rows.map((r,i)=>[i+1,r.name,r.dept,r.connection,r.phone||'',r.total]),file:'المعلمات.pdf'},
     subjects:{title:'قائمة المواد',headers:['م','المادة'],rows:()=>subjects.map((x,i)=>[i+1,x]),file:'المواد.pdf'},
     admins:{title:'قائمة الإداريات',headers:['م','اسم الإدارية'],rows:()=>admins.map((x,i)=>[i+1,x]),file:'الإداريات.pdf'}
   }[kind];
@@ -1562,8 +1580,8 @@ window.pdfSimpleSection2026=async function(kind){
     if(typeof html2canvas==='undefined'||!window.jspdf||!window.jspdf.jsPDF){alert('تعذر تحميل أداة PDF. تأكد من اتصال الإنترنت.');return;}
     let data,title,headers,file;
     if(kind==='teachers'){
-      const rr=typeof getFilteredRows2026==='function'?getFilteredRows2026():rows;
-      data=rr.map((r,i)=>[i+1,r.name,r.dept,r.connection,r.total]);title='قائمة المعلمات';headers=['م','اسم المعلمة','القسم','نوع الارتباط','النصاب'];file='المعلمات_حسب_الفرز.pdf';
+      const rr=typeof getFilteredTeacherList2026==='function'?getFilteredTeacherList2026():rows;
+      data=rr.map((r,i)=>[i+1,r.name,r.dept,r.connection,r.phone||'',r.total]);title='قائمة المعلمات';headers=['م','اسم المعلمة','القسم','نوع الارتباط','رقم الهاتف','النصاب'];file='المعلمات_حسب_الفرز.pdf';
     }else if(kind==='admins'){
       const aa=getFilteredAdmins2026();data=aa.map((x,i)=>[i+1,x]);title='قائمة الإداريات';headers=['م','اسم الإدارية'];file='الإداريات_حسب_الفرز.pdf';
     }else if(kind==='subjects'){
