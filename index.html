@@ -824,7 +824,8 @@ function saveTeacherModal(){
   const connection=document.getElementById('mConn').value.trim()||'معين';
   const phone=normalizeTeacherPhone2026(document.getElementById('mPhone2026').value);if(phone===null)return;
   if(addingTeacher2026){
-    insertTeacherByDept2026({n:rows.length+1,name,dept,connection,phone,total:'0',slots:Array(20).fill('')});
+    if(!validateNewMovementStaff20261018(name,'معلمة'))return;
+    insertTeacherByDept2026(newMovementStaff20261018({n:rows.length+1,name,dept,connection,phone,total:'0',slots:Array(20).fill('')},'معلمة'));
   }else{
     if(editingTeacher<0 || !rows[editingTeacher])return;
     const r=rows[editingTeacher];
@@ -851,7 +852,8 @@ function addTeacherManager(){
   const name=teacherName.value.trim();
   if(!name) return alert("اكتب اسم المعلمة");
   const phone=normalizeTeacherPhone2026(document.getElementById("teacherPhone2026").value);if(phone===null)return;
-  insertTeacherByDept2026({n:rows.length+1,name,dept:teacherDept.value.trim(),connection:teacherConnection.value,phone,total:"0",slots:Array(20).fill("")});
+  if(!validateNewMovementStaff20261018(name,'معلمة'))return;
+  insertTeacherByDept2026(newMovementStaff20261018({n:rows.length+1,name,dept:teacherDept.value.trim(),connection:teacherConnection.value,phone,total:"0",slots:Array(20).fill("")},'معلمة'));
   teacherName.value="";
   teacherDept.value="";
   document.getElementById("teacherPhone2026").value="";
@@ -934,7 +936,10 @@ function addAdmin(){
   if(!requireEdit()) return;
   const v=adminName.value.trim();
   if(!v) return;
-  admins.push({name:v,dept:(document.getElementById("adminDept2026")?.value||"").trim()});
+  const phone=normalizeTeacherPhone2026(document.getElementById('adminPhoneAuto20261018')?.value||'');if(phone===null)return;
+  if(!validateNewMovementStaff20261018(v,'إدارية'))return;
+  admins.push(newMovementStaff20261018({name:v,dept:(document.getElementById("adminDept2026")?.value||"").trim(),phone},'إدارية'));
+  if(document.getElementById('adminPhoneAuto20261018'))document.getElementById('adminPhoneAuto20261018').value='';
   document.getElementById("adminDept2026").value="";
   adminName.value="";
   saveAdmins();
@@ -1870,7 +1875,7 @@ if ('serviceWorker' in navigator) {
     if(inp&&!document.getElementById('adminDept2026')){const el=document.createElement('input');el.id='adminDept2026';el.placeholder='القسم';inp.insertAdjacentElement('afterend',el);}
   }
   const oldEditAdmin=window.editAdmin;
-  window.editAdmin=function(i){if(!requireEdit())return;const old=adminObj(admins[i]);const name=prompt('اسم الإدارية:',old.name);if(name===null||!name.trim())return;const dept=prompt('القسم:',old.dept);if(dept===null)return;admins[i]={name:name.trim(),dept:dept.trim()};saveAdmins();};
+  window.editAdmin=function(i){if(!requireEdit())return;const old=adminObj(admins[i]);const name=prompt('اسم الإدارية:',old.name);if(name===null||!name.trim())return;const dept=prompt('القسم:',old.dept);if(dept===null)return;admins[i]={...(typeof admins[i]==='object'?admins[i]:{}),name:name.trim(),dept:dept.trim()};saveAdmins();};
   let adminSearch='';
   window.setAdminFilter2026=function(v){adminSearch=v;renderAdmins();requestAnimationFrame(()=>{const el=document.getElementById('adminFilter2026');if(el){el.focus();try{el.setSelectionRange(v.length,v.length)}catch(e){}}});};
   window.getFilteredAdmins2026=function(){return admins.map(adminObj).filter(x=>norm(x.name+' '+x.dept).includes(norm(adminSearch)));};
@@ -2835,4 +2840,68 @@ setup();
   return oldLogout.apply(this,arguments);
  };
 })();
+</script>
+
+<script id="automaticNewStaffCodes20261018">
+(function(){
+'use strict';
+const META='movementAutoProvision20261018';let running=false,retryTimer;
+const norm=s=>String(s||'').normalize('NFKC').replace(/[\u064B-\u065F\u0670]/g,'').replace(/[أإآ]/g,'ا').replace(/ى/g,'ي').replace(/\s+/g,' ').trim();
+const can=kind=>role()==='admin'||(role()==='edit'&&hasScope2026(kind==='معلمة'?'teachers':'admins'));
+const token=()=>role()==='admin'?window.dqAdminToken2026:window.dqWaToken20261018;
+function owner(){const a=currentAccount();return JSON.stringify([a?.id||a?.name||'',role()])}
+function all(){return [...rows.map(person=>({person,kind:'معلمة'})),...admins.filter(x=>typeof x==='object'&&x).map(person=>({person,kind:'إدارية'}))]}
+window.validateNewMovementStaff20261018=function(name,kind){
+ if(all().some(x=>x.kind===kind&&norm(x.person.name)===norm(name))){alert('الاسم الكامل موجود بالفعل في القائمة؛ لم تتم إضافة موظفة أو إنشاء رمز جديد.');return false}return true;
+};
+window.newMovementStaff20261018=function(person,kind){
+ const request=crypto.randomUUID();return {...person,staffId:(kind==='معلمة'?'t-auto-':'a-auto-')+request,[META]:{request,state:'pending',notice:true,owner:owner()}};
+};
+function saveQuiet(kind){localStorage.setItem(kind==='معلمة'?ROWS_KEY:ADMINS_KEY,JSON.stringify(kind==='معلمة'?rows:admins));}
+function errorText(e){const m=String(e?.message||'');
+ if(/STAFF_ALREADY_EXISTS/.test(m))return 'الاسم الكامل موجود بالفعل في قاعدة حركة الدوام؛ لم يُنشأ رمز إضافي. راجعي الاسم قبل إعادة الإضافة.';
+ if(/SESSION_EXPIRED|LOGIN_REQUIRED/.test(m))return 'يلزم تسجيل الخروج ثم الدخول بحساب مخول لإكمال إنشاء الرمز.';
+ if(/PGRST|could not find|does not exist/i.test(m))return 'يلزم تشغيل ملف تفعيل إنشاء الرموز الجديدة في قاعدة البيانات مرة واحدة.';
+ if(/NO_AVAILABLE_CODE/.test(m))return 'لم يعد هناك رمز رباعي متاح. لم تتغير أي رموز حالية.';
+ if(/INVALID_PHONE/.test(m))return 'رقم الهاتف غير صحيح. راجعي بيانات الموظفة.';
+ if(/SCOPE_DENIED/.test(m))return 'هذا الحساب غير مخول لإنشاء رمز لهذه الفئة.';
+ return 'تعذر إكمال الاتصال بقاعدة البيانات؛ سيعاد إكمال إنشاء الرمز عند الاتصال.';
+}
+async function pump(){
+ if(running)return;running=true;
+ try{
+  for(const entry of all()){
+   const {person,kind}=entry,meta=person[META];
+   if(!meta||meta.state!=='pending'||!can(kind))continue;
+   const identity=owner(),session=token();if(!session)continue;
+   try{
+    const result=await window.dqMainRpc2026('dq_wa_provision_staff',{p_token:session,p_request_id:meta.request,p_name:person.name,p_kind:kind,p_dept:person.dept||'',p_phone:person.phone||''});
+    if(identity!==owner()||session!==token()||!can(kind))continue;
+    if(result.id!==person.staffId||result.kind!==kind||norm(result.name)!==norm(person.name)||!/^\d{4}$/.test(String(result.code||'')))throw Error('IDENTITY_MISMATCH');
+    // Resolve the current record after awaiting: remote sync may have replaced object references.
+    const current=all().filter(x=>x.kind===kind&&x.person[META]?.request===meta.request);
+    if(current.length!==1)continue;
+    const actual=current[0].person,notify=actual[META].notice&&actual[META].owner===identity;
+    actual[META]={request:meta.request,state:'ready'};saveQuiet(kind);
+    if(kind==='معلمة')renderTeachers();else renderAdmins();
+    if(notify)alert('تم حفظ الموظفة وإنشاء رمز حركة الدوام: '+String(result.code).replace(/\d/g,d=>'٠١٢٣٤٥٦٧٨٩'[d])+'\nيمكن إرساله الآن من زر واتساب.');
+   }catch(e){
+    if(identity!==owner()||!can(kind))continue;
+    const current=all().find(x=>x.kind===kind&&x.person[META]?.request===meta.request)?.person;
+    if(current?.[META].notice&&current[META].owner===identity){current[META].notice=false;saveQuiet(kind);alert('تم حفظ اسم الموظفة في البرنامج، لكن لم يكتمل ربط الرمز.\n'+errorText(e));}
+   }
+  }
+ }finally{running=false;}
+}
+window.provisionNewMovementStaff20261018=pump;
+for(const name of ['saveRows','saveAdmins']){const old=window[name];window[name]=function(){const r=old.apply(this,arguments);pump();return r};}
+const oldApply=window.applyRole;window.applyRole=function(){const r=oldApply.apply(this,arguments);pump();return r};
+window.addEventListener('online',pump);
+window.addEventListener('storage',e=>{if([ROWS_KEY,ADMINS_KEY].includes(e.key))pump()});
+retryTimer=setInterval(pump,30000);
+// The administrative form did not previously have a phone field.
+const host=document.getElementById('adminDept2026')||document.getElementById('adminName');
+if(host&&!document.getElementById('adminPhoneAuto20261018')){const input=document.createElement('input');input.id='adminPhoneAuto20261018';input.placeholder='رقم هاتف الإدارية';input.inputMode='tel';input.dir='ltr';host.insertAdjacentElement('afterend',input);}
+})();
+
 </script>
