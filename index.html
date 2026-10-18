@@ -2232,8 +2232,9 @@ let imported=[],selected=null,people=[],search='',dialog;
 const digit=s=>String(s||'').replace(/[٠-٩]/g,c=>String('٠١٢٣٤٥٦٧٨٩'.indexOf(c))).replace(/[۰-۹]/g,c=>String('۰۱۲۳۴۵۶۷۸۹'.indexOf(c)));
 const norm=s=>String(s||'').normalize('NFKC').replace(/[\u064B-\u065F\u0670]/g,'').replace(/\s+/g,' ').trim();
 function phone(s){let v=digit(s).replace(/[\s()+.\-]/g,'');if(v.startsWith('00965'))v=v.slice(5);else if(v.startsWith('965')&&v.length===11)v=v.slice(3);return /^[569]\d{7}$/.test(v)?'965'+v:''}
-function admin(){return role()==='admin'}
-function roster(){return [...rows.map((p,i)=>({...p,key:'t:'+i,job:'معلمة'})),...admins.map((p,i)=>({...typeof p==='string'?{name:p}:p,key:'a:'+i,job:'إدارية'}))].filter(p=>p.name)}
+function canSendKind20261018(kind){return role()==='admin'||(role()==='edit'&&hasScope2026(kind==='معلمة'?'teachers':'admins'))}
+function admin(){return role()==='admin'||(role()==='edit'&&(hasScope2026('teachers')||hasScope2026('admins')))}
+function roster(){return [...rows.map((p,i)=>({...p,key:'t:'+i,job:'معلمة'})),...admins.map((p,i)=>({...typeof p==='string'?{name:p}:p,key:'a:'+i,job:'إدارية'}))].filter(p=>p.name&&canSendKind20261018(p.job))}
 function codeFor(p){if(p.staffId){const exact=imported.filter(x=>x.id===p.staffId);if(exact.length===1)return exact[0].code}const names=people.filter(x=>norm(x.name)===norm(p.name)),m=imported.filter(x=>norm(x.name)===norm(p.name));return names.length===1&&m.length===1?m[0].code:''}
 function el(id){return document.getElementById(id)}
 function clearMessage(){el('waCode2026').value='';el('waMessage2026').value='';el('waSend2026').removeAttribute('href')}
@@ -2261,7 +2262,7 @@ function setup(){if(dialog)return;
  el('waImport2026').onchange=async e=>{const f=e.target.files[0];if(!f||!admin())return;try{if(f.size>2*1024*1024)throw Error('حجم الملف أكبر من المسموح.');const text=await f.text();if(!admin())return;const result=[];if(/<table[\s>]/i.test(text)){
   const doc=new DOMParser().parseFromString(text,'text/html');for(const r of doc.querySelectorAll('tbody tr')){const c=[...r.querySelectorAll('td')].map(t=>t.textContent.trim());const code=r.querySelector('.code')?.textContent.trim()||c[c.length-1];if(c.length>=2&&/^\d{4,8}$/.test(digit(code)))result.push({id:c.length>=5?c[0]:'',name:c.length>=5?c[1]:c[0],code:digit(code)})}
  }else{for(const line of text.split(/\r?\n/)){const c=line.replace(/^\uFEFF/,'').split(/[\t,;]/).map(x=>x.trim().replace(/^"|"$/g,''));if(c.length>=2&&/^\d{4,8}$/.test(digit(c[1])))result.push({id:'',name:c[0],code:digit(c[1])})}}
- if(!result.length)throw Error('لم يُعثر على أسماء ورموز صالحة في الكشف.');imported=result;el('waImportStatus2026').textContent='تم تحميل '+result.length.toLocaleString('ar-KW')+' رمزًا لهذه الجلسة. راجعي الاسم والرقم قبل الإرسال.';if(selected)select(selected.key);
+ if(!result.length)throw Error('لم يُعثر على أسماء ورموز صالحة في الكشف.');imported=result.filter(x=>people.some(p=>x.id&&p.staffId?x.id===p.staffId:norm(x.name)===norm(p.name)));el('waImportStatus2026').textContent='تم تحميل '+imported.length.toLocaleString('ar-KW')+' رمزًا لهذه الجلسة. راجعي الاسم والرقم قبل الإرسال.';if(selected)select(selected.key);
  }catch(err){el('waImportStatus2026').textContent=err.message}finally{e.target.value=''}};
  dialog.addEventListener('close',()=>{clearMessage();el('waPhone2026').value='';selected=null});
 }
@@ -2274,10 +2275,10 @@ function sendOrPrepare(key){
 }
 function decorate(){
  const manager=admin();let panel=el('waLaunch2026');const host=document.querySelector('#staffMovement2026 .movement-panel');if(host&&!panel){panel=document.createElement('button');panel.id='waLaunch2026';panel.type='button';panel.textContent='واتساب — إرسال رموز الموظفات';panel.style.cssText='background:#16784a;color:white;margin:10px 0';panel.onclick=()=>open();host.prepend(panel)}if(panel)panel.hidden=!manager;
- for(const [id,kind] of [['teacherList','t'],['adminList','a']]){const body=el(id);if(!body)continue;for(const tr of body.querySelectorAll('tr')){const td=tr.querySelector('.edit-control');if(!td)continue;let b=td.querySelector('.wa-row-2026');if(!manager){if(b)b.remove();continue}if(b)continue;const edit=td.querySelector('button[onclick]'),m=edit?.getAttribute('onclick')?.match(/\((\d+)\)/);if(!m)continue;b=document.createElement('button');b.type='button';b.className='wa-row-2026';b.textContent='واتساب — إرسال الرمز';b.style.cssText='background:#16784a;color:white;margin:3px';b.onclick=()=>sendOrPrepare(kind+':'+m[1]);td.append(b)}}
+ for(const [id,kind] of [['teacherList','t'],['adminList','a']]){const allowedKind=canSendKind20261018(kind==='t'?'معلمة':'إدارية');const body=el(id);if(!body)continue;for(const tr of body.querySelectorAll('tr')){const td=tr.querySelector('.edit-control');if(!td)continue;let b=td.querySelector('.wa-row-2026');if(!manager||!allowedKind){if(b)b.remove();continue}if(b)continue;const edit=td.querySelector('button[onclick]'),m=edit?.getAttribute('onclick')?.match(/\((\d+)\)/);if(!m)continue;b=document.createElement('button');b.type='button';b.className='wa-row-2026';b.textContent='واتساب — إرسال الرمز';b.style.cssText='background:#16784a;color:white;margin:3px';b.onclick=()=>sendOrPrepare(kind+':'+m[1]);td.append(b)}}
 }
 function clear(){imported=[];selected=null;if(dialog){clearMessage();el('waPhone2026').value='';el('waImportStatus2026').textContent='';if(dialog.open)dialog.close()}}
-const oldRole=window.applyRole;window.applyRole=function(){const r=oldRole.apply(this,arguments);if(!admin())clear();decorate();return r};
+const oldRole=window.applyRole;window.applyRole=function(){clear();const r=oldRole.apply(this,arguments);decorate();return r};
 const oldLogout=window.logout;window.logout=function(){clear();return oldLogout.apply(this,arguments)};
 let queued=false;new MutationObserver(()=>{if(queued)return;queued=true;queueMicrotask(()=>{queued=false;decorate()})}).observe(document.body,{childList:true,subtree:true});
 window.openWhatsAppCodes2026=open;window.whatsAppCodesCore2026={phone};decorate();
