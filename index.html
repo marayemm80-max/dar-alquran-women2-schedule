@@ -1216,6 +1216,7 @@ function renderAll(){
 async function doLogin(){
   if(window.dqLoginBusy2026)return;
   window.dqLoginBusy2026=true;
+  window.dqWaToken20261018='';try{sessionStorage.removeItem('dq_wa_token_20261018')}catch(e){}
   const user=loginUser.value.trim(),pass=loginPass.value;
   let account=null;
   loginError.textContent='جارٍ التحقق من الدخول…';
@@ -1226,8 +1227,13 @@ async function doLogin(){
       window.dqAdminToken2026=result.token;
       try{sessionStorage.setItem('dq_main_admin_token_v2',result.token)}catch(e){}
     }else{
+      let waLogin=null;
+      try{waLogin=await window.dqMainRpc2026('dq_wa_login',{p_user:user,p_password:pass})}catch(e){}
       let users=[];try{users=JSON.parse(localStorage.getItem(USERS_KEY)||'[]')}catch(e){}
-      account=users.find(p=>p.name===user&&p.pass===pass&&p.role!=='admin')||null;
+      if(waLogin?.token&&waLogin.role==='edit'){
+        account={name:waLogin.name,role:'edit',scopes:waLogin.scopes};
+        window.dqWaToken20261018=waLogin.token;try{sessionStorage.setItem('dq_wa_token_20261018',waLogin.token)}catch(e){}
+      }else account=users.find(p=>p.name===user&&p.pass===pass&&p.role!=='admin')||null;
       if(!account){loginError.textContent='اسم المستخدم أو كلمة المرور غير صحيحة';return;}
       window.dqAdminToken2026='';try{sessionStorage.removeItem('dq_main_admin_token_v2')}catch(e){}
     }
@@ -2228,67 +2234,81 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 (function(){
 'use strict';
 const LINK='https://tinyurl.com/2aatbf5r';
-let imported=[],selected=null,people=[],search='',dialog;
+let selected=null,people=[],search='',dialog,requestVersion=0,serverCode='';
 const digit=s=>String(s||'').replace(/[٠-٩]/g,c=>String('٠١٢٣٤٥٦٧٨٩'.indexOf(c))).replace(/[۰-۹]/g,c=>String('۰۱۲۳۴۵۶۷۸۹'.indexOf(c)));
-const norm=s=>String(s||'').normalize('NFKC').replace(/[\u064B-\u065F\u0670]/g,'').replace(/\s+/g,' ').trim();
+const norm=s=>String(s||'').normalize('NFKC').replace(/[\u064B-\u065F\u0670]/g,'').replace(/[أإآ]/g,'ا').replace(/ى/g,'ي').replace(/\s+/g,' ').trim();
 function phone(s){let v=digit(s).replace(/[\s()+.\-]/g,'');if(v.startsWith('00965'))v=v.slice(5);else if(v.startsWith('965')&&v.length===11)v=v.slice(3);return /^[569]\d{7}$/.test(v)?'965'+v:''}
-function canSendKind20261018(kind){return role()==='admin'||(role()==='edit'&&hasScope2026(kind==='معلمة'?'teachers':'admins'))}
-function admin(){return role()==='admin'||(role()==='edit'&&(hasScope2026('teachers')||hasScope2026('admins')))}
+function canSendKind20261018(kind){return role()==='admin'||(role()==='edit'&&typeof hasScope2026==='function'&&hasScope2026(kind==='معلمة'?'teachers':'admins'))}
+function admin(){return canSendKind20261018('معلمة')||canSendKind20261018('إدارية')}
 function roster(){return [...rows.map((p,i)=>({...p,key:'t:'+i,job:'معلمة'})),...admins.map((p,i)=>({...typeof p==='string'?{name:p}:p,key:'a:'+i,job:'إدارية'}))].filter(p=>p.name&&canSendKind20261018(p.job))}
-function codeFor(p){if(p.staffId){const exact=imported.filter(x=>x.id===p.staffId);if(exact.length===1)return exact[0].code}const names=people.filter(x=>norm(x.name)===norm(p.name)),m=imported.filter(x=>norm(x.name)===norm(p.name));return names.length===1&&m.length===1?m[0].code:''}
 function el(id){return document.getElementById(id)}
-function clearMessage(){el('waCode2026').value='';el('waMessage2026').value='';el('waSend2026').removeAttribute('href')}
+function accountKey(){try{const a=currentAccount();return JSON.stringify([a?.id||a?.name||'',role(),canSendKind20261018('معلمة'),canSendKind20261018('إدارية')])}catch{return ''}}
+function token(){return role()==='admin'?window.dqAdminToken2026:window.dqWaToken20261018}
+function message(p,code){return 'السلام عليكم ورحمة الله وبركاته\nالأستاذة: '+p.name+'\nرمزك الخاص لحركة الدوام: '+code+'\nرابط حركة الدوام:\n'+LINK+'\nيرجى الاحتفاظ بالرمز وعدم مشاركته.'}
+function errorText(e){
+ const m=String(e?.message||'');
+ if(/SESSION_EXPIRED|LOGIN_REQUIRED/.test(m))return 'يرجى تسجيل الخروج ثم الدخول بحسابك لتفعيل جلب الرموز من أي جهاز.';
+ if(/CURRENT_CODE_UNAVAILABLE/.test(m))return 'الرمز الحالي لهذه الموظفة غير مربوط بعد. يلزم استكمال مرجع الرمز لدى المسؤولة دون تغيير رمزها.';
+ if(/STAFF_NAME_NOT_UNIQUE/.test(m))return 'لم نجد مطابقة واحدة للاسم؛ يلزم مراجعة الاسم الكامل وربطه بمعرّف الموظفة.';
+ if(/STAFF_NOT_FOUND|IDENTITY_MISMATCH/.test(m))return 'تعذرت مطابقة الموظفة مع سجل الرموز. راجعي الاسم والمعرّف.';
+ if(/SCOPE_DENIED|NOT_ALLOWED/.test(m))return 'لا توجد لهذا الحساب صلاحية إرسال رموز هذا القسم.';
+ if(/PGRST|could not find|does not exist/i.test(m))return 'لم تُفعّل خدمة إرسال الرموز في قاعدة البيانات بعد. شغّلي ملف التفعيل الخاص مرة واحدة.';
+ return 'تعذر جلب الرمز من قاعدة البيانات. تحققي من الاتصال ثم حاولي مجددًا.';
+}
+async function fetchCode(p){
+ if(!p||!canSendKind20261018(p.job))throw Error('NOT_ALLOWED');
+ const t=token(),identity=accountKey();if(!t)throw Error('LOGIN_REQUIRED');
+ const names=[...new Set([p.name,...(p.rosterAliases20261017||[])].filter(Boolean))];
+ const result=await window.dqMainRpc2026('dq_wa_staff_code',{p_token:t,p_id:p.staffId||'',p_names:names,p_kind:p.job});
+ if(identity!==accountKey()||t!==token()||!canSendKind20261018(p.job))throw Error('NOT_ALLOWED');
+ if(!result||result.kind!==p.job||!/^\d{4,8}$/.test(String(result.code||'')))throw Error('IDENTITY_MISMATCH');
+ if(p.staffId?String(result.id)!==String(p.staffId):!names.some(n=>norm(n)===norm(result.name)))throw Error('IDENTITY_MISMATCH');
+ return String(result.code);
+}
+function clearMessage(){serverCode='';if(!dialog)return;el('waCode2026').value='';el('waMessage2026').value='';el('waSend2026').removeAttribute('href');el('waSend2026').setAttribute('aria-disabled','true')}
 function update(){
- if(!admin()){clear();return}
- const code=digit(el('waCode2026').value).trim(),tel=phone(el('waPhone2026').value);
- const valid=!!selected&&!!tel&&/^\d{4,8}$/.test(code);
- const text=valid?'السلام عليكم ورحمة الله وبركاته\nالأستاذة: '+selected.name+'\nرمزك الخاص لحركة الدوام: '+code+'\nرابط حركة الدوام:\n'+LINK+'\nيرجى الاحتفاظ بالرمز وعدم مشاركته.':'';
- el('waMessage2026').value=text;
- const a=el('waSend2026');a.setAttribute('aria-disabled',String(!valid));if(valid)a.href='https://wa.me/'+tel+'?text='+encodeURIComponent(text);else a.removeAttribute('href');
+ if(!dialog)return;
+ const tel=phone(el('waPhone2026').value),valid=!!selected&&canSendKind20261018(selected.job)&&!!tel&&/^\d{4,8}$/.test(serverCode);
+ el('waCode2026').value=serverCode;el('waMessage2026').value=valid?message(selected,serverCode):'';
+ const a=el('waSend2026');a.setAttribute('aria-disabled',String(!valid));if(valid)a.href='https://wa.me/'+tel+'?text='+encodeURIComponent(message(selected,serverCode));else a.removeAttribute('href');
 }
-function select(key){
- selected=people.find(p=>p.key===key)||null;clearMessage();
- el('waPhone2026').value=selected?(phone(selected.phone)?'00'+phone(selected.phone):(selected.phone||'')):'';
- el('waCode2026').value=selected?codeFor(selected):'';update();
+async function select(key){
+ const version=++requestVersion;selected=people.find(p=>p.key===key)||null;clearMessage();
+ el('waError2026').textContent='';el('waPhone2026').value=selected?(phone(selected.phone)?'00'+phone(selected.phone):(selected.phone||'')):'';
+ if(!selected)return;
+ el('waStatus2026').textContent='جارٍ جلب الرمز الحالي…';
+ try{const code=await fetchCode(selected);if(version!==requestVersion||!dialog.open)return;serverCode=code;el('waStatus2026').textContent='تم جلب الرمز الحالي من قاعدة البيانات.';update();if(!phone(el('waPhone2026').value))el('waError2026').textContent='راجعي رقم واتساب قبل الإرسال.'}
+ catch(e){if(version!==requestVersion)return;el('waStatus2026').textContent='';el('waError2026').textContent=errorText(e)}
 }
-function options(){const selectEl=el('waPerson2026'),current=selected?.key||'';selectEl.replaceChildren(new Option('اختاري الموظفة',''));people.filter(p=>norm(p.name+' '+p.job).includes(norm(search))).forEach(p=>selectEl.add(new Option(p.name+' — '+p.job,p.key)));if([...selectEl.options].some(x=>x.value===current))selectEl.value=current;else select('')}
+function options(){const box=el('waPerson2026'),key=selected?.key||'';box.replaceChildren(new Option('اختاري الموظفة',''));people.filter(p=>norm(p.name+' '+p.job).includes(norm(search))).forEach(p=>box.add(new Option(p.name+' — '+p.job,p.key)));if([...box.options].some(x=>x.value===key))box.value=key;else select('')}
 function setup(){if(dialog)return;
  dialog=document.createElement('dialog');dialog.id='waDialog2026';dialog.dir='rtl';dialog.style.cssText='width:min(610px,92vw);max-height:90vh;overflow:auto;box-sizing:border-box;border:1px solid #cbd5e1;border-radius:16px;padding:22px;color:#193d6a;background:#fff';
- dialog.innerHTML='<form method="dialog" style="float:left"><button aria-label="إغلاق">إغلاق ×</button></form><h2 style="margin-top:0">إرسال رمز حركة الدوام</h2><p>اختاري الموظفة وراجعي رقمها ورسالتها، ثم افتحي محادثتها في واتساب واضغطي إرسال.</p><label>بحث بالاسم<input id="waSearch2026" style="width:100%;box-sizing:border-box"></label><label>الموظفة<select id="waPerson2026" style="width:100%"></select></label><label>رقم واتساب — مفتاح الكويت 00965 تلقائي<input id="waPhone2026" dir="ltr" inputmode="tel" autocomplete="off" style="width:100%;box-sizing:border-box" placeholder="00965 ثم رقم الهاتف"></label><label>رمز حركة الدوام الحالي<input id="waCode2026" type="password" inputmode="numeric" autocomplete="off" style="width:100%;box-sizing:border-box"></label><details style="margin:12px 0"><summary>تحميل كشف الرموز لتعبئتها تلقائيًا</summary><p>اختاري كشف الرموز الحالي بصيغة HTML، أو CSV بأعمدة: الاسم، الرمز. تبقى الرموز داخل جلسة المسؤولة فقط، وتُمسح عند تسجيل الخروج أو إغلاق الصفحة.</p><input id="waImport2026" type="file" accept=".html,.htm,.csv,.tsv,.txt"><p id="waImportStatus2026" role="status"></p></details><label>معاينة الرسالة<textarea id="waMessage2026" readonly rows="7" style="width:100%;box-sizing:border-box"></textarea></label><p id="waError2026" role="status" style="color:#a32d28"></p><a id="waSend2026" target="_blank" rel="noopener noreferrer" aria-disabled="true" style="display:inline-block;background:#16784a;color:#fff;padding:12px 18px;border-radius:9px;text-decoration:none">فتح واتساب لإرسال الرمز</a>';
+ dialog.innerHTML='<form method="dialog" style="float:left"><button aria-label="إغلاق">إغلاق ×</button></form><h2 style="margin-top:0">إرسال رمز حركة الدوام</h2><p>اختاري الموظفة لعرض رمزها الحالي وتجهيز رسالتها.</p><label>بحث بالاسم<input id="waSearch2026" style="width:100%;box-sizing:border-box"></label><label>الموظفة<select id="waPerson2026" style="width:100%"></select></label><label>رقم واتساب<input id="waPhone2026" dir="ltr" inputmode="tel" autocomplete="off" style="width:100%;box-sizing:border-box"></label><label>رمز حركة الدوام الحالي<input id="waCode2026" readonly type="password" autocomplete="off" style="width:100%;box-sizing:border-box"></label><p id="waStatus2026" role="status"></p><label>معاينة الرسالة<textarea id="waMessage2026" readonly rows="7" style="width:100%;box-sizing:border-box"></textarea></label><p id="waError2026" role="status" style="color:#a32d28"></p><a id="waSend2026" target="_blank" rel="noopener noreferrer" aria-disabled="true" style="display:inline-block;background:#16784a;color:#fff;padding:12px 18px;border-radius:9px;text-decoration:none">فتح واتساب لإرسال الرمز</a>';
  document.body.append(dialog);dialog.querySelectorAll('label').forEach(x=>x.style.cssText='display:block;margin:12px 0;font-weight:600');
  el('waSearch2026').oninput=e=>{search=e.target.value;options()};el('waPerson2026').onchange=e=>select(e.target.value);
- for(const id of ['waPhone2026','waCode2026'])el(id).oninput=()=>{el('waError2026').textContent='';update()};
- el('waSend2026').onclick=e=>{update();if(!admin()||!el('waSend2026').hasAttribute('href')){e.preventDefault();el('waError2026').textContent='اختاري الموظفة وأدخلي رقمًا كويتيًا صحيحًا ورمزها الحالي.'}};
- el('waImport2026').onchange=async e=>{const f=e.target.files[0];if(!f||!admin())return;try{if(f.size>2*1024*1024)throw Error('حجم الملف أكبر من المسموح.');const text=await f.text();if(!admin())return;const result=[];if(/<table[\s>]/i.test(text)){
-  const doc=new DOMParser().parseFromString(text,'text/html');for(const r of doc.querySelectorAll('tbody tr')){const c=[...r.querySelectorAll('td')].map(t=>t.textContent.trim());const code=r.querySelector('.code')?.textContent.trim()||c[c.length-1];if(c.length>=2&&/^\d{4,8}$/.test(digit(code)))result.push({id:c.length>=5?c[0]:'',name:c.length>=5?c[1]:c[0],code:digit(code)})}
- }else{for(const line of text.split(/\r?\n/)){const c=line.replace(/^\uFEFF/,'').split(/[\t,;]/).map(x=>x.trim().replace(/^"|"$/g,''));if(c.length>=2&&/^\d{4,8}$/.test(digit(c[1])))result.push({id:'',name:c[0],code:digit(c[1])})}}
- if(!result.length)throw Error('لم يُعثر على أسماء ورموز صالحة في الكشف.');imported=result.filter(x=>people.some(p=>x.id&&p.staffId?x.id===p.staffId:norm(x.name)===norm(p.name)));el('waImportStatus2026').textContent='تم تحميل '+imported.length.toLocaleString('ar-KW')+' رمزًا لهذه الجلسة. راجعي الاسم والرقم قبل الإرسال.';if(selected)select(selected.key);
- }catch(err){el('waImportStatus2026').textContent=err.message}finally{e.target.value=''}};
- dialog.addEventListener('close',()=>{clearMessage();el('waPhone2026').value='';selected=null});
+ el('waPhone2026').oninput=()=>{el('waError2026').textContent='';update()};
+ el('waSend2026').onclick=e=>{update();if(!admin()||!el('waSend2026').hasAttribute('href')){e.preventDefault();el('waError2026').textContent='انتظري اكتمال جلب الرمز وراجعي رقم واتساب.'}};
+ dialog.addEventListener('close',()=>{requestVersion++;clearMessage();el('waPhone2026').value='';el('waStatus2026').textContent='';selected=null});
 }
-function open(key){if(!admin())return;setup();people=roster();search='';el('waSearch2026').value='';options();if(key){el('waPerson2026').value=key;select(key)}el('waError2026').textContent='';dialog.showModal()}
-function sendOrPrepare(key){
- if(!admin())return;people=roster();const p=people.find(p=>p.key===key);const code=p?codeFor(p):'',tel=p?phone(p.phone):'';
- if(!p||!tel||!/^\d{4,8}$/.test(code)){open(key);return}
- const text='السلام عليكم ورحمة الله وبركاته\nالأستاذة: '+p.name+'\nرمزك الخاص لحركة الدوام: '+code+'\nرابط حركة الدوام:\n'+LINK+'\nيرجى الاحتفاظ بالرمز وعدم مشاركته.';
- window.open('https://wa.me/'+tel+'?text='+encodeURIComponent(text),'_blank','noopener,noreferrer');
+function open(key){if(!admin())return;setup();people=roster();search='';el('waSearch2026').value='';options();el('waError2026').textContent='';if(!dialog.open)dialog.showModal();if(key){el('waPerson2026').value=key;select(key)}}
+async function sendOrPrepare(key){
+ if(!admin())return;const identity=accountKey();people=roster();const p=people.find(p=>p.key===key);if(!p)return;
+ // Open the tab during the click so asynchronous lookup cannot trigger popup blocking.
+ let popup=null;try{popup=window.open('about:blank','_blank');if(popup)popup.opener=null}catch(e){}
+ try{
+  const code=await fetchCode(p),tel=phone(p.phone);
+  if(!tel){popup?.close();open(key);el('waError2026').textContent='راجعي رقم واتساب لهذه الموظفة قبل الإرسال.';return}
+  const url='https://wa.me/'+tel+'?text='+encodeURIComponent(message(p,code));
+  if(popup&&!popup.closed){popup.location.replace(url);return}
+  open(key);++requestVersion;serverCode=code;el('waStatus2026').textContent='الرسالة جاهزة؛ اضغطي فتح واتساب.';update();
+ }catch(e){popup?.close();if(identity!==accountKey()||!admin())return;open(key);++requestVersion;el('waStatus2026').textContent='';el('waError2026').textContent=errorText(e)}
 }
 function decorate(){
  const manager=admin();let panel=el('waLaunch2026');const host=document.querySelector('#staffMovement2026 .movement-panel');if(host&&!panel){panel=document.createElement('button');panel.id='waLaunch2026';panel.type='button';panel.textContent='واتساب — إرسال رموز الموظفات';panel.style.cssText='background:#16784a;color:white;margin:10px 0';panel.onclick=()=>open();host.prepend(panel)}if(panel)panel.hidden=!manager;
- for(const [id,kind] of [['teacherList','t'],['adminList','a']]){const allowedKind=canSendKind20261018(kind==='t'?'معلمة':'إدارية');const body=el(id);if(!body)continue;for(const tr of body.querySelectorAll('tr')){const td=tr.querySelector('.edit-control');if(!td)continue;let b=td.querySelector('.wa-row-2026');if(!manager||!allowedKind){if(b)b.remove();continue}if(b)continue;const edit=td.querySelector('button[onclick]'),m=edit?.getAttribute('onclick')?.match(/\((\d+)\)/);if(!m)continue;b=document.createElement('button');b.type='button';b.className='wa-row-2026';b.textContent='واتساب — إرسال الرمز';b.style.cssText='background:#16784a;color:white;margin:3px';b.onclick=()=>sendOrPrepare(kind+':'+m[1]);td.append(b)}}
+ for(const [id,kind] of [['teacherList','t'],['adminList','a']]){const allowed=canSendKind20261018(kind==='t'?'معلمة':'إدارية'),body=el(id);if(!body)continue;for(const tr of body.querySelectorAll('tr')){const td=tr.querySelector('.edit-control');if(!td)continue;let b=td.querySelector('.wa-row-2026');if(!manager||!allowed){if(b)b.remove();continue}if(b)continue;const edit=td.querySelector('button[onclick]'),m=edit?.getAttribute('onclick')?.match(/\((\d+)\)/);if(!m)continue;b=document.createElement('button');b.type='button';b.className='wa-row-2026';b.textContent='واتساب — إرسال الرمز';b.style.cssText='background:#16784a;color:white;margin:3px';b.onclick=()=>sendOrPrepare(kind+':'+m[1]);td.append(b)}}
 }
-function clear(){imported=[];selected=null;if(dialog){clearMessage();el('waPhone2026').value='';el('waImportStatus2026').textContent='';if(dialog.open)dialog.close()}}
-// Retain imported codes during UI refreshes for the same authorized account.
-function accountKey20261018(){
- try{const a=currentAccount();return a?JSON.stringify([a.id||a.staffId||a.name||'',role(),canSendKind20261018('معلمة'),canSendKind20261018('إدارية')]):''}catch(e){return ''}
-}
-let codeAccount20261018=accountKey20261018();
-const oldRole=window.applyRole;window.applyRole=function(){
- const accountKey=accountKey20261018();
- if(!admin()||!accountKey||accountKey!==codeAccount20261018)clear();
- codeAccount20261018=accountKey;
- const r=oldRole.apply(this,arguments);decorate();return r;
-};
+function clear(){requestVersion++;selected=null;clearMessage();if(dialog?.open)dialog.close()}
+let owner=accountKey();const oldRole=window.applyRole;window.applyRole=function(){const key=accountKey();if(!admin()||key!==owner)clear();owner=key;const r=oldRole.apply(this,arguments);decorate();return r};
 const oldLogout=window.logout;window.logout=function(){clear();return oldLogout.apply(this,arguments)};
 let queued=false;new MutationObserver(()=>{if(queued)return;queued=true;queueMicrotask(()=>{queued=false;decorate()})}).observe(document.body,{childList:true,subtree:true});
 window.openWhatsAppCodes2026=open;window.whatsAppCodesCore2026={phone};decorate();
@@ -2804,4 +2824,15 @@ window.leaveLedgerCore2026={dates,amount,stats,merge,rules,records,people,report
 setup();
 })();
 
+</script>
+
+<script id="whatsAppServerSession20261018">
+(function(){
+ window.dqWaToken20261018='';try{window.dqWaToken20261018=sessionStorage.getItem('dq_wa_token_20261018')||''}catch(e){}
+ const oldLogout=window.logout;window.logout=async function(){
+  const t=window.dqWaToken20261018;window.dqWaToken20261018='';try{sessionStorage.removeItem('dq_wa_token_20261018')}catch(e){}
+  if(t)try{await window.dqMainRpc2026('dq_wa_logout',{p_token:t})}catch(e){}
+  return oldLogout.apply(this,arguments);
+ };
+})();
 </script>
