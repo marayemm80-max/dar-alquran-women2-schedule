@@ -2278,7 +2278,17 @@ function decorate(){
  for(const [id,kind] of [['teacherList','t'],['adminList','a']]){const allowedKind=canSendKind20261018(kind==='t'?'معلمة':'إدارية');const body=el(id);if(!body)continue;for(const tr of body.querySelectorAll('tr')){const td=tr.querySelector('.edit-control');if(!td)continue;let b=td.querySelector('.wa-row-2026');if(!manager||!allowedKind){if(b)b.remove();continue}if(b)continue;const edit=td.querySelector('button[onclick]'),m=edit?.getAttribute('onclick')?.match(/\((\d+)\)/);if(!m)continue;b=document.createElement('button');b.type='button';b.className='wa-row-2026';b.textContent='واتساب — إرسال الرمز';b.style.cssText='background:#16784a;color:white;margin:3px';b.onclick=()=>sendOrPrepare(kind+':'+m[1]);td.append(b)}}
 }
 function clear(){imported=[];selected=null;if(dialog){clearMessage();el('waPhone2026').value='';el('waImportStatus2026').textContent='';if(dialog.open)dialog.close()}}
-const oldRole=window.applyRole;window.applyRole=function(){clear();const r=oldRole.apply(this,arguments);decorate();return r};
+// Retain imported codes during UI refreshes for the same authorized account.
+function accountKey20261018(){
+ try{const a=currentAccount();return a?JSON.stringify([a.id||a.staffId||a.name||'',role(),canSendKind20261018('معلمة'),canSendKind20261018('إدارية')]):''}catch(e){return ''}
+}
+let codeAccount20261018=accountKey20261018();
+const oldRole=window.applyRole;window.applyRole=function(){
+ const accountKey=accountKey20261018();
+ if(!admin()||!accountKey||accountKey!==codeAccount20261018)clear();
+ codeAccount20261018=accountKey;
+ const r=oldRole.apply(this,arguments);decorate();return r;
+};
 const oldLogout=window.logout;window.logout=function(){clear();return oldLogout.apply(this,arguments)};
 let queued=false;new MutationObserver(()=>{if(queued)return;queued=true;queueMicrotask(()=>{queued=false;decorate()})}).observe(document.body,{childList:true,subtree:true});
 window.openWhatsAppCodes2026=open;window.whatsAppCodesCore2026={phone};decorate();
