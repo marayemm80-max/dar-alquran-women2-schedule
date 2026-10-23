@@ -1350,7 +1350,7 @@ async function pdfSchedule2026(){
 </style>
 <script id="finalEnhancementsScript2026">
 (function(){
-  const FILTERS={name:'',dept:'',connection:'',total:'',className:'',manualLeaveType:''};
+  const FILTERS={name:'',dept:'',connection:'',total:'',className:''};
   const norm=s=>String(s??'').trim().toLowerCase();
   function normalizeClass2026(v){
     return String(v??'')
@@ -1384,21 +1384,20 @@ async function pdfSchedule2026(){
       (!FILTERS.connection||norm(r.connection).includes(norm(FILTERS.connection))) &&
       (!FILTERS.total||norm(r.total).includes(norm(FILTERS.total))) && classMatch;
   }
-  window.getFilteredRows2026=()=>rows.filter(r=>matches(r)&&(!FILTERS.manualLeaveType||norm(r.manualLeaveType).includes(norm(FILTERS.manualLeaveType))));
+  window.getFilteredRows2026=()=>rows.filter(matches);
   window.setScheduleFilter2026=(k,v)=>{const el=document.activeElement,pos=el&&typeof el.selectionStart==='number'?el.selectionStart:v.length;FILTERS[k]=v;renderSchedule();requestAnimationFrame(()=>{const n=document.querySelector('#schedule [data-filter-key=\"'+k+'\"]');if(n){n.focus();try{n.setSelectionRange(pos,pos)}catch(e){}}});};
   window.clearFilters2026=()=>{Object.keys(FILTERS).forEach(k=>FILTERS[k]='');renderSchedule();renderTeachers();};
 
   window.renderSchedule=function(){
     let h='<thead>';
-    h+='<tr><th rowspan="3" class="meta num">م</th><th class="meta name">الاسم</th><th class="meta dept">القسم</th><th class="meta conn">نوع الارتباط</th><th class="meta leave-type">نوع الإجازة</th><th colspan="20" class="meta">أيام الأسبوع</th><th class="meta total">إجمالي<br>نصاب الحصص</th><th rowspan="3" class="meta actioncol no-print edit-control">إجراء</th></tr>';
+    h+='<tr><th rowspan="3" class="meta num">م</th><th class="meta name">الاسم</th><th class="meta dept">القسم</th><th class="meta conn">نوع الارتباط</th><th colspan="20" class="meta">أيام الأسبوع</th><th class="meta total">إجمالي<br>نصاب الحصص</th><th rowspan="3" class="meta actioncol no-print edit-control">إجراء</th></tr>';
     h+='<tr class="filter-row no-print"><th><input class="filter-input" data-filter-key="name" value="'+esc(FILTERS.name)+'" placeholder="فرز الاسم" oninput="setScheduleFilter2026(\'name\',this.value)"></th><th><input class="filter-input" data-filter-key="dept" value="'+esc(FILTERS.dept)+'" placeholder="فرز القسم" oninput="setScheduleFilter2026(\'dept\',this.value)"></th><th><input class="filter-input" data-filter-key="connection" value="'+esc(FILTERS.connection)+'" placeholder="فرز الارتباط" oninput="setScheduleFilter2026(\'connection\',this.value)"></th>';
-    h+='<th><input class="filter-input" data-filter-key="manualLeaveType" value="'+esc(FILTERS.manualLeaveType||'')+'" placeholder="فرز نوع الإجازة" oninput="setScheduleFilter2026(\'manualLeaveType\',this.value)"></th>';
     DAYS.forEach((d,i)=>h+=`<th colspan="4" class="${DAY_CLASSES[i]}">${d}</th>`);
     h+='<th><input class="filter-input" data-filter-key="total" value="'+esc(FILTERS.total)+'" placeholder="فرز النصاب" oninput="setScheduleFilter2026(\'total\',this.value)"></th></tr><tr>';
-    h+='<th class="no-print" colspan="4"><input class="filter-input" data-filter-key="className" style="width:96%" value="'+esc(FILTERS.className)+'" placeholder="فرز الفصل (مثال: 3م2)" oninput="setScheduleFilter2026(\'className\',this.value)"></th>';
+    h+='<th class="no-print" colspan="3"><input class="filter-input" data-filter-key="className" style="width:96%" value="'+esc(FILTERS.className)+'" placeholder="فرز الفصل (مثال: 3م2)" oninput="setScheduleFilter2026(\'className\',this.value)"></th>';
     DAYS.forEach((d,i)=>PERIODS.forEach(p=>h+=`<th class="period ${DAY_CLASSES[i]}">${p}</th>`));
     h+='<th class="no-print"><button onclick="clearFilters2026()">مسح الفرز</button></th></tr></thead><tbody>';
-    let visibleNo=0; rows.forEach((r,ri)=>{ if(!matches(r)|| (FILTERS.manualLeaveType && !norm(r.manualLeaveType).includes(norm(FILTERS.manualLeaveType))))return; visibleNo++; h+=`<tr><td>${visibleNo}</td><td class="edit name" onclick="openTeacherModal(${ri})">${esc(r.name)}</td><td class="edit" onclick="openTeacherModal(${ri})">${esc(r.dept)}</td><td class="edit" onclick="openTeacherModal(${ri})">${esc(r.connection)}</td><td class="edit manual-leave-type" onclick="editManualLeaveType20261021(${ri})" title="اضغطي لتسجيل نوع الإجازة يدويًا">${esc(r.manualLeaveType||'')}</td>`; const slots=Array.isArray(r.slots)?r.slots:Array(20).fill(''); const wantedClass=normalizeClass2026(FILTERS.className); for(let si=0;si<20;si++){const raw=slots[si]||'',v=(!wantedClass||lessonClasses2026(raw).includes(wantedClass))?raw:'',di=Math.floor(si/4),draggable=canEdit()&&v?'true':'false';h+=`<td class="slot ${DAY_CLASSES[di]}" draggable="${draggable}" data-r="${ri}" data-s="${si}" onclick="editSlot(${ri},${si})" ondragstart="dragStart(event,${ri},${si})" ondragover="dragOver(event)" ondragleave="event.currentTarget.classList.remove('over')" ondrop="dropSlot(event,${ri},${si})" ondragend="dragEnd(event)">${esc(v)}</td>`;} h+=`<td class="edit" onclick="openTeacherModal(${ri})">${esc(r.total)}</td><td class="no-print edit-control"><button onclick="openTeacherModal(${ri})">✏️ تعديل</button> <button class="danger" onclick="removeTeacher(${ri})">حذف</button></td></tr>`;});
+    let visibleNo=0; rows.forEach((r,ri)=>{ if(!matches(r))return; visibleNo++; h+=`<tr><td>${visibleNo}</td><td class="edit name" onclick="openTeacherModal(${ri})">${esc(r.name)}</td><td class="edit" onclick="openTeacherModal(${ri})">${esc(r.dept)}</td><td class="edit" onclick="openTeacherModal(${ri})">${esc(r.connection)}</td>`; const slots=Array.isArray(r.slots)?r.slots:Array(20).fill(''); const wantedClass=normalizeClass2026(FILTERS.className); for(let si=0;si<20;si++){const raw=slots[si]||'',v=(!wantedClass||lessonClasses2026(raw).includes(wantedClass))?raw:'',di=Math.floor(si/4),draggable=canEdit()&&v?'true':'false';h+=`<td class="slot ${DAY_CLASSES[di]}" draggable="${draggable}" data-r="${ri}" data-s="${si}" onclick="editSlot(${ri},${si})" ondragstart="dragStart(event,${ri},${si})" ondragover="dragOver(event)" ondragleave="event.currentTarget.classList.remove('over')" ondrop="dropSlot(event,${ri},${si})" ondragend="dragEnd(event)">${esc(v)}</td>`;} h+=`<td class="edit" onclick="openTeacherModal(${ri})">${esc(r.total)}</td><td class="no-print edit-control"><button onclick="openTeacherModal(${ri})">✏️ تعديل</button> <button class="danger" onclick="removeTeacher(${ri})">حذف</button></td></tr>`;});
     scheduleGrid.innerHTML=h;
     document.querySelectorAll('.edit-control').forEach(el=>el.style.display=canEdit()?'':'none');
   };
@@ -1440,7 +1439,7 @@ async function pdfSchedule2026(){
   }
 
   const RESKEY='daily_reserve_2026';
-  function loadReserve(){try{return JSON.parse(localStorage.getItem(RESKEY)||'[]')}catch(e){return[]}}
+  function loadReserve(){window.expireDailyReserve20261023?.();try{return JSON.parse(localStorage.getItem(RESKEY)||'[]')}catch(e){return[]}}
   function saveReserve(a){localStorage.setItem(RESKEY,JSON.stringify(a));renderReserve2026();}
   window.addReserve2026=function(){if(!requireEdit())return;const date=reserveDate.value,absent=reserveAbsent.value.trim(),sub=reserveSub.value.trim(),period=reservePeriod.value,notes=reserveNotes.value.trim();if(!date||!absent||!sub)return alert('أدخل التاريخ والمعلمة الغائبة ومعلمة الاحتياط.');const a=loadReserve();a.push({date,absent,sub,period,notes});saveReserve(a);reserveAbsent.value=reserveSub.value=reserveNotes.value='';};
   window.deleteReserve2026=function(i){if(!requireEdit())return;const a=loadReserve();a.splice(i,1);saveReserve(a);};
@@ -1924,7 +1923,7 @@ if ('serviceWorker' in navigator) {
     localStorage.setItem('daily_reserve_2026',JSON.stringify(a));editing=-1;
     reserveDate.value=reserveAbsent.value=reserveSub.value=reserveNotes.value='';document.getElementById('saveReserveButton2026').textContent='إضافة الاحتياط';renderReserve2026();
   };
-  window.renderReserve2026=function(){const b=document.getElementById('reserveBody');if(!b)return;const a=JSON.parse(localStorage.getItem('daily_reserve_2026')||'[]');
+  window.renderReserve2026=function(){const b=document.getElementById('reserveBody');if(!b)return;if(window.expireDailyReserve20261023?.()){editing=-1;const btn=document.getElementById('saveReserveButton2026');if(btn)btn.textContent='إضافة الاحتياط';}const a=JSON.parse(localStorage.getItem('daily_reserve_2026')||'[]');
     b.innerHTML=a.map((x,i)=>`<tr><td>${esc((['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'])[new Date(x.date+'T12:00:00').getDay()]||'')}</td><td>${esc(x.date)}</td><td>${esc(x.absent)}</td><td>${esc(x.sub)}</td><td>${esc(x.period)}</td><td>${esc(x.notes)}</td><td class="edit-control"><button onclick="editReserve2026(${i})">تعديل</button> <button class="danger" onclick="deleteReserve2026(${i})">حذف</button></td></tr>`).join('');
     b.querySelectorAll('.edit-control').forEach(el=>el.style.display=canEdit()?'':'none');
   };
@@ -2347,16 +2346,6 @@ window.openWhatsAppCodes2026=open;window.whatsAppCodesCore2026={phone};decorate(
 })();
 </script>
 
-<script>
-// Independent manual schedule metadata, stored with the existing teacher row.
-window.editManualLeaveType20261021=function(i){
- if(typeof requireScopeEdit2026==='function'){if(!requireScopeEdit2026('schedule'))return;}else if(!requireEdit())return;
- const r=rows[i];if(!r)return;
- const value=prompt('نوع الإجازة للمعلمة '+r.name+' (اتركيها فارغة لمسح الخانة):',r.manualLeaveType||'');
- if(value===null)return;
- r.manualLeaveType=value.trim();saveRows();
-};
-</script>
 </body>
 </html>
 
@@ -2965,84 +2954,39 @@ const panel=document.querySelector('#staffMovement2026 .movement-panel');if(pane
 })();
 </script>
 
-<script id="automaticPermissionReserve20261021">
+
+<style id="royalBlue20261023">
+@media screen {html,body{background:#1745AD!important} header{background:linear-gradient(120deg,#102B73,#1745AD)!important}}
+</style>
+<script id="dailyRules20261023">
 (function(){
- const KEY='daily_reserve_2026', labels=['الأولى','الثانية','الثالثة','الرابعة'];
- const times=[[510,550],[550,590],[610,650],[650,690]];
- const norm=v=>movementNormalize2026(v);
- let busy=false,portalReady=false,editingSource=null;
- const read=()=>{try{return JSON.parse(localStorage.getItem(KEY)||'[]')}catch{return []}};
- const key=x=>[x.date,norm(x.absent),x.period].join('|');
- function affected(e,i){if(/مرض|طارئ/.test(e.type||''))return true;return /إذن.*بداية/.test(e.type||'')?times[i][0]<600:/إذن.*نهاية/.test(e.type||'')?times[i][1]>600:false}
- function reconcile(){
-  if(busy||typeof role!=='function'||role()!=='admin')return;
-  busy=true;
-  try{
-   const movements=movementEntries2026(), desired=new Map();
-   for(const e of movements){
-    if(!/^\d{4}-\d{2}-\d{2}$/.test(e.date||''))continue;
-    const day=new Date(e.date+'T12:00:00').getDay();if(day>4)continue;
-    const matches=rows.filter(r=>norm(r.name)===norm(e.name));if(matches.length!==1)continue;
-    const teacher=matches[0];
-    labels.forEach((period,i)=>{
-     const classroom=String(teacher.slots?.[day*4+i]||'').trim();
-     if(!classroom||!affected(e,i))return;
-     const item={date:e.date,absent:teacher.name,sub:'',period,notes:e.type+' — الفصل: '+classroom,autoPermission20261021:true,autoPortal20261021:!!e.portal};
-     desired.set(key(item),item);
-    });
-   }
-   const before=read(),after=[];
-   for(const item of before){
-    if(!item.autoPermission20261021){after.push(item);continue}
-    const next=desired.get(key(item));
-    if(next){after.push({...item,...next,sub:item.sub||'',notes:next.notes});desired.delete(key(item))}
-    else if(item.autoPortal20261021&&!portalReady)after.push(item);
-   }
-   for(const [k,item] of desired)if(!after.some(x=>key(x)===k))after.push(item);
-   if(JSON.stringify(before)!==JSON.stringify(after))localStorage.setItem(KEY,JSON.stringify(after));
-  }finally{busy=false}
- }
- // Confirm an authoritative portal response before removing portal-derived records.
- const originalFetch=window.fetch;
- window.fetch=async function(...args){const response=await originalFetch.apply(this,args);
-  if(String(args[0]).includes('/dq_main_admin_entries')&&response.ok){try{const data=await response.clone().json();if(Array.isArray(data))portalReady=true}catch{}}
-  return response;
+ const key='daily_reserve_2026';
+ window.expireDailyReserve20261023=function(){
+  const today=movementNowKuwait2026().date;
+  let all;try{all=JSON.parse(localStorage.getItem(key)||'[]')}catch(e){return false}
+  if(!Array.isArray(all))return false;
+  const keep=all.filter(x=>!/^\d{4}-\d{2}-\d{2}$/.test(x.date)||x.date>=today);
+  if(keep.length===all.length)return false;
+  localStorage.setItem(key,JSON.stringify(keep));return true;
  };
- const render=window.renderReserve2026;
- window.renderReserve2026=function(){reconcile();return render.apply(this,arguments)};
- const movementRender=window.renderStaffMovement2026;
- window.renderStaffMovement2026=function(){const result=movementRender.apply(this,arguments);reconcile();renderReserve2026();return result};
- const edit=window.editReserve2026;
- window.editReserve2026=function(i){editingSource=read()[i];return edit.apply(this,arguments)};
+ const save=window.saveStaffMovement2026;
+ window.saveStaffMovement2026=function(){
+  const date=movementNowKuwait2026().date;
+  const day=new Date(date+'T12:00:00Z').getUTCDay();
+  if(day===5||day===6)return alert('لا يمكن تسجيل حركة الدوام يومَي الجمعة والسبت.');
+  return save.apply(this,arguments);
+ };
  const add=window.addReserve2026;
  window.addReserve2026=function(){
-  const target={date:reserveDate.value,absent:reserveAbsent.value.trim(),period:reservePeriod.value};
-  const source=editingSource;const pending=read().find(x=>x.autoPermission20261021&&key(x)===key(target));
-  if(pending&&source!==pending&&(!source||key(source)!==key(target))){
-   const index=read().findIndex(x=>x.autoPermission20261021&&key(x)===key(target));
-   const sub=reserveSub.value,notes=reserveNotes.value;window.editReserve2026(index);reserveSub.value=sub;reserveNotes.value=notes;
-  }
-  const meta=editingSource;const result=add.apply(this,arguments);
-  if(!reserveDate.value&&meta?.autoPermission20261021){
-   const all=read(),index=all.findIndex(x=>key(x)===key(target));
-   if(index>=0){all[index].autoPermission20261021=true;all[index].autoPortal20261021=meta.autoPortal20261021;localStorage.setItem(KEY,JSON.stringify(all))}
-   editingSource=null;renderReserve2026();
-  }
-  return result;
+  const date=document.getElementById('reserveDate')?.value;
+  if(date&&date<movementNowKuwait2026().date)return alert('انتهى هذا اليوم؛ لا يمكن إضافة احتياط بتاريخ سابق.');
+  return add.apply(this,arguments);
  };
- const warning=window.reserveMovementWarning2026;
- window.reserveMovementWarning2026=function(name,date,period){
-  const i=labels.indexOf(period);
-  if(i>=0&&movementEntries2026().some(e=>norm(e.name)===norm(name)&&e.date===date&&(affected(e,i)||/مرض|طارئ/.test(e.type||''))))return 'المعلمة غير متاحة للاحتياط بسبب حركة الدوام المسجلة في وقت الحصة.';
-  return warning?.apply(this,arguments)||'';
- };
- window.addEventListener('storage',()=>renderReserve2026());
- setInterval(()=>{if(typeof role==='function'&&role()==='admin')renderReserve2026()},5000);
- setTimeout(()=>{
-  const panel=document.querySelector('#reserve2026 .panel');
-  if(panel){const note=document.createElement('p');note.textContent='تُدرج حصص الأذونات تلقائيًا: إذن البداية قبل ١٠، وإذن النهاية من ١٠. اختاري «تعديل» لتعيين البديلة. لتصحيح الإدراج التلقائي عدّلي حركة الدوام الأصلية.';panel.prepend(note)}
-  renderReserve2026();
- },0);
- window.permissionReserveReconcile20261021=reconcile;
+ function refresh(){window.renderReserve2026?.();}
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',refresh);else refresh();
+ setInterval(refresh,15000);
+ window.addEventListener('focus',refresh);
+ window.addEventListener('storage',e=>{if(e.key===key)refresh()});
+ document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh()});
 })();
 </script>
