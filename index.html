@@ -395,7 +395,7 @@ function applySchedulePdfColors20261023(page,palette,offset){
     <div class="daily-footer-2026">
       <div class="daily-footer-row-2026">
         
-        <div><b>مشرفة المركز: أ. هيله العتيبي</b></div>
+        <div><b>مشرفة المركز<br>أ. هيله العتيبي</b></div>
       </div>
       <div class="daily-quote-2026">قال الإمام الشافعي رحمه الله: ليس العلم ما حُفظ، إنما العلم ما نفع.</div>
     </div>
@@ -1110,7 +1110,7 @@ async function exportRows(rr,filename){
   }
   ws.getRow(footerStart).height=24; ws.getRow(footerStart+1).height=24; ws.getRow(footerStart+2).height=22;
   ws.pageSetup.printArea=`A1:Z${footerStart+2}`;
-  ws.headerFooter.oddFooter='&Rمشرفة مركز دار قرآن غرب عبدالله المبارك  -  أ. هيله العتيبي';
+  ws.headerFooter.oddFooter='';
 
   exportColors.body.forEach((row,i)=>row.forEach((x,c)=>{const cell=ws.getCell(i+5,c+1);cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF'+x.bg}};cell.font={...cell.font,color:{argb:'FF'+x.fg},bold:x.bold}}));
   for(let c=1;c<=26;c++){const x=exportColors.meta;ws.getCell(2,c).fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF'+x.bg}};}
@@ -3272,3 +3272,10 @@ function installPrintWatermark20261025(doc){
 }
 installPrintWatermark20261025(document);
 </script>
+
+<style id="supervisor-left-centered-20261025">
+.leave-sign-2026,.daily-footer-row-2026{direction:ltr!important;justify-content:flex-start!important}
+.leave-supervisor-2026,.daily-footer-row-2026>div{direction:rtl!important;text-align:center!important;flex:0 1 auto!important;margin-right:auto!important;margin-left:0!important}
+.leave-supervisor-2026{min-width:280px}
+.daily-footer-row-2026>div{min-width:240px;line-height:1.8}
+</style>
