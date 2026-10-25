@@ -394,7 +394,7 @@ function applySchedulePdfColors20261023(page,palette,offset){
     <table id="dailyTable2026" class="daily-table-2026"></table>
     <div class="daily-footer-2026">
       <div class="daily-footer-row-2026">
-        <small>إعداد وتصميم: أ. مريم العتيبي</small>
+        
         <div><b>مشرفة المركز: أ. هيله العتيبي</b></div>
       </div>
       <div class="daily-quote-2026">قال الإمام الشافعي رحمه الله: ليس العلم ما حُفظ، إنما العلم ما نفع.</div>
@@ -431,7 +431,7 @@ function applySchedulePdfColors20261023(page,palette,offset){
       <tbody id="leaveList2026"></tbody>
     </table>
     <div class="leave-sign-2026">
-      <div class="leave-designer-2026">إعداد وتصميم / أ. مريم العتيبي</div>
+      
       <div class="leave-supervisor-2026">مشرفة مركز دار قرآن غرب عبدالله المبارك<br>أ. هيله العتيبي</div>
     </div>
   </div>
@@ -1098,7 +1098,7 @@ async function exportRows(rr,filename){
   ws.mergeCells(footerStart+1,1,footerStart+1,11);
   ws.getCell(footerStart+1,1).value="٢- الدورات العلمية بانتظار صدور قرار الموافقة من الإدارة.";
   ws.mergeCells(footerStart+2,1,footerStart+2,11);
-  ws.getCell(footerStart+2,1).value="أ. مريم العتيبي";
+  ws.getCell(footerStart+2,1).value="";
   ws.mergeCells(footerStart,16,footerStart,26);
   ws.getCell(footerStart,16).value="مشرفة مركز دار قرآن غرب عبدالله المبارك";
   ws.mergeCells(footerStart+1,16,footerStart+1,26);
@@ -1110,12 +1110,12 @@ async function exportRows(rr,filename){
   }
   ws.getRow(footerStart).height=24; ws.getRow(footerStart+1).height=24; ws.getRow(footerStart+2).height=22;
   ws.pageSetup.printArea=`A1:Z${footerStart+2}`;
-  ws.headerFooter.oddFooter='&Rمشرفة مركز دار قرآن غرب عبدالله المبارك  -  أ. هيله العتيبي&Cأ. مريم العتيبي';
+  ws.headerFooter.oddFooter='&Rمشرفة مركز دار قرآن غرب عبدالله المبارك  -  أ. هيله العتيبي';
 
   exportColors.body.forEach((row,i)=>row.forEach((x,c)=>{const cell=ws.getCell(i+5,c+1);cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF'+x.bg}};cell.font={...cell.font,color:{argb:'FF'+x.fg},bold:x.bold}}));
   for(let c=1;c<=26;c++){const x=exportColors.meta;ws.getCell(2,c).fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF'+x.bg}};}
   for(let d=0;d<5;d++)for(let c=6+d*4;c<10+d*4;c++)for(const r of [3,4]){const x=(r===3?exportColors.days:exportColors.periods)[d];const cell=ws.getCell(r,c);cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF'+x.bg}};cell.font={...cell.font,color:{argb:'FF'+x.fg}};}
-  const buffer=await wb.xlsx.writeBuffer();
+  const buffer=(applyWorkbookWatermark20261025(wb),await wb.xlsx.writeBuffer());
   const blob=new Blob([buffer],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});
   const url=URL.createObjectURL(blob);
   const a=document.createElement("a");
@@ -1150,7 +1150,7 @@ async function exportPdf(){
     horizontalPageBreak:true,
     horizontalPageBreakRepeat:[0,1,2,3]
   });
-  doc.save("جدول_نصاب_المعلمات_2026.pdf");
+  applyPdfWatermark20261025(doc);doc.save("جدول_نصاب_المعلمات_2026.pdf");
 }
 function exportXlsx(){
   const q=exportTeacher.value;
@@ -1353,7 +1353,7 @@ async function pdfSchedule2026(){
     DAYS.forEach((d,i)=>PERIODS.forEach(p=>h+=`<th class="${dayClasses[i]}">${p}</th>`)); h+='</tr></thead><tbody>';
     rr.forEach((r,i)=>{h+=`<tr><td>${offset+i+1}</td><td class="nm">${safe(r.name)}</td><td>${safe(r.dept)}</td><td>${safe(r.connection)}</td><td class="leave">${safe(r.manualLeaveType20261025||'')}</td>`; const slots=Array.isArray(r.slots)?r.slots:Array(20).fill(''); for(let j=0;j<20;j++)h+=`<td class="${dayClasses[Math.floor(j/4)]}">${safe(slots[j]||'')}</td>`; h+=`<td>${safe(r.total)}</td></tr>`;});
     h+='</tbody></table>';
-    h+=`<div class="pdffoot"><div class="sign">مشرفة مركز دار قرآن غرب عبدالله المبارك<br><b>أ. هيله العتيبي</b></div><div class="notes"><b>ملاحظة:</b> ١- دورة الأسماء الحسنى تقام تحت مظلة أنشطة التواصل وتحت إشراف التوجيه الفني.<br>٢- الدورات العلمية بانتظار صدور قرار الموافقة من الإدارة.<br><span>أ. مريم العتيبي</span></div></div></div>`;
+    h+=`<div class="pdffoot"><div class="sign">مشرفة مركز دار قرآن غرب عبدالله المبارك<br><b>أ. هيله العتيبي</b></div><div class="notes"><b>ملاحظة:</b> ١- دورة الأسماء الحسنى تقام تحت مظلة أنشطة التواصل وتحت إشراف التوجيه الفني.<br>٢- الدورات العلمية بانتظار صدور قرار الموافقة من الإدارة.</div></div></div>`;
     return h;
   }
   const style=document.createElement('style');
@@ -1367,7 +1367,7 @@ async function pdfSchedule2026(){
       const canvas=await html2canvas(page,{scale:1.55,useCORS:true,backgroundColor:'#ffffff',logging:false});
       const img=canvas.toDataURL('image/jpeg',0.94); if(i>0)doc.addPage('a3','landscape'); doc.addImage(img,'JPEG',0,0,420,297,undefined,'FAST'); page.remove();
     }
-    doc.save('جدول_نصاب_المعلمات_2026.pdf');
+    applyPdfWatermark20261025(doc);doc.save('جدول_نصاب_المعلمات_2026.pdf');
   }catch(e){ console.error(e); alert('تعذر إنشاء ملف PDF. حاول مرة أخرى.'); }
   finally{host.remove(); btns.forEach(b=>{b.disabled=false;b.textContent=b.dataset.oldText||'تصدير PDF';});}
 }
@@ -1492,7 +1492,7 @@ async function pdfSchedule2026(){
     const page=document.createElement('div');page.style.cssText='width:1100px;background:#fff;padding:34px;font-family:Tahoma,Arial,sans-serif;direction:rtl;color:#000';
     page.innerHTML=`<h2 style="text-align:center;margin:0 0 8px;font-size:26px">الاحتياط اليومي</h2><div style="text-align:center;margin-bottom:20px;font-size:18px;font-weight:bold">نظام إدارة جدول حصص مركز دار القرآن غرب عبدالله المبارك نساء ٢</div><table style="width:100%;border-collapse:collapse;table-layout:fixed;font-size:16px"><thead><tr><th style="border:1px solid #555;padding:9px;background:#DDE2EA">م</th><th style="border:1px solid #555;padding:9px;background:#DDE2EA">اليوم</th><th style="border:1px solid #555;padding:9px;background:#DDE2EA">التاريخ</th><th style="border:1px solid #555;padding:9px;background:#DDE2EA">المعلمة الغائبة</th><th style="border:1px solid #555;padding:9px;background:#DDE2EA">معلمة الاحتياط</th><th style="border:1px solid #555;padding:9px;background:#DDE2EA">الحصة</th><th style="border:1px solid #555;padding:9px;background:#DDE2EA">ملاحظات</th></tr></thead><tbody>${data.map((x,i)=>`<tr><td style="border:1px solid #777;padding:8px;text-align:center">${i+1}</td><td style="border:1px solid #777;padding:8px;text-align:center">${esc(reserveDay2026(x.date))}</td><td style="border:1px solid #777;padding:8px;text-align:center">${esc(x.date)}</td><td style="border:1px solid #777;padding:8px;text-align:center">${esc(x.absent)}</td><td style="border:1px solid #777;padding:8px;text-align:center">${esc(x.sub)}</td><td style="border:1px solid #777;padding:8px;text-align:center">${esc(x.period)}</td><td style="border:1px solid #777;padding:8px;text-align:center">${esc(x.notes)}</td></tr>`).join('')}</tbody></table>`;
     host.appendChild(page);
-    try{const canvas=await html2canvas(page,{scale:1.6,useCORS:true,backgroundColor:'#ffffff',logging:false});const img=canvas.toDataURL('image/jpeg',0.95);const {jsPDF}=window.jspdf;const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4',compress:true});const pw=297,ph=210;const ratio=Math.min((pw-10)/canvas.width,(ph-10)/canvas.height);const w=canvas.width*ratio,h=canvas.height*ratio;doc.addImage(img,'JPEG',(pw-w)/2,5,w,h,undefined,'FAST');doc.save('جدول_الاحتياط_اليومي.pdf');}catch(e){console.error(e);alert('تعذر إنشاء ملف PDF. حاول مرة أخرى.');}finally{host.remove();}
+    try{const canvas=await html2canvas(page,{scale:1.6,useCORS:true,backgroundColor:'#ffffff',logging:false});const img=canvas.toDataURL('image/jpeg',0.95);const {jsPDF}=window.jspdf;const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4',compress:true});const pw=297,ph=210;const ratio=Math.min((pw-10)/canvas.width,(ph-10)/canvas.height);const w=canvas.width*ratio,h=canvas.height*ratio;doc.addImage(img,'JPEG',(pw-w)/2,5,w,h,undefined,'FAST');applyPdfWatermark20261025(doc);doc.save('جدول_الاحتياط_اليومي.pdf');}catch(e){console.error(e);alert('تعذر إنشاء ملف PDF. حاول مرة أخرى.');}finally{host.remove();}
   };
   function addReserve(){
     const cards=document.querySelector('#home .cards');if(cards&&!document.getElementById('reserveCard2026')){const c=document.createElement('div');c.id='reserveCard2026';c.className='card';c.onclick=()=>show('reserve2026');c.innerHTML='<div class="icon">🔄</div><h3>الاحتياط اليومي</h3><p>تسجيل وعرض احتياط المعلمات اليومي.</p>';cards.appendChild(c);}
@@ -1642,7 +1642,7 @@ window.pdfSimpleSection2026=async function(kind){
   const trs=data.map(r=>`<tr>${r.map(v=>`<td style="border:1px solid #777;padding:9px;text-align:center;font-size:16px">${esc(v)}</td>`).join('')}</tr>`).join('');
   page.innerHTML=`<h2 style="text-align:center;margin:0 0 8px;font-size:28px">${cfg.title}</h2><div style="text-align:center;margin-bottom:22px;font-size:18px;font-weight:bold">نظام إدارة جدول حصص مركز دار القرآن غرب عبدالله المبارك نساء ٢</div><table style="width:100%;border-collapse:collapse;table-layout:fixed"><thead><tr>${th}</tr></thead><tbody>${trs}</tbody></table>`;
   host.appendChild(page);
-  try{const canvas=await html2canvas(page,{scale:1.5,useCORS:true,backgroundColor:'#fff',logging:false});const {jsPDF}=window.jspdf;const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4',compress:true});const pw=210,ph=297,margin=7;const ratio=Math.min((pw-margin*2)/canvas.width,(ph-margin*2)/canvas.height);const w=canvas.width*ratio,h=canvas.height*ratio;doc.addImage(canvas.toDataURL('image/jpeg',.95),'JPEG',(pw-w)/2,margin,w,h,undefined,'FAST');doc.save(cfg.file);}catch(e){console.error(e);alert('تعذر إنشاء ملف PDF. حاول مرة أخرى.');}finally{host.remove();}
+  try{const canvas=await html2canvas(page,{scale:1.5,useCORS:true,backgroundColor:'#fff',logging:false});const {jsPDF}=window.jspdf;const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4',compress:true});const pw=210,ph=297,margin=7;const ratio=Math.min((pw-margin*2)/canvas.width,(ph-margin*2)/canvas.height);const w=canvas.width*ratio,h=canvas.height*ratio;doc.addImage(canvas.toDataURL('image/jpeg',.95),'JPEG',(pw-w)/2,margin,w,h,undefined,'FAST');applyPdfWatermark20261025(doc);doc.save(cfg.file);}catch(e){console.error(e);alert('تعذر إنشاء ملف PDF. حاول مرة أخرى.');}finally{host.remove();}
 };
 </script>
 
@@ -1689,7 +1689,7 @@ window.pdfSimpleSection2026=async function(kind){
     const trs=data.map(r=>`<tr>${r.map(v=>`<td style="border:1px solid #777;padding:9px;text-align:center;font-size:16px">${esc(v)}</td>`).join('')}</tr>`).join('');
     page.innerHTML=`<h2 style="text-align:center;margin:0 0 8px;font-size:28px">${title}</h2><div style="text-align:center;margin-bottom:22px;font-size:18px;font-weight:bold">نظام إدارة جدول حصص مركز دار القرآن غرب عبدالله المبارك نساء ٢</div><table style="width:100%;border-collapse:collapse;table-layout:fixed"><thead><tr>${th}</tr></thead><tbody>${trs}</tbody></table>`;
     host.appendChild(page);
-    try{const canvas=await html2canvas(page,{scale:1.5,useCORS:true,backgroundColor:'#fff',logging:false});const {jsPDF}=window.jspdf;const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4',compress:true});const pw=210,ph=297,margin=7;const ratio=Math.min((pw-margin*2)/canvas.width,(ph-margin*2)/canvas.height);const w=canvas.width*ratio,h=canvas.height*ratio;doc.addImage(canvas.toDataURL('image/jpeg',.95),'JPEG',(pw-w)/2,margin,w,h,undefined,'FAST');doc.save(file);}catch(e){console.error(e);alert('تعذر إنشاء ملف PDF. حاول مرة أخرى.');}finally{host.remove();}
+    try{const canvas=await html2canvas(page,{scale:1.5,useCORS:true,backgroundColor:'#fff',logging:false});const {jsPDF}=window.jspdf;const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4',compress:true});const pw=210,ph=297,margin=7;const ratio=Math.min((pw-margin*2)/canvas.width,(ph-margin*2)/canvas.height);const w=canvas.width*ratio,h=canvas.height*ratio;doc.addImage(canvas.toDataURL('image/jpeg',.95),'JPEG',(pw-w)/2,margin,w,h,undefined,'FAST');applyPdfWatermark20261025(doc);doc.save(file);}catch(e){console.error(e);alert('تعذر إنشاء ملف PDF. حاول مرة أخرى.');}finally{host.remove();}
   };
   renderSubjects();renderAdmins();renderTeachers();renderSchedule();
 })();
@@ -1797,7 +1797,7 @@ window.pdfSimpleSection2026=async function(kind){
     const w=canvas.width*ratio,h=canvas.height*ratio;
     pdf.addImage(img,"JPEG",(pw-w)/2,(ph-h)/2,w,h);
     const label=sel.options[sel.selectedIndex]?.text||"الجدول اليومي";
-    pdf.save("جدول الحصص اليومية - "+label+".pdf");
+    applyPdfWatermark20261025(pdf);pdf.save("جدول الحصص اليومية - "+label+".pdf");
   };
 
   // Make daily table refresh automatically whenever the main render cycle runs.
@@ -1885,7 +1885,7 @@ window.pdfSimpleSection2026=async function(kind){
    const pdf=new jsPDF({orientation:"landscape",unit:"mm",format:"a4"});
    const pw=pdf.internal.pageSize.getWidth(),ph=pdf.internal.pageSize.getHeight(),ratio=Math.min((pw-8)/canvas.width,(ph-8)/canvas.height);
    const w=canvas.width*ratio,h=canvas.height*ratio;pdf.addImage(img,"JPEG",(pw-w)/2,(ph-h)/2,w,h);
-   pdf.save("حصر إجازات المعلمات.pdf");
+   applyPdfWatermark20261025(pdf);pdf.save("حصر إجازات المعلمات.pdf");
  };
  loadLeaves2026(); setTimeout(renderLeaves2026,350);
 })();
@@ -1929,7 +1929,7 @@ if ('serviceWorker' in navigator) {
     const host=document.createElement('div');host.style.cssText='position:fixed;left:-99999px;top:0;background:white';document.body.appendChild(host);
     host.innerHTML='<div id="adminPdfPage2026" style="width:1000px;padding:40px;background:white;direction:rtl;font-family:Tahoma,Arial"><h2 style="text-align:center">قائمة الإداريات</h2><h3 style="text-align:center">مركز دار القرآن غرب عبدالله المبارك نساء ٢</h3><table style="width:100%;border-collapse:collapse"><thead><tr><th>م</th><th>اسم الإدارية</th><th>القسم</th></tr></thead><tbody>'+data.map((x,i)=>`<tr><td>${i+1}</td><td>${esc(x.name)}</td><td>${esc(x.dept)}</td></tr>`).join('')+'</tbody></table></div>';
     host.querySelectorAll('th,td').forEach(e=>e.style.cssText='border:1px solid #555;padding:12px;text-align:center');
-    try{const c=await html2canvas(host.firstElementChild,{scale:1.7,backgroundColor:'#fff'});const doc=new window.jspdf.jsPDF({orientation:'landscape',unit:'mm',format:'a4'});const w=287,h=c.height*287/c.width;doc.addImage(c.toDataURL('image/png'),'PNG',5,5,w,Math.min(h,195));doc.save('الإداريات_حسب_الفرز.pdf');}finally{host.remove();}
+    try{const c=await html2canvas(host.firstElementChild,{scale:1.7,backgroundColor:'#fff'});const doc=new window.jspdf.jsPDF({orientation:'landscape',unit:'mm',format:'a4'});const w=287,h=c.height*287/c.width;doc.addImage(c.toDataURL('image/png'),'PNG',5,5,w,Math.min(h,195));applyPdfWatermark20261025(doc);doc.save('الإداريات_حسب_الفرز.pdf');}finally{host.remove();}
   };
   // Conflict checking for reserve entries: same teacher, day, and period.
   function reserveConflict(date,sub,period,skip){
@@ -2037,7 +2037,7 @@ async function exportTodayMovementsPdf2026(){
    const canvas=await html2canvas(page,{scale:1.5,backgroundColor:'#fff',useCORS:true,logging:false});
    if(start)pdf.addPage();pdf.addImage(canvas.toDataURL('image/jpeg',.95),'JPEG',8,8,194,281,undefined,'FAST');page.remove();
   }
-  pdf.save('كشف_حركة_الدوام_اليومي_للموظفات_'+today+'.pdf');
+  applyPdfWatermark20261025(pdf);pdf.save('كشف_حركة_الدوام_اليومي_للموظفات_'+today+'.pdf');
  }catch(err){console.error(err);alert('تعذر تصدير PDF.')}finally{host.remove()}
 }
 function openMovementArchive2026(){if(role()!=='admin'){alert('أرشيف حركة الدوام متاح للمسؤول فقط.');return;}show('movementArchive2026');setArchiveRange2026('month')}
@@ -2053,7 +2053,7 @@ function exportArchivePdf2026(){
  const esc=v=>String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const head='<html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>أرشيف حركة الدوام</title><style>body{font-family:Tahoma,Arial;padding:24px;color:#173b7a}table{width:100%;border-collapse:collapse}td,th{border:1px solid #aaa;padding:8px;text-align:right}th{background:#e6ebf2}</style></head><body>';
  const rows=data.slice(1).map(row=>'<tr>'+row.map(x=>'<td>'+esc(x)+'</td>').join('')+'</tr>').join('');
- w.document.open();w.document.write('<!doctype html>'+head+'<h2>أرشيف حركة الدوام</h2><p>الفترة: '+esc(archiveFrom2026.value||'البداية')+' إلى '+esc(archiveTo2026.value||'النهاية')+'</p><table><thead><tr>'+data[0].map(x=>'<th>'+esc(x)+'</th>').join('')+'</tr></thead><tbody>'+rows+'</tbody></table><p>اختاري حفظ كملف PDF من نافذة الطباعة.</p>\n</body></html>');w.document.close();w.focus();w.print();
+ w.document.open();w.document.write('<!doctype html>'+head+'<h2>أرشيف حركة الدوام</h2><p>الفترة: '+esc(archiveFrom2026.value||'البداية')+' إلى '+esc(archiveTo2026.value||'النهاية')+'</p><table><thead><tr>'+data[0].map(x=>'<th>'+esc(x)+'</th>').join('')+'</tr></thead><tbody>'+rows+'</tbody></table><p>اختاري حفظ كملف PDF من نافذة الطباعة.</p>\n</body></html>');w.document.close();installPrintWatermark20261025(w.document);w.focus();w.print();
 }
 </script>
 <script>
@@ -2635,7 +2635,7 @@ if ('serviceWorker' in navigator) {
    'xl/workbook.xml':'<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="حركة الدوام" sheetId="1" r:id="rId1"/></sheets></workbook>',
    'xl/_rels/workbook.xml.rels':'<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>',
    'xl/styles.xml':'<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="2"><font><sz val="12"/><name val="Arial"/></font><font><b/><sz val="12"/><color rgb="FFFFFFFF"/><name val="Arial"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF244F86"/><bgColor indexed="64"/></patternFill></fill></fills><borders count="1"><border/></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="2"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0" applyAlignment="1"><alignment horizontal="right" vertical="center" wrapText="1" readingOrder="2"/></xf><xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1" applyAlignment="1"><alignment horizontal="right" vertical="center" wrapText="1" readingOrder="2"/></xf></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>',
-   'xl/worksheets/sheet1.xml':'<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetViews><sheetView workbookViewId="0" rightToLeft="1"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><cols><col min="1" max="1" width="35" customWidth="1"/><col min="2" max="2" width="24" customWidth="1"/><col min="3" max="4" width="16" customWidth="1"/><col min="5" max="5" width="48" customWidth="1"/><col min="6" max="6" width="16" customWidth="1"/></cols><sheetData>'+data.map((row,i)=>'<row r="'+(i+1)+'">'+row.map((v,j)=>'<c r="'+String.fromCharCode(65+j)+(i+1)+'" t="inlineStr" s="'+(i?0:1)+'"><is><t xml:space="preserve">'+xml(v)+'</t></is></c>').join('')+'</row>').join('')+'</sheetData><autoFilter ref="A1:F'+data.length+'"/></worksheet>'
+   'xl/worksheets/sheet1.xml':'<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetViews><sheetView workbookViewId="0" rightToLeft="1"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><cols><col min="1" max="1" width="35" customWidth="1"/><col min="2" max="2" width="24" customWidth="1"/><col min="3" max="4" width="16" customWidth="1"/><col min="5" max="5" width="48" customWidth="1"/><col min="6" max="6" width="16" customWidth="1"/></cols><sheetData>'+data.map((row,i)=>'<row r="'+(i+1)+'">'+row.map((v,j)=>'<c r="'+String.fromCharCode(65+j)+(i+1)+'" t="inlineStr" s="'+(i?0:1)+'"><is><t xml:space="preserve">'+xml(v)+'</t></is></c>').join('')+'</row>').join('')+'</sheetData><autoFilter ref="A1:F'+data.length+'"/>'+watermarkExcelXml20261025()+'</worksheet>'
   };
   const encode=new TextEncoder(),chunks=[],central=[];let offset=0;
   const crc=bytes=>{let n=0xffffffff;for(const b of bytes){n^=b;for(let k=0;k<8;k++)n=(n>>>1)^((n&1)?0xedb88320:0);}return (n^0xffffffff)>>>0;};
@@ -2866,9 +2866,9 @@ function loadProfile(){const pid=$('llPPerson').value,year=$('llBalanceYear').va
 function saveProfile(ev){ev.preventDefault();if(!canManage())return;if(!ready)return alert('انتظري نجاح الاتصال أولًا.');const id=$('llPPerson').value;if(!who(id))return;const p={date:$('llPDate').value,updated:new Date().toISOString()};if(!date(p.date)||p.date>today())return alert('تاريخ بداية الرصيد يجب ألا يكون في المستقبل.');for(const [input,key]of [['llPAnnual','annual'],['llPEmergency','emergency'],['llPShort','short'],['llPLong','long']])p[key]=$(input).value===''?null:Number($(input).value);state.profiles[id+'|'+p.date.slice(0,4)]=p;put();$('llProfile').hidden=true}
 function annualSickNote(r){if(r.type!=='sick')return '';const y=r.start.slice(0,4),days=new Set();for(const x of records().filter(x=>x.person===r.person&&x.type==='sick'&&x.status==='approved'))for(const d of dates(x.start,x.end,x.mode))if(d.startsWith(y))days.add(d);return days.size>15?'تجاوزت الموظفة ١٥ يومًا مرضية لعام '+ar(y)+'؛ المجموع: '+ar(days.size)+'، والتجاوز: '+ar(days.size-15)+' أيام.':''}
 function report(details){const {from,to}=range(),pp=filteredPeople(),ids=new Set(pp.map(p=>p.id)),rr=filtered().filter(r=>ids.has(r.person));if(!date(from)||!date(to)||to<from)throw Error('فترة غير صحيحة');return details?{heads:['الاسم','النوع','البداية','النهاية','الأيام','الساعات','الحالة','المصدر','الملاحظات','مرجع القرار'],rows:rr.map(r=>[r.name,type(r.type)[1],r.start,r.end,['days','mission'].includes(type(r.type)[3])?amount(r,from,to):'',type(r.type)[3]==='hours'?(r.hours??'غير مدخلة'):'',({approved:'معتمد',pending:'بانتظار الاعتماد',rejected:'غير معتمد'})[r.status],r.source||'سجل الإجازات',[r.note,annualSickNote(r)].filter(Boolean).join(' — '),r.doc||''])}:{heads:['الاسم','الفئة','مرضية (أيام)','دورية (أيام)','طارئة (أيام)','أخرى (أيام)','إجمالي أيام الإجازات','الرضاعة / الحمل حتى','أيام استخدام الرضاعة','ساعات استخدام الرضاعة','الرصيد المعتمد'],rows:pp.map(p=>{const s=stats(p,rr,from,to);return [p.name,p.job,s.sick,s.annual,s.emergency,s.other,s.days,s.nursing,s.nursingN,s.nursingHours,balance(p)]})}}
-async function exportReport(details,pdf){if(!canAccess())return;try{const r=report(details),{from,to}=range(),title=details?'تفاصيل الإجازات':'ملخص الإجازات',filename=(details?'تفاصيل_الإجازات':'ملخص_الإجازات')+'_'+from+'_'+to;const logos=[...document.querySelectorAll('.leave-head-2026 img')].map(x=>x.src);const head=`<div style="display:flex;align-items:center;justify-content:space-between">${logos[0]?`<img src="${logos[0]}" style="height:65px">`:''}<div><h2>مركز دار القرآن غرب عبدالله المبارك — نساء ٢</h2><h3>${title}</h3><p>الفترة الصباحية · ${h(periodCaption())} · ${ar(from)} إلى ${ar(to)}</p><p>سنة الأرصدة الميلادية: ${ar($('llBalanceYear').value)}</p></div>${logos[1]?`<img src="${logos[1]}" style="height:65px">`:''}</div>`;const table=rs=>`<table style="border-collapse:collapse;width:100%;table-layout:fixed;direction:rtl;font-size:12px"><thead><tr>${r.heads.map(x=>`<th style="background:#dce6f4;border:1px solid #9aabc0;padding:8px">${h(x)}</th>`).join('')}</tr></thead><tbody>${rs.map((row,i)=>'<tr>'+row.map((x,j)=>`<td style="background:${j===2?'#fce8ed':j===3?'#e4effd':j===4?'#fff0d9':i%2?'#f1f5fa':'#fff'};border:1px solid #aebdce;padding:8px;overflow-wrap:anywhere">${h(typeof x==='number'?ar(Number(x.toFixed(2))):ar(x))}</td>`).join('')+'</tr>').join('')}</tbody></table>`;if(!pdf){if(typeof ExcelJS==='undefined')throw Error('تعذر تحميل أداة Excel');const wb=new ExcelJS.Workbook();const sheet=wb.addWorksheet(details?'التفاصيل':'الملخص',{views:[{rightToLeft:true,state:'frozen',ySplit:5}]});sheet.addRow([title]);sheet.mergeCells(1,1,1,r.heads.length);sheet.addRow(['مركز دار القرآن غرب عبدالله المبارك — نساء ٢']);sheet.mergeCells(2,1,2,r.heads.length);sheet.addRow(['الفترة الصباحية',from,to,periodCaption(),'سنة الأرصدة الميلادية',$('llBalanceYear').value]);sheet.addRow([]);sheet.addRow(r.heads);r.rows.forEach(row=>sheet.addRow(row));sheet.addRow(['الأيام والساعات منفصلة؛ الأرصدة المعتمدة تخص السنة الموضحة.']);sheet.columns.forEach((c,i)=>c.width=i===0||i===r.heads.length-1?38:20);sheet.eachRow((row,ri)=>{row.height=ri<5?28:50;row.eachCell({includeEmpty:true},(c,ci)=>{c.font={name:'Arial',size:12,bold:ri<=5,color:{argb:'FF20334D'}};c.alignment={horizontal:'right',vertical:'middle',wrapText:true};c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF'+(ri===5?'DCE6F4':ci===3?'FCE8ED':ci===4?'E4EFFD':ci===5?'FFF0D9':'FFFFFF')}};c.border={bottom:{style:'thin',color:{argb:'FFCCD8E5'}}}})});sheet.pageSetup={orientation:'landscape',paperSize:8,fitToPage:true,fitToWidth:1,fitToHeight:0};sheet.headerFooter.oddFooter='&Cصفحة &P من &N';const blob=new Blob([await wb.xlsx.writeBuffer()],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});const a=document.createElement('a'),url=URL.createObjectURL(blob);a.href=url;a.download=filename+'.xlsx';a.click();setTimeout(()=>URL.revokeObjectURL(url),30000);return}
+async function exportReport(details,pdf){if(!canAccess())return;try{const r=report(details),{from,to}=range(),title=details?'تفاصيل الإجازات':'ملخص الإجازات',filename=(details?'تفاصيل_الإجازات':'ملخص_الإجازات')+'_'+from+'_'+to;const logos=[...document.querySelectorAll('.leave-head-2026 img')].map(x=>x.src);const head=`<div style="display:flex;align-items:center;justify-content:space-between">${logos[0]?`<img src="${logos[0]}" style="height:65px">`:''}<div><h2>مركز دار القرآن غرب عبدالله المبارك — نساء ٢</h2><h3>${title}</h3><p>الفترة الصباحية · ${h(periodCaption())} · ${ar(from)} إلى ${ar(to)}</p><p>سنة الأرصدة الميلادية: ${ar($('llBalanceYear').value)}</p></div>${logos[1]?`<img src="${logos[1]}" style="height:65px">`:''}</div>`;const table=rs=>`<table style="border-collapse:collapse;width:100%;table-layout:fixed;direction:rtl;font-size:12px"><thead><tr>${r.heads.map(x=>`<th style="background:#dce6f4;border:1px solid #9aabc0;padding:8px">${h(x)}</th>`).join('')}</tr></thead><tbody>${rs.map((row,i)=>'<tr>'+row.map((x,j)=>`<td style="background:${j===2?'#fce8ed':j===3?'#e4effd':j===4?'#fff0d9':i%2?'#f1f5fa':'#fff'};border:1px solid #aebdce;padding:8px;overflow-wrap:anywhere">${h(typeof x==='number'?ar(Number(x.toFixed(2))):ar(x))}</td>`).join('')+'</tr>').join('')}</tbody></table>`;if(!pdf){if(typeof ExcelJS==='undefined')throw Error('تعذر تحميل أداة Excel');const wb=new ExcelJS.Workbook();const sheet=wb.addWorksheet(details?'التفاصيل':'الملخص',{views:[{rightToLeft:true,state:'frozen',ySplit:5}]});sheet.addRow([title]);sheet.mergeCells(1,1,1,r.heads.length);sheet.addRow(['مركز دار القرآن غرب عبدالله المبارك — نساء ٢']);sheet.mergeCells(2,1,2,r.heads.length);sheet.addRow(['الفترة الصباحية',from,to,periodCaption(),'سنة الأرصدة الميلادية',$('llBalanceYear').value]);sheet.addRow([]);sheet.addRow(r.heads);r.rows.forEach(row=>sheet.addRow(row));sheet.addRow(['الأيام والساعات منفصلة؛ الأرصدة المعتمدة تخص السنة الموضحة.']);sheet.columns.forEach((c,i)=>c.width=i===0||i===r.heads.length-1?38:20);sheet.eachRow((row,ri)=>{row.height=ri<5?28:50;row.eachCell({includeEmpty:true},(c,ci)=>{c.font={name:'Arial',size:12,bold:ri<=5,color:{argb:'FF20334D'}};c.alignment={horizontal:'right',vertical:'middle',wrapText:true};c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF'+(ri===5?'DCE6F4':ci===3?'FCE8ED':ci===4?'E4EFFD':ci===5?'FFF0D9':'FFFFFF')}};c.border={bottom:{style:'thin',color:{argb:'FFCCD8E5'}}}})});sheet.pageSetup={orientation:'landscape',paperSize:8,fitToPage:true,fitToWidth:1,fitToHeight:0};sheet.headerFooter.oddFooter='&Cصفحة &P من &N';const blob=new Blob([(applyWorkbookWatermark20261025(wb),await wb.xlsx.writeBuffer())],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});const a=document.createElement('a'),url=URL.createObjectURL(blob);a.href=url;a.download=filename+'.xlsx';a.click();setTimeout(()=>URL.revokeObjectURL(url),30000);return}
 
- if(typeof html2canvas==='undefined'||!window.jspdf?.jsPDF)throw Error('تعذر تحميل أداة PDF');const doc=new window.jspdf.jsPDF({orientation:'landscape',unit:'mm',format:'a3',compress:true}),pages=[];for(let i=0;i<Math.max(1,r.rows.length);i+=10)pages.push(r.rows.slice(i,i+10));for(let i=0;i<pages.length;i++){const measure=document.createElement('div');measure.style.cssText='position:absolute;left:-16000px;top:0;width:1500px;padding:24px;font-family:Arial;direction:rtl;background:#fff';measure.innerHTML=head+table(pages[i])+'<p>صفحة</p>';document.body.append(measure);await document.fonts.ready;const projected=measure.offsetHeight*(doc.internal.pageSize.getWidth()-16)/measure.offsetWidth;measure.remove();if(projected>doc.internal.pageSize.getHeight()-20&&pages[i].length>1){const chunk=pages[i],mid=Math.ceil(chunk.length/2);pages.splice(i,1,chunk.slice(0,mid),chunk.slice(mid));i--;}}for(let i=0;i<pages.length;i++){const host=document.createElement('div');host.style.cssText='position:absolute;left:-16000px;top:0;width:1500px;background:white;padding:24px;font-family:Arial;direction:rtl;color:#20334d;';host.innerHTML=head+table(pages[i])+`<p style="text-align:center">الأيام والساعات منفصلة · الأرصدة تخص السنة الموضحة · صفحة ${ar(i+1)} من ${ar(pages.length)}</p>`;document.body.append(host);try{await document.fonts.ready;await Promise.all([...host.querySelectorAll('img')].map(im=>im.decode().catch(()=>{})));const c=await html2canvas(host,{scale:1.5,backgroundColor:'#fff',logging:false});if(i)doc.addPage();const w=doc.internal.pageSize.getWidth()-16,hg=c.height*w/c.width;if(hg>doc.internal.pageSize.getHeight()-16)throw Error('تجاوز محتوى الصفحة مساحة التصدير؛ قللي الفترة أو طول الملاحظات.');doc.addImage(c.toDataURL('image/jpeg',.96),'JPEG',8,8,w,hg)}finally{host.remove()}}doc.save(filename+'.pdf');
+ if(typeof html2canvas==='undefined'||!window.jspdf?.jsPDF)throw Error('تعذر تحميل أداة PDF');const doc=new window.jspdf.jsPDF({orientation:'landscape',unit:'mm',format:'a3',compress:true}),pages=[];for(let i=0;i<Math.max(1,r.rows.length);i+=10)pages.push(r.rows.slice(i,i+10));for(let i=0;i<pages.length;i++){const measure=document.createElement('div');measure.style.cssText='position:absolute;left:-16000px;top:0;width:1500px;padding:24px;font-family:Arial;direction:rtl;background:#fff';measure.innerHTML=head+table(pages[i])+'<p>صفحة</p>';document.body.append(measure);await document.fonts.ready;const projected=measure.offsetHeight*(doc.internal.pageSize.getWidth()-16)/measure.offsetWidth;measure.remove();if(projected>doc.internal.pageSize.getHeight()-20&&pages[i].length>1){const chunk=pages[i],mid=Math.ceil(chunk.length/2);pages.splice(i,1,chunk.slice(0,mid),chunk.slice(mid));i--;}}for(let i=0;i<pages.length;i++){const host=document.createElement('div');host.style.cssText='position:absolute;left:-16000px;top:0;width:1500px;background:white;padding:24px;font-family:Arial;direction:rtl;color:#20334d;';host.innerHTML=head+table(pages[i])+`<p style="text-align:center">الأيام والساعات منفصلة · الأرصدة تخص السنة الموضحة · صفحة ${ar(i+1)} من ${ar(pages.length)}</p>`;document.body.append(host);try{await document.fonts.ready;await Promise.all([...host.querySelectorAll('img')].map(im=>im.decode().catch(()=>{})));const c=await html2canvas(host,{scale:1.5,backgroundColor:'#fff',logging:false});if(i)doc.addPage();const w=doc.internal.pageSize.getWidth()-16,hg=c.height*w/c.width;if(hg>doc.internal.pageSize.getHeight()-16)throw Error('تجاوز محتوى الصفحة مساحة التصدير؛ قللي الفترة أو طول الملاحظات.');doc.addImage(c.toDataURL('image/jpeg',.96),'JPEG',8,8,w,hg)}finally{host.remove()}}applyPdfWatermark20261025(doc);doc.save(filename+'.pdf');
  }catch(e){alert(e.message||'تعذر التصدير.')}}
 window.leaveLedgerCore2026={dates,amount,stats,merge,rules,records,people,report,academicCalendar,holidayOverlaps};
 setup();
@@ -3236,4 +3236,39 @@ window.show=function(id){const result=show.apply(this,arguments);if(id==='reserv
 window.addEventListener('storage',e=>{if(['staff_movement_demo_2026','daily_reserve_2026'].includes(e.key))renderReserve2026()});
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>renderReserve2026());else renderReserve2026();
 })();
+</script>
+
+<script id="export-watermark-20261025">
+const watermarkText20261025='إعداد وتصميم: أ. مريم محمد علي العتيبي';
+function applyPdfWatermark20261025(pdf){
+ if(pdf.__watermark20261025)return;
+ const canvas=document.createElement('canvas');canvas.width=1600;canvas.height=100;
+ const ctx=canvas.getContext('2d');ctx.clearRect(0,0,1600,100);
+ ctx.font='40px Arial';ctx.direction='rtl';ctx.textAlign='center';ctx.textBaseline='middle';
+ ctx.fillStyle='#dddddd';ctx.fillText(watermarkText20261025,800,50);
+ const image=canvas.toDataURL('image/png'),count=pdf.internal.getNumberOfPages();
+ const active=pdf.internal.getCurrentPageInfo().pageNumber;
+ for(let i=1;i<=count;i++){pdf.setPage(i);const w=pdf.internal.pageSize.getWidth(),h=pdf.internal.pageSize.getHeight();pdf.addImage(image,'PNG',(w-100)/2,h-7,100,6.25,'ownership-watermark-20261025','FAST');}
+ pdf.setPage(active);pdf.__watermark20261025=true;
+}
+function applyWorkbookWatermark20261025(wb){
+ wb.eachSheet(sheet=>{
+ const hf=sheet.headerFooter||(sheet.headerFooter={});
+ for(const key of ['oddFooter','evenFooter','firstFooter']){
+  const existing=hf[key]||hf.oddFooter||'';
+  if(existing.includes(watermarkText20261025)){hf[key]=existing;continue;}
+  hf[key]=existing+'&C\n&"Arial,Regular"&8&KDDDDDD'+watermarkText20261025;
+ }
+ });
+}
+function watermarkExcelXml20261025(){
+ const text='&amp;C&amp;"Arial,Regular"&amp;8&amp;KDDDDDD'+watermarkText20261025;
+ return '<pageMargins left="0.25" right="0.25" top="0.4" bottom="0.4" header="0.15" footer="0.15"/><headerFooter><oddFooter>'+text+'</oddFooter><evenFooter>'+text+'</evenFooter><firstFooter>'+text+'</firstFooter></headerFooter>';
+}
+function installPrintWatermark20261025(doc){
+ if(doc.getElementById('printWatermark20261025'))return;
+ const style=doc.createElement('style');style.textContent='#printWatermark20261025{display:none}@media print{#printWatermark20261025{display:block!important;visibility:visible!important;position:fixed!important;bottom:0!important;left:0!important;right:0!important;text-align:center!important;direction:rtl!important;font:8pt Arial!important;color:#ddd!important;z-index:2147483647!important;print-color-adjust:exact!important;-webkit-print-color-adjust:exact!important;pointer-events:none}@page{margin-bottom:12mm}}';
+ doc.head.appendChild(style);const mark=doc.createElement('div');mark.id='printWatermark20261025';mark.textContent=watermarkText20261025;mark.setAttribute('aria-hidden','true');doc.body.appendChild(mark);
+}
+installPrintWatermark20261025(document);
 </script>
