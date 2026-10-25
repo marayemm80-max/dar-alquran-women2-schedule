@@ -1383,7 +1383,7 @@ async function pdfSchedule2026(){
 </style>
 <script id="finalEnhancementsScript2026">
 (function(){
-  const FILTERS={name:'',dept:'',connection:'',total:'',className:''};
+  const FILTERS={name:'',dept:'',connection:'',leaveType:'',total:'',className:''};
   const norm=s=>String(s??'').trim().toLowerCase();
   function normalizeClass2026(v){
     return String(v??'')
@@ -1407,7 +1407,7 @@ async function pdfSchedule2026(){
       return false;
     });
   }
-  function matches(r){
+  function matches(r,includeLeave=true){
     const wanted=normalizeClass2026(FILTERS.className);
     const validClasses=['1م1','1م2','2م','3م1','3م2','5م1','5م2','3ت'];
     const classMatch=!wanted || (validClasses.includes(wanted) &&
@@ -1415,16 +1415,18 @@ async function pdfSchedule2026(){
     return (!FILTERS.name||norm(r.name).includes(norm(FILTERS.name))) &&
       (!FILTERS.dept||norm(r.dept).includes(norm(FILTERS.dept))) &&
       (!FILTERS.connection||norm(r.connection).includes(norm(FILTERS.connection))) &&
+      (!includeLeave||!FILTERS.leaveType||norm(r.manualLeaveType20261025).includes(norm(FILTERS.leaveType))) &&
       (!FILTERS.total||norm(r.total).includes(norm(FILTERS.total))) && classMatch;
   }
-  window.getFilteredRows2026=()=>rows.filter(matches);
+  window.getFilteredRows2026=()=>rows.filter(r=>matches(r));
   window.setScheduleFilter2026=(k,v)=>{const el=document.activeElement,pos=el&&typeof el.selectionStart==='number'?el.selectionStart:v.length;FILTERS[k]=v;renderSchedule();requestAnimationFrame(()=>{const n=document.querySelector('#schedule [data-filter-key=\"'+k+'\"]');if(n){n.focus();try{n.setSelectionRange(pos,pos)}catch(e){}}});};
   window.clearFilters2026=()=>{Object.keys(FILTERS).forEach(k=>FILTERS[k]='');renderSchedule();renderTeachers();};
 
   window.renderSchedule=function(){
     let h='<thead>';
-    h+='<tr><th rowspan="3" class="meta num">م</th><th class="meta name">الاسم</th><th class="meta dept">القسم</th><th class="meta conn">نوع الارتباط</th><th rowspan="3" class="meta manual-leave-type-20261025">نوع الإجازة</th><th colspan="20" class="meta">أيام الأسبوع</th><th class="meta total">إجمالي<br>نصاب الحصص</th><th rowspan="3" class="meta actioncol no-print edit-control">إجراء</th></tr>';
+    h+='<tr><th rowspan="3" class="meta num">م</th><th class="meta name">الاسم</th><th class="meta dept">القسم</th><th class="meta conn">نوع الارتباط</th><th class="meta manual-leave-type-20261025">نوع الإجازة</th><th colspan="20" class="meta">أيام الأسبوع</th><th class="meta total">إجمالي<br>نصاب الحصص</th><th rowspan="3" class="meta actioncol no-print edit-control">إجراء</th></tr>';
     h+='<tr class="filter-row no-print"><th><input class="filter-input" data-filter-key="name" value="'+esc(FILTERS.name)+'" placeholder="فرز الاسم" oninput="setScheduleFilter2026(\'name\',this.value)"></th><th><input class="filter-input" data-filter-key="dept" value="'+esc(FILTERS.dept)+'" placeholder="فرز القسم" oninput="setScheduleFilter2026(\'dept\',this.value)"></th><th><input class="filter-input" data-filter-key="connection" value="'+esc(FILTERS.connection)+'" placeholder="فرز الارتباط" oninput="setScheduleFilter2026(\'connection\',this.value)"></th>';
+    h+='<th rowspan="2"><input class="filter-input" data-filter-key="leaveType" value="'+esc(FILTERS.leaveType)+'" placeholder="فرز نوع الإجازة" oninput="setScheduleFilter2026(\'leaveType\',this.value)"></th>';
     DAYS.forEach((d,i)=>h+=`<th colspan="4" class="${DAY_CLASSES[i]}">${d}</th>`);
     h+='<th><input class="filter-input" data-filter-key="total" value="'+esc(FILTERS.total)+'" placeholder="فرز النصاب" oninput="setScheduleFilter2026(\'total\',this.value)"></th></tr><tr>';
     h+='<th class="no-print" colspan="3"><input class="filter-input" data-filter-key="className" style="width:96%" value="'+esc(FILTERS.className)+'" placeholder="فرز الفصل (مثال: 3م2)" oninput="setScheduleFilter2026(\'className\',this.value)"></th>';
@@ -1436,7 +1438,7 @@ async function pdfSchedule2026(){
   };
 
   let teacherPhoneFilter2026='';
-  const teacherMatches2026=r=>matches(r)&&(!teacherPhoneFilter2026||String(r.phone||'').includes(teacherPhoneFilter2026));
+  const teacherMatches2026=r=>matches(r,false)&&(!teacherPhoneFilter2026||String(r.phone||'').includes(teacherPhoneFilter2026));
   window.getFilteredTeacherList2026=()=>rows.filter(teacherMatches2026);
   window.filterTeacherPhone2026=value=>{teacherPhoneFilter2026=value.replace(/[٠-٩]/g,c=>String('٠١٢٣٤٥٦٧٨٩'.indexOf(c)));const pos=document.getElementById('teacherPhoneFilter2026')?.selectionStart;renderTeachers();requestAnimationFrame(()=>{const e=document.getElementById('teacherPhoneFilter2026');if(e){e.focus();if(pos!==null&&pos!==undefined)e.setSelectionRange(pos,pos)}})};
   window.renderTeachers=function(){
