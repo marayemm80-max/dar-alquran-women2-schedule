@@ -646,7 +646,7 @@ function show(id){
 function normalizeTeacherNameAccess2026(v){return String(v||'').trim().replace(/[أإآ]/g,'ا').replace(/ى/g,'ي').replace(/\\s+/g,' ').toLowerCase()}
 function renderSchedule(){
   let h='<thead>';
-  h+='<tr><th rowspan="3" class="meta num">م</th><th rowspan="3" class="meta name">الاسم</th><th rowspan="3" class="meta dept">القسم</th><th rowspan="3" class="meta conn">نوع الارتباط</th><th colspan="20" class="meta">أيام الأسبوع</th><th rowspan="3" class="meta total">إجمالي<br>نصاب الحصص</th><th rowspan="3" class="meta actioncol no-print edit-control">إجراء</th></tr>';
+  h+='<tr><th rowspan="3" class="meta num">م</th><th rowspan="3" class="meta name">الاسم</th><th rowspan="3" class="meta dept">القسم</th><th rowspan="3" class="meta conn">نوع الارتباط</th><th rowspan="3" class="meta manual-leave-type-20261025">نوع الإجازة</th><th colspan="20" class="meta">أيام الأسبوع</th><th rowspan="3" class="meta total">إجمالي<br>نصاب الحصص</th><th rowspan="3" class="meta actioncol no-print edit-control">إجراء</th></tr>';
   h+='<tr>';
   DAYS.forEach((d,i)=>h+=`<th colspan="4" class="${DAY_CLASSES[i]}">${d}</th>`);
   h+='</tr><tr>';
@@ -658,7 +658,7 @@ function renderSchedule(){
     h+=`<tr><td>${ri+1}</td>`;
     h+=`<td class="edit name" onclick="openTeacherModal(${ri})">${esc(r.name)}</td>`;
     h+=`<td class="edit" onclick="openTeacherModal(${ri})">${esc(r.dept)}</td>`;
-    h+=`<td class="edit" onclick="openTeacherModal(${ri})">${esc(r.connection)}</td>`;
+    h+=`<td class="edit" onclick="openTeacherModal(${ri})">${esc(r.connection)}</td><td class="manual-leave-type-20261025" onclick="editManualScheduleLeave20261025(${ri})">${esc(r.manualLeaveType20261025||'')}</td>`;
     const slots=Array.isArray(r.slots)?r.slots:Array(20).fill("");
     for(let si=0;si<20;si++){
       const v=slots[si]||"";
@@ -1421,14 +1421,14 @@ async function pdfSchedule2026(){
 
   window.renderSchedule=function(){
     let h='<thead>';
-    h+='<tr><th rowspan="3" class="meta num">م</th><th class="meta name">الاسم</th><th class="meta dept">القسم</th><th class="meta conn">نوع الارتباط</th><th colspan="20" class="meta">أيام الأسبوع</th><th class="meta total">إجمالي<br>نصاب الحصص</th><th rowspan="3" class="meta actioncol no-print edit-control">إجراء</th></tr>';
+    h+='<tr><th rowspan="3" class="meta num">م</th><th class="meta name">الاسم</th><th class="meta dept">القسم</th><th class="meta conn">نوع الارتباط</th><th rowspan="3" class="meta manual-leave-type-20261025">نوع الإجازة</th><th colspan="20" class="meta">أيام الأسبوع</th><th class="meta total">إجمالي<br>نصاب الحصص</th><th rowspan="3" class="meta actioncol no-print edit-control">إجراء</th></tr>';
     h+='<tr class="filter-row no-print"><th><input class="filter-input" data-filter-key="name" value="'+esc(FILTERS.name)+'" placeholder="فرز الاسم" oninput="setScheduleFilter2026(\'name\',this.value)"></th><th><input class="filter-input" data-filter-key="dept" value="'+esc(FILTERS.dept)+'" placeholder="فرز القسم" oninput="setScheduleFilter2026(\'dept\',this.value)"></th><th><input class="filter-input" data-filter-key="connection" value="'+esc(FILTERS.connection)+'" placeholder="فرز الارتباط" oninput="setScheduleFilter2026(\'connection\',this.value)"></th>';
     DAYS.forEach((d,i)=>h+=`<th colspan="4" class="${DAY_CLASSES[i]}">${d}</th>`);
     h+='<th><input class="filter-input" data-filter-key="total" value="'+esc(FILTERS.total)+'" placeholder="فرز النصاب" oninput="setScheduleFilter2026(\'total\',this.value)"></th></tr><tr>';
     h+='<th class="no-print" colspan="3"><input class="filter-input" data-filter-key="className" style="width:96%" value="'+esc(FILTERS.className)+'" placeholder="فرز الفصل (مثال: 3م2)" oninput="setScheduleFilter2026(\'className\',this.value)"></th>';
     DAYS.forEach((d,i)=>PERIODS.forEach(p=>h+=`<th class="period ${DAY_CLASSES[i]}">${p}</th>`));
     h+='<th class="no-print"><button onclick="clearFilters2026()">مسح الفرز</button></th></tr></thead><tbody>';
-    let visibleNo=0; rows.forEach((r,ri)=>{ if(!matches(r))return; visibleNo++; h+=`<tr><td>${visibleNo}</td><td class="edit name" onclick="openTeacherModal(${ri})">${esc(r.name)}</td><td class="edit" onclick="openTeacherModal(${ri})">${esc(r.dept)}</td><td class="edit" onclick="openTeacherModal(${ri})">${esc(r.connection)}</td>`; const slots=Array.isArray(r.slots)?r.slots:Array(20).fill(''); const wantedClass=normalizeClass2026(FILTERS.className); for(let si=0;si<20;si++){const raw=slots[si]||'',v=(!wantedClass||lessonClasses2026(raw).includes(wantedClass))?raw:'',di=Math.floor(si/4),draggable=canEdit()&&v?'true':'false';h+=`<td class="slot ${DAY_CLASSES[di]}" draggable="${draggable}" data-r="${ri}" data-s="${si}" onclick="editSlot(${ri},${si})" ondragstart="dragStart(event,${ri},${si})" ondragover="dragOver(event)" ondragleave="event.currentTarget.classList.remove('over')" ondrop="dropSlot(event,${ri},${si})" ondragend="dragEnd(event)">${esc(v)}</td>`;} h+=`<td class="edit" onclick="openTeacherModal(${ri})">${esc(r.total)}</td><td class="no-print edit-control"><button onclick="openTeacherModal(${ri})">✏️ تعديل</button> <button class="danger" onclick="removeTeacher(${ri})">حذف</button></td></tr>`;});
+    let visibleNo=0; rows.forEach((r,ri)=>{ if(!matches(r))return; visibleNo++; h+=`<tr><td>${visibleNo}</td><td class="edit name" onclick="openTeacherModal(${ri})">${esc(r.name)}</td><td class="edit" onclick="openTeacherModal(${ri})">${esc(r.dept)}</td><td class="edit" onclick="openTeacherModal(${ri})">${esc(r.connection)}</td><td class="manual-leave-type-20261025" onclick="editManualScheduleLeave20261025(${ri})">${esc(r.manualLeaveType20261025||'')}</td>`; const slots=Array.isArray(r.slots)?r.slots:Array(20).fill(''); const wantedClass=normalizeClass2026(FILTERS.className); for(let si=0;si<20;si++){const raw=slots[si]||'',v=(!wantedClass||lessonClasses2026(raw).includes(wantedClass))?raw:'',di=Math.floor(si/4),draggable=canEdit()&&v?'true':'false';h+=`<td class="slot ${DAY_CLASSES[di]}" draggable="${draggable}" data-r="${ri}" data-s="${si}" onclick="editSlot(${ri},${si})" ondragstart="dragStart(event,${ri},${si})" ondragover="dragOver(event)" ondragleave="event.currentTarget.classList.remove('over')" ondrop="dropSlot(event,${ri},${si})" ondragend="dragEnd(event)">${esc(v)}</td>`;} h+=`<td class="edit" onclick="openTeacherModal(${ri})">${esc(r.total)}</td><td class="no-print edit-control"><button onclick="openTeacherModal(${ri})">✏️ تعديل</button> <button class="danger" onclick="removeTeacher(${ri})">حذف</button></td></tr>`;});
     scheduleGrid.innerHTML=h;
     document.querySelectorAll('.edit-control').forEach(el=>el.style.display=canEdit()?'':'none');
   };
@@ -2018,8 +2018,8 @@ async function exportTodayMovementsPdf2026(){
    const subset=entries.slice(start,start+pageSize);
    const page=document.createElement('div');page.dir='rtl';page.style.cssText='background:#fff;color:#1c344f;font-family:Tahoma,Arial,sans-serif;width:940px;min-height:1200px;box-sizing:border-box;padding:34px 42px;display:flex;flex-direction:column';
    const logo=(src)=>src?'<img src="'+src+'" style="width:94px;height:100px;object-fit:contain">':'<div style="width:94px"></div>';
-   const rows=subset.map((e,i)=>'<tr><td>'+(start+i+1)+'</td><td>'+esc(e.name)+'</td><td>'+esc(e.type)+'</td><td>'+esc(e.time)+'</td><td>'+esc(window.movementDisplayNote20261020?movementDisplayNote20261020(e):(e.notes||'—'))+'</td></tr>').join('');
-   page.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;gap:14px;border-bottom:3px solid #244d80;padding-bottom:14px">'+logo(logos[0])+'<div style="text-align:center;flex:1"><div style="font-size:19px;font-weight:bold;color:#183d70">مركز دار القرآن غرب عبدالله المبارك نساء ٢</div><h2 style="font-size:25px;color:#173c6d;margin:14px 0 4px">كشف حركة الدوام اليومي للموظفات</h2></div>'+logo(logos[1])+'</div><div style="display:flex;justify-content:space-between;margin:22px 0 15px;font-size:17px"><b>التاريخ: '+esc(today)+'</b><b>إجمالي الحركات: '+entries.length+'</b></div><table style="border-collapse:collapse;width:100%;table-layout:fixed;text-align:center;font-size:16px"><thead><tr style="background:#dce5f0;color:#19385e"><th style="width:6%">م</th><th style="width:29%">اسم الموظفة</th><th style="width:26%">نوع الحركة</th><th style="width:14%">وقت التسجيل</th><th style="width:25%">ملاحظات</th></tr></thead><tbody>'+rows+'</tbody></table><div style="margin-top:auto;padding-top:35px"><div style="display:flex;justify-content:space-between;gap:25px;text-align:center;font-size:15px"><div><b>إعداد ومتابعة</b><div style="margin-top:9px">أ. مريم العتيبي</div></div><div><b>مشرفة مركز دار القرآن غرب عبدالله المبارك</b><div style="margin-top:9px">أ. هيله العتيبي</div></div></div><div style="border-top:2px solid #244d80;margin-top:24px;padding-top:8px;text-align:center;color:#64748b;font-size:12px">نظام إدارة جدول حصص مركز دار القرآن غرب عبدالله المبارك نساء ٢ — صفحة '+(Math.floor(start/pageSize)+1)+' من '+Math.ceil(entries.length/pageSize)+'</div></div>';
+   const rows=subset.map((e,i)=>'<tr><td>'+(start+i+1)+'</td><td>'+esc(e.name)+'</td><td>'+esc(movementJob20261025(e))+'</td><td>'+esc(e.type)+'</td><td>'+esc(e.time)+'</td><td>'+esc(window.movementDisplayNote20261020?movementDisplayNote20261020(e):(e.notes||'—'))+'</td></tr>').join('');
+   page.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;gap:14px;border-bottom:3px solid #244d80;padding-bottom:14px">'+logo(logos[0])+'<div style="text-align:center;flex:1"><div style="font-size:19px;font-weight:bold;color:#183d70">مركز دار القرآن غرب عبدالله المبارك نساء ٢</div><h2 style="font-size:25px;color:#173c6d;margin:14px 0 4px">كشف حركة الدوام اليومي للموظفات</h2></div>'+logo(logos[1])+'</div><div style="display:flex;justify-content:space-between;margin:22px 0 15px;font-size:17px"><b>التاريخ: '+esc(today)+'</b><b>إجمالي الحركات: '+entries.length+'</b></div><table style="border-collapse:collapse;width:100%;table-layout:fixed;text-align:center;font-size:16px"><thead><tr style="background:#dce5f0;color:#19385e"><th style="width:6%">م</th><th style="width:25%">اسم الموظفة</th><th style="width:12%">الوظيفة</th><th style="width:22%">نوع الحركة</th><th style="width:12%">وقت التسجيل</th><th style="width:23%">ملاحظات</th></tr></thead><tbody>'+rows+'</tbody></table><div style="margin-top:auto;padding-top:35px"><div style="display:flex;justify-content:space-between;gap:25px;text-align:center;font-size:15px"><div><b>إعداد ومتابعة</b><div style="margin-top:9px">أ. مريم العتيبي</div></div><div><b>مشرفة مركز دار القرآن غرب عبدالله المبارك</b><div style="margin-top:9px">أ. هيله العتيبي</div></div></div><div style="border-top:2px solid #244d80;margin-top:24px;padding-top:8px;text-align:center;color:#64748b;font-size:12px">نظام إدارة جدول حصص مركز دار القرآن غرب عبدالله المبارك نساء ٢ — صفحة '+(Math.floor(start/pageSize)+1)+' من '+Math.ceil(entries.length/pageSize)+'</div></div>';
    const style=document.createElement('style');style.textContent='table th,table td{border:1px solid #9cadc2;padding:12px 7px;overflow-wrap:anywhere;vertical-align:middle}tbody tr:nth-child(even){background:#f3f6fb}';page.prepend(style);host.appendChild(page);
    await Promise.all(Array.from(page.querySelectorAll('img')).map(im=>im.complete?Promise.resolve():new Promise(resolve=>{im.onload=resolve;im.onerror=resolve})));
    const canvas=await html2canvas(page,{scale:1.5,backgroundColor:'#fff',useCORS:true,logging:false});
@@ -2623,7 +2623,7 @@ if ('serviceWorker' in navigator) {
    'xl/workbook.xml':'<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="حركة الدوام" sheetId="1" r:id="rId1"/></sheets></workbook>',
    'xl/_rels/workbook.xml.rels':'<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>',
    'xl/styles.xml':'<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="2"><font><sz val="12"/><name val="Arial"/></font><font><b/><sz val="12"/><color rgb="FFFFFFFF"/><name val="Arial"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF244F86"/><bgColor indexed="64"/></patternFill></fill></fills><borders count="1"><border/></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="2"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0" applyAlignment="1"><alignment horizontal="right" vertical="center" wrapText="1" readingOrder="2"/></xf><xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1" applyAlignment="1"><alignment horizontal="right" vertical="center" wrapText="1" readingOrder="2"/></xf></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>',
-   'xl/worksheets/sheet1.xml':'<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetViews><sheetView workbookViewId="0" rightToLeft="1"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><cols><col min="1" max="1" width="35" customWidth="1"/><col min="2" max="2" width="24" customWidth="1"/><col min="3" max="4" width="16" customWidth="1"/><col min="5" max="5" width="48" customWidth="1"/></cols><sheetData>'+data.map((row,i)=>'<row r="'+(i+1)+'">'+row.map((v,j)=>'<c r="'+String.fromCharCode(65+j)+(i+1)+'" t="inlineStr" s="'+(i?0:1)+'"><is><t xml:space="preserve">'+xml(v)+'</t></is></c>').join('')+'</row>').join('')+'</sheetData><autoFilter ref="A1:E'+data.length+'"/></worksheet>'
+   'xl/worksheets/sheet1.xml':'<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetViews><sheetView workbookViewId="0" rightToLeft="1"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><cols><col min="1" max="1" width="35" customWidth="1"/><col min="2" max="2" width="24" customWidth="1"/><col min="3" max="4" width="16" customWidth="1"/><col min="5" max="5" width="48" customWidth="1"/><col min="6" max="6" width="16" customWidth="1"/></cols><sheetData>'+data.map((row,i)=>'<row r="'+(i+1)+'">'+row.map((v,j)=>'<c r="'+String.fromCharCode(65+j)+(i+1)+'" t="inlineStr" s="'+(i?0:1)+'"><is><t xml:space="preserve">'+xml(v)+'</t></is></c>').join('')+'</row>').join('')+'</sheetData><autoFilter ref="A1:F'+data.length+'"/></worksheet>'
   };
   const encode=new TextEncoder(),chunks=[],central=[];let offset=0;
   const crc=bytes=>{let n=0xffffffff;for(const b of bytes){n^=b;for(let k=0;k<8;k++)n=(n>>>1)^((n&1)?0xedb88320:0);}return (n^0xffffffff)>>>0;};
@@ -3116,4 +3116,56 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 #home .card .icon svg{width:54px!important;height:54px!important;stroke:#fff!important;stroke-width:1.9}
 #home .card:hover{box-shadow:0 10px 24px #14214d35;filter:brightness(1.06)}
 }
+</style>
+
+<script id="movement-job-column-20261025">
+(function(){
+'use strict';
+window.movementJob20261025=function(entry){
+ const people=window.leaveLedgerCore2026?.people()||[
+ ...(typeof rows!=='undefined'?rows:[]).map(p=>({...p,job:'معلمة'})),
+ ...(typeof admins!=='undefined'?admins:[]).map(p=>typeof p==='string'?{name:p,job:'إدارية'}:{...p,job:'إدارية'})
+ ];
+ const accepted=p=>p&&['معلمة','إدارية'].includes(p.job);
+ const staffId=entry.staffId||entry.person;
+ if(staffId){const byId=people.filter(p=>String(p.staffId||p.id)===String(staffId));if(byId.length===1&&accepted(byId[0]))return byId[0].job;}
+ const exact=people.filter(p=>movementNormalize2026(p.name)===movementNormalize2026(entry.name));
+ if(exact.length&&new Set(exact.map(p=>p.job)).size===1&&accepted(exact[0]))return exact[0].job;
+ if(['معلمة','إدارية'].includes(entry.job))return entry.job;
+ return '—';
+};
+function addColumn(bodyId){
+ const body=document.getElementById(bodyId);if(!body)return;
+ const head=body.closest('table').querySelector('thead tr');
+ if(!head.querySelector('[data-movement-job]')){const th=document.createElement('th');th.dataset.movementJob='1';th.textContent='الوظيفة';head.insertBefore(th,head.children[5]||null);}
+ for(const tr of body.children){
+ if(tr.cells.length===1&&tr.cells[0].colSpan>1){tr.cells[0].colSpan=head.cells.length;continue;}
+ if(tr.querySelector('[data-movement-job]')||tr.cells.length<5)continue;
+ const td=document.createElement('td');td.dataset.movementJob='1';td.textContent=movementJob20261025({name:tr.cells[0].textContent});
+ tr.insertBefore(td,tr.cells[5]||null);
+ }
+}
+for(const [fn,id] of [['renderStaffMovement2026','movementRows2026'],['renderMovementArchive2026','archiveRows2026']]){
+ const previous=window[fn];window[fn]=function(){const result=previous.apply(this,arguments);addColumn(id);return result;};
+}
+const previousExport=window.archiveExportTable2026;
+window.archiveExportTable2026=function(){const data=previousExport.apply(this,arguments);if(!data)return data;const entries=filteredArchive2026();data[0].push('الوظيفة');data.slice(1).forEach((row,i)=>row.push(movementJob20261025(entries[i]||{name:row[0]})));return data;};
+addColumn('movementRows2026');addColumn('archiveRows2026');
+})();
+</script>
+
+<script id="manual-schedule-leave-20261025">
+function editManualScheduleLeave20261025(index){
+ if(typeof requireScopeEdit2026==='function'){if(!requireScopeEdit2026('schedule'))return;}
+ else if(!requireEdit())return;
+ const person=rows[index];if(!person)return;
+ const value=prompt('نوع الإجازة — خانة مستقلة للكتابة:',person.manualLeaveType20261025||'');
+ if(value===null)return;
+ person.manualLeaveType20261025=value.trim();
+ saveRows();
+}
+</script>
+<style>
+#scheduleGrid .manual-leave-type-20261025{min-width:110px;white-space:normal;text-align:center}
+#scheduleGrid td.manual-leave-type-20261025{cursor:pointer}
 </style>
