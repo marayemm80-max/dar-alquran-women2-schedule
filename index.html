@@ -236,9 +236,9 @@ function scheduleExportColors20261023(records){
  const days=['sun','mon','tue','wed','thu'];
  records.forEach((r,i)=>{const tr=document.createElement('tr');const existing=[...source.querySelectorAll('tbody tr')].find(t=>t.cells[1]?.textContent.trim()===r.name.trim());
  const dep=departments.find(x=>String(r.dept||'').includes(x[0]));
- [i+1,r.name,r.dept,r.connection,...(r.slots||Array(20).fill('')),r.total].forEach((v,c)=>{const td=document.createElement('td');td.textContent=v??'';
- if(existing?.cells[c])td.className=existing.cells[c].className;
- else{if(c>=4&&c<24)td.className='slot '+days[Math.floor((c-4)/4)];if(dep)td.classList.add('dept-'+dep[1]+'-2026');}
+ [i+1,r.name,r.dept,r.connection,r.manualLeaveType20261025||"",...(r.slots||Array(20).fill('')),r.total].forEach((v,c)=>{const td=document.createElement('td');td.textContent=v??'';
+ if(existing?.cells[c]){td.className=existing.cells[c].className;td.style.cssText=existing.cells[c].style.cssText;}
+ else{if(c===4)td.className='manual-leave-type-20261025';if(c>=5&&c<25)td.className='slot '+days[Math.floor((c-5)/4)];if(dep)td.classList.add('dept-'+dep[1]+'-2026');}
  if(String(v).includes('بالتناوب'))td.classList.add('alternate-2026');tr.append(td)});body.append(tr)});
  document.body.append(table);
  function color(css,factor=1){const n=css.match(/[\d.]+/g);if(!n)return 'FFFFFF';return n.slice(0,3).map(x=>Math.max(0,Math.min(255,Math.round(Number(x)*factor))).toString(16).padStart(2,'0')).join('').toUpperCase()}
@@ -1007,12 +1007,12 @@ async function exportRows(rr,filename){
   const exportColors=scheduleExportColors20261023(rr);
   const wb=new ExcelJS.Workbook();
   wb.creator="نظام إدارة جدول حصص مركز دار القرآن غرب عبدالله المبارك نساء ٢";
-  const ws=wb.addWorksheet("جدول النصاب",{views:[{rightToLeft:true,state:"frozen",ySplit:4,xSplit:4,showGridLines:false}]});
+  const ws=wb.addWorksheet("جدول النصاب",{views:[{rightToLeft:true,state:"frozen",ySplit:4,xSplit:5,showGridLines:false}]});
   ws.properties.defaultRowHeight=28;
-  ws.pageSetup={orientation:"landscape",fitToPage:true,fitToWidth:1,fitToHeight:0,paperSize:9,showGridLines:false,printArea:`A1:Y${rr.length+4}`,margins:{left:0.15,right:0.15,top:0.25,bottom:0.25,header:0.1,footer:0.1}};
+  ws.pageSetup={orientation:"landscape",fitToPage:true,fitToWidth:1,fitToHeight:0,paperSize:9,showGridLines:false,printArea:`A1:Z${rr.length+4}`,margins:{left:0.15,right:0.15,top:0.25,bottom:0.25,header:0.1,footer:0.1}};
   ws.headerFooter.oddHeader='&C&16&\"Arial,Bold\"جدول نصاب حصص معلمات مركز دار قرآن غرب عبدالله المبارك نساء (2) للعام الدراسي 2026م';
 
-  ws.mergeCells("A1:Y1");
+  ws.mergeCells("A1:Z1");
   const title=ws.getCell("A1");
   title.value="جدول نصاب حصص معلمات مركز دار قرآن غرب عبدالله المبارك نساء (2) للعام الدراسي 2026م";
   title.font={bold:true,size:16,color:{argb:"FFFFFFFF"},name:"Arial"};
@@ -1024,13 +1024,14 @@ async function exportRows(rr,filename){
   ws.mergeCells("B2:B4"); ws.getCell("B2").value="الاسم";
   ws.mergeCells("C2:C4"); ws.getCell("C2").value="القسم";
   ws.mergeCells("D2:D4"); ws.getCell("D2").value="نوع الارتباط";
-  ws.mergeCells("E2:X2"); ws.getCell("E2").value="أيام الأسبوع";
-  ws.mergeCells("Y2:Y4"); ws.getCell("Y2").value="إجمالي\nنصاب الحصص";
+  ws.mergeCells("E2:E4"); ws.getCell("E2").value="نوع الإجازة";
+  ws.mergeCells("F2:Y2"); ws.getCell("F2").value="أيام الأسبوع";
+  ws.mergeCells("Z2:Z4"); ws.getCell("Z2").value="إجمالي\nنصاب الحصص";
 
   const fills=["FFDCE3EE","FFC8D5E8","FFE2E6EC","FFD4D9E2","FFC5CBD5"];
   const headerFill="FFEFEFEF";
   const border={top:{style:"thin",color:{argb:"FF555555"}},left:{style:"thin",color:{argb:"FF555555"}},bottom:{style:"thin",color:{argb:"FF555555"}},right:{style:"thin",color:{argb:"FF555555"}}};
-  let col=5;
+  let col=6;
   DAYS.forEach((day,di)=>{
     ws.mergeCells(3,col,3,col+3);
     const dc=ws.getCell(3,col); dc.value=day;
@@ -1045,8 +1046,8 @@ async function exportRows(rr,filename){
     col+=4;
   });
 
-  ["A2","B2","C2","D2","E2","Y2"].forEach(a=>ws.getCell(a).fill={type:"pattern",pattern:"solid",fgColor:{argb:headerFill}});
-  for(let r=2;r<=4;r++) for(let c=1;c<=25;c++){
+  ["A2","B2","C2","D2","E2","F2","Z2"].forEach(a=>ws.getCell(a).fill={type:"pattern",pattern:"solid",fgColor:{argb:headerFill}});
+  for(let r=2;r<=4;r++) for(let c=1;c<=26;c++){
     const cell=ws.getCell(r,c);
     cell.font={bold:true,size:10,name:"Arial"};
     cell.alignment={horizontal:"center",vertical:"middle",wrapText:true,readingOrder:"rtl"};
@@ -1055,16 +1056,16 @@ async function exportRows(rr,filename){
   ws.getRow(2).height=24; ws.getRow(3).height=23; ws.getRow(4).height=23;
 
   rr.forEach((r,i)=>{
-    const vals=[i+1,r.name,r.dept,r.connection,...(r.slots||Array(20).fill("")),r.total];
+    const vals=[i+1,r.name,r.dept,r.connection,r.manualLeaveType20261025||"",...(r.slots||Array(20).fill("")),r.total];
     const row=ws.addRow(vals);
     row.height=34;
-    for(let c=1;c<=25;c++){
+    for(let c=1;c<=26;c++){
       const cell=row.getCell(c);
       cell.alignment={horizontal:"center",vertical:"middle",wrapText:true,readingOrder:"rtl"};
       cell.font={size:9,name:"Arial"};
       cell.border=border;
-      if(c>=5 && c<=24){
-        const di=Math.floor((c-5)/4);
+      if(c>=6 && c<=25){
+        const di=Math.floor((c-6)/4);
         cell.fill={type:"pattern",pattern:"solid",fgColor:{argb:fills[di]}};
       }else{
         cell.fill={type:"pattern",pattern:"solid",fgColor:{argb:"FFFFFFFF"}};
@@ -1076,8 +1077,9 @@ async function exportRows(rr,filename){
   ws.getColumn(2).width=32;
   ws.getColumn(3).width=19;
   ws.getColumn(4).width=15;
-  for(let c=5;c<=24;c++) ws.getColumn(c).width=13.5;
-  ws.getColumn(25).width=12;
+  ws.getColumn(5).width=18;
+  for(let c=6;c<=25;c++) ws.getColumn(c).width=13.5;
+  ws.getColumn(26).width=12;
   ws.eachRow(row=>row.eachCell(cell=>{ cell.protection={locked:false}; }));
 
   // Excel-only enhancement: logos + footer, without changing any other system function.
@@ -1097,22 +1099,22 @@ async function exportRows(rr,filename){
   ws.getCell(footerStart+1,1).value="٢- الدورات العلمية بانتظار صدور قرار الموافقة من الإدارة.";
   ws.mergeCells(footerStart+2,1,footerStart+2,11);
   ws.getCell(footerStart+2,1).value="أ. مريم العتيبي";
-  ws.mergeCells(footerStart,16,footerStart,25);
+  ws.mergeCells(footerStart,16,footerStart,26);
   ws.getCell(footerStart,16).value="مشرفة مركز دار قرآن غرب عبدالله المبارك";
-  ws.mergeCells(footerStart+1,16,footerStart+1,25);
+  ws.mergeCells(footerStart+1,16,footerStart+1,26);
   ws.getCell(footerStart+1,16).value="أ. هيله العتيبي";
-  for(let r=footerStart;r<=footerStart+2;r++) for(let c=1;c<=25;c++){
+  for(let r=footerStart;r<=footerStart+2;r++) for(let c=1;c<=26;c++){
     const cell=ws.getCell(r,c);
     cell.font={name:"Arial",size:10,bold:(r===footerStart+1 && c>=16)};
     cell.alignment={horizontal:(c>=16?"center":"right"),vertical:"middle",wrapText:true,readingOrder:"rtl"};
   }
   ws.getRow(footerStart).height=24; ws.getRow(footerStart+1).height=24; ws.getRow(footerStart+2).height=22;
-  ws.pageSetup.printArea=`A1:Y${footerStart+2}`;
+  ws.pageSetup.printArea=`A1:Z${footerStart+2}`;
   ws.headerFooter.oddFooter='&Rمشرفة مركز دار قرآن غرب عبدالله المبارك  -  أ. هيله العتيبي&Cأ. مريم العتيبي';
 
   exportColors.body.forEach((row,i)=>row.forEach((x,c)=>{const cell=ws.getCell(i+5,c+1);cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF'+x.bg}};cell.font={...cell.font,color:{argb:'FF'+x.fg},bold:x.bold}}));
-  for(let c=1;c<=25;c++){const x=exportColors.meta;ws.getCell(2,c).fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF'+x.bg}};}
-  for(let d=0;d<5;d++)for(let c=5+d*4;c<9+d*4;c++)for(const r of [3,4]){const x=(r===3?exportColors.days:exportColors.periods)[d];const cell=ws.getCell(r,c);cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF'+x.bg}};cell.font={...cell.font,color:{argb:'FF'+x.fg}};}
+  for(let c=1;c<=26;c++){const x=exportColors.meta;ws.getCell(2,c).fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF'+x.bg}};}
+  for(let d=0;d<5;d++)for(let c=6+d*4;c<10+d*4;c++)for(const r of [3,4]){const x=(r===3?exportColors.days:exportColors.periods)[d];const cell=ws.getCell(r,c);cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF'+x.bg}};cell.font={...cell.font,color:{argb:'FF'+x.fg}};}
   const buffer=await wb.xlsx.writeBuffer();
   const blob=new Blob([buffer],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});
   const url=URL.createObjectURL(blob);
@@ -1346,16 +1348,16 @@ async function pdfSchedule2026(){
   document.body.appendChild(host);
   function pageHtml(rr,offset,isLast){
     let h=`<div class="pdfpage"><div class="pdfhead"><img src="${logoLeft}"><div class="pdftitle">جدول نصاب حصص معلمات مركز دار قرآن<br>غرب عبدالله المبارك نساء (2) للعام الدراسي 2026م</div><img src="${logoRight}"></div>`;
-    h+='<table class="pdftable"><thead><tr><th rowspan="3">م</th><th rowspan="3" class="nm">الاسم</th><th rowspan="3">القسم</th><th rowspan="3">نوع<br>الارتباط</th><th colspan="20">أيام الأسبوع</th><th rowspan="3">إجمالي<br>نصاب<br>الحصص</th></tr><tr>';
+    h+='<table class="pdftable"><thead><tr><th rowspan="3">م</th><th rowspan="3" class="nm">الاسم</th><th rowspan="3">القسم</th><th rowspan="3">نوع<br>الارتباط</th><th rowspan="3" class="leave">نوع الإجازة</th><th colspan="20">أيام الأسبوع</th><th rowspan="3">إجمالي<br>نصاب<br>الحصص</th></tr><tr>';
     DAYS.forEach((d,i)=>h+=`<th colspan="4" class="${dayClasses[i]}">${d}<div class="time">توقيت الحصة</div></th>`); h+='</tr><tr>';
     DAYS.forEach((d,i)=>PERIODS.forEach(p=>h+=`<th class="${dayClasses[i]}">${p}</th>`)); h+='</tr></thead><tbody>';
-    rr.forEach((r,i)=>{h+=`<tr><td>${offset+i+1}</td><td class="nm">${safe(r.name)}</td><td>${safe(r.dept)}</td><td>${safe(r.connection)}</td>`; const slots=Array.isArray(r.slots)?r.slots:Array(20).fill(''); for(let j=0;j<20;j++)h+=`<td class="${dayClasses[Math.floor(j/4)]}">${safe(slots[j]||'')}</td>`; h+=`<td>${safe(r.total)}</td></tr>`;});
+    rr.forEach((r,i)=>{h+=`<tr><td>${offset+i+1}</td><td class="nm">${safe(r.name)}</td><td>${safe(r.dept)}</td><td>${safe(r.connection)}</td><td class="leave">${safe(r.manualLeaveType20261025||'')}</td>`; const slots=Array.isArray(r.slots)?r.slots:Array(20).fill(''); for(let j=0;j<20;j++)h+=`<td class="${dayClasses[Math.floor(j/4)]}">${safe(slots[j]||'')}</td>`; h+=`<td>${safe(r.total)}</td></tr>`;});
     h+='</tbody></table>';
     h+=`<div class="pdffoot"><div class="sign">مشرفة مركز دار قرآن غرب عبدالله المبارك<br><b>أ. هيله العتيبي</b></div><div class="notes"><b>ملاحظة:</b> ١- دورة الأسماء الحسنى تقام تحت مظلة أنشطة التواصل وتحت إشراف التوجيه الفني.<br>٢- الدورات العلمية بانتظار صدور قرار الموافقة من الإدارة.<br><span>أ. مريم العتيبي</span></div></div></div>`;
     return h;
   }
   const style=document.createElement('style');
-  style.textContent=`.pdfpage{width:1580px;height:1115px;background:#fff;padding:18px 42px 18px;font-family:Tahoma,Arial,sans-serif;direction:rtl;color:#000;overflow:hidden}.pdfhead{height:150px;display:grid;grid-template-columns:210px 1fr 210px;align-items:start;direction:ltr}.pdfhead img{width:150px;max-height:125px;object-fit:contain;justify-self:center}.pdftitle{direction:rtl;text-align:center;font-size:31px;font-weight:700;line-height:1.5;padding-top:22px}.pdftable{width:100%;border-collapse:collapse;table-layout:fixed;font-size:10px;direction:rtl}.pdftable th,.pdftable td{border:1px solid #111;text-align:center;vertical-align:middle;padding:2px;height:31px;line-height:1.15}.pdftable th{font-weight:700}.pdftable .nm{width:180px}.pdftable th:first-child{width:34px}.pdftable th:nth-child(3){width:90px}.pdftable th:nth-child(4){width:65px}.pdftable th:last-child{width:52px}.pdftable .sun{background:#f7e8bd}.pdftable .mon{background:#d7e5f1}.pdftable .tue{background:#dcebd4}.pdftable .wed{background:#f1d7c8}.pdftable .thu{background:#d9e0ea}.time{font-size:8px;margin-top:3px}.pdffoot{display:flex;justify-content:space-between;align-items:flex-start;direction:ltr;margin-top:22px;padding:0 8px}.sign{direction:rtl;text-align:center;font-size:20px;line-height:2}.sign b{font-size:23px}.notes{direction:rtl;text-align:right;font-size:12px;line-height:1.7;max-width:690px}.notes b{color:#c00}.notes span{display:block;margin-top:7px}`;
+  style.textContent=`.pdfpage{width:1580px;height:1115px;background:#fff;padding:18px 42px 18px;font-family:Tahoma,Arial,sans-serif;direction:rtl;color:#000;overflow:hidden}.pdfhead{height:150px;display:grid;grid-template-columns:210px 1fr 210px;align-items:start;direction:ltr}.pdfhead img{width:150px;max-height:125px;object-fit:contain;justify-self:center}.pdftitle{direction:rtl;text-align:center;font-size:31px;font-weight:700;line-height:1.5;padding-top:22px}.pdftable{width:100%;border-collapse:collapse;table-layout:fixed;font-size:10px;direction:rtl}.pdftable th,.pdftable td{border:1px solid #111;text-align:center;vertical-align:middle;padding:2px;height:31px;line-height:1.15}.pdftable th{font-weight:700}.pdftable .nm{width:180px}.pdftable .leave{width:90px;overflow-wrap:anywhere}.pdftable th:first-child{width:34px}.pdftable th:nth-child(3){width:90px}.pdftable th:nth-child(4){width:65px}.pdftable th:last-child{width:52px}.pdftable .sun{background:#f7e8bd}.pdftable .mon{background:#d7e5f1}.pdftable .tue{background:#dcebd4}.pdftable .wed{background:#f1d7c8}.pdftable .thu{background:#d9e0ea}.time{font-size:8px;margin-top:3px}.pdffoot{display:flex;justify-content:space-between;align-items:flex-start;direction:ltr;margin-top:22px;padding:0 8px}.sign{direction:rtl;text-align:center;font-size:20px;line-height:2}.sign b{font-size:23px}.notes{direction:rtl;text-align:right;font-size:12px;line-height:1.7;max-width:690px}.notes b{color:#c00}.notes span{display:block;margin-top:7px}`;
   host.appendChild(style);
   try{
     const {jsPDF}=window.jspdf; const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a3',compress:true});
@@ -1876,7 +1878,7 @@ window.pdfSimpleSection2026=async function(kind){
    renderLeaves2026();
    if(typeof html2canvas==="undefined"||!window.jspdf?.jsPDF)return alert("تعذر تحميل أداة PDF. تأكد من اتصال الإنترنت.");
    const el=document.getElementById("leavePaper2026");
-   const canvas=await html2canvas(el,{scale:2,useCORS:true,backgroundColor:"#fff"});
+   const canvas=await html2canvas(el,{scale:2,useCORS:true,backgroundColor:"#fff",onclone:doc=>{doc.querySelectorAll("#leavePaper2026 .no-print,#leavePaper2026 .edit-control,#leavePaper2026 button").forEach(node=>node.remove());}});
    const img=canvas.toDataURL("image/jpeg",.97), {jsPDF}=window.jspdf;
    const pdf=new jsPDF({orientation:"landscape",unit:"mm",format:"a4"});
    const pw=pdf.internal.pageSize.getWidth(),ph=pdf.internal.pageSize.getHeight(),ratio=Math.min((pw-8)/canvas.width,(ph-8)/canvas.height);
@@ -1942,6 +1944,14 @@ if ('serviceWorker' in navigator) {
     return '';
   }
   let editing=-1;
+  window.prepareMovementReserve20261025=function(item){
+    if(!requireEdit())return;
+    editing=-1;
+    reserveDate.value=item.date;reserveAbsent.value=item.absent;reserveSub.value='';reservePeriod.value=item.period;reserveNotes.value=item.notes||'';
+    document.getElementById('saveReserveButton2026').textContent='إضافة الاحتياط';
+    document.getElementById('reserve2026').scrollIntoView({behavior:'smooth',block:'start'});
+    reserveSub.focus();
+  };
   window.editReserve2026=function(i){if(!requireEdit())return;const a=JSON.parse(localStorage.getItem('daily_reserve_2026')||'[]');const x=a[i];if(!x)return;
     reserveDate.value=x.date;reserveAbsent.value=x.absent;reserveSub.value=x.sub;reservePeriod.value=x.period;reserveNotes.value=x.notes||'';
     editing=i;const btn=document.getElementById('saveReserveButton2026');if(btn)btn.textContent='حفظ تعديل الاحتياط';
@@ -2499,7 +2509,7 @@ if ('serviceWorker' in navigator) {
 (function(){
  const normalize=v=>String(v||'').trim().replace(/[أإآ]/g,'ا').replace(/ى/g,'ي').replace(/\s+/g,' ').toLowerCase();
  const times={'الأولى':['08:30','09:10'],'الثانية':['09:10','09:50'],'الثالثة':['10:10','10:50'],'الرابعة':['10:50','11:30']};
- function entries(){try{return JSON.parse(localStorage.getItem('staff_movement_demo_2026')||'[]')}catch(e){return []}}
+ function entries(){try{return movementEntries2026()}catch(e){return []}}
  function assess(name,date,period){
   const m=entries().filter(x=>normalize(x.name)===normalize(name)&&x.date===date);
   const t=times[period];if(!m.length)return {blocked:false,message:'لا توجد حركة دوام مسجلة لهذا الاسم والتاريخ على هذا الجهاز (ليس تأكيداً للتوفر).'};
@@ -3169,3 +3179,49 @@ function editManualScheduleLeave20261025(index){
 #scheduleGrid .manual-leave-type-20261025{min-width:110px;white-space:normal;text-align:center}
 #scheduleGrid td.manual-leave-type-20261025{cursor:pointer}
 </style>
+
+<script id="movement-reserve-link-20261025">
+(function(){
+'use strict';
+const norm=v=>String(v||'').trim().replace(/[أإآ]/g,'ا').replace(/ى/g,'ي').replace(/\s+/g,' ').toLowerCase();
+const periods=['الأولى','الثانية','الثالثة','الرابعة'];
+// Derived vacancies never alter the movement records or saved assignments.
+window.movementReserveNeeds20261025=function(entries,teachers,administrators,assigned,today){
+ const needs=new Map();
+ for(const e of entries){
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(e.date||'')||e.date<today)continue;
+  const day=new Date(e.date+'T12:00:00Z').getUTCDay();if(day>4)continue;
+  const name=norm(e.name),id=String(e.staffId||e.person||'');
+  if(e.job==='إدارية'||administrators.some(p=>{p=typeof p==='string'?{name:p}:p;return id?String(p.staffId||p.id||'')===id:norm(p.name)===name}))continue;
+  let matches=id?teachers.filter(p=>String(p.staffId||p.id||'')===id):[];
+  if(!matches.length)matches=teachers.filter(p=>norm(p.name)===name);
+  if(matches.length!==1)continue;
+  const t=matches[0],type=norm(e.type);
+  const affected=/مرض|طارئ/.test(type)?[0,1,2,3]:/اذن.*بداية/.test(type)?[0,1]:/اذن.*نهاية/.test(type)?[2,3]:[];
+  for(const pi of affected){
+   const lesson=String(t.slots?.[day*4+pi]||'').trim();if(!lesson)continue;
+   const period=periods[pi],key=e.date+'|'+norm(t.name)+'|'+period;
+   if(assigned.some(x=>x.date===e.date&&norm(x.absent)===norm(t.name)&&x.period===period))continue;
+   if(!needs.has(key))needs.set(key,{date:e.date,absent:t.name,sub:'',period,notes:e.type+' — '+lesson});
+  }
+ }
+ return [...needs.values()].sort((a,b)=>a.date.localeCompare(b.date)||a.absent.localeCompare(b.absent,'ar')||periods.indexOf(a.period)-periods.indexOf(b.period));
+};
+let pending=[];
+window.assignMovementReserve20261025=function(i){const item=pending[i];if(item)prepareMovementReserve20261025(item)};
+const render=window.renderReserve2026;
+window.renderReserve2026=function(){
+ const result=render.apply(this,arguments),body=document.getElementById('reserveBody');if(!body)return result;
+ const assigned=JSON.parse(localStorage.getItem('daily_reserve_2026')||'[]');
+ pending=movementReserveNeeds20261025(movementEntries2026(),rows,admins,assigned,movementNowKuwait2026().date);
+ body.insertAdjacentHTML('beforeend',pending.map((x,i)=>'<tr data-movement-reserve="1"><td>'+esc(['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس'][new Date(x.date+'T12:00:00Z').getUTCDay()])+'</td><td>'+esc(x.date)+'</td><td>'+esc(x.absent)+'</td><td>بانتظار تعيين بديلة</td><td>'+esc(x.period)+'</td><td>'+esc(x.notes)+'</td><td class="edit-control">'+(canEdit()?'<button onclick="assignMovementReserve20261025('+i+')">تعيين الاحتياط</button>':'')+'</td></tr>').join(''));
+ return result;
+};
+const movementRender=window.renderStaffMovement2026;
+window.renderStaffMovement2026=function(){const result=movementRender.apply(this,arguments);renderReserve2026();return result};
+const show=window.show;
+window.show=function(id){const result=show.apply(this,arguments);if(id==='reserve2026')renderReserve2026();return result};
+window.addEventListener('storage',e=>{if(['staff_movement_demo_2026','daily_reserve_2026'].includes(e.key))renderReserve2026()});
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>renderReserve2026());else renderReserve2026();
+})();
+</script>
