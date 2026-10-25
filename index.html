@@ -1945,10 +1945,11 @@ if ('serviceWorker' in navigator) {
     if(match)return `⚠️ تعارض: المعلمة ${sub} مسجلة مسبقاً في الاحتياط بالتاريخ والحصة نفسيهما.`;
     return '';
   }
-  let editing=-1;
+  let editing=-1,editingMovementSource=null;
+  window.cancelReserveEditAfterSync20261025=function(){editing=-1;editingMovementSource=null;const b=document.getElementById('saveReserveButton2026');if(b)b.textContent='إضافة الاحتياط';};
   window.prepareMovementReserve20261025=function(item){
     if(!requireEdit())return;
-    editing=-1;
+    editing=-1;editingMovementSource=item.movementSource20261025||null;
     reserveDate.value=item.date;reserveAbsent.value=item.absent;reserveSub.value='';reservePeriod.value=item.period;reserveNotes.value=item.notes||'';
     document.getElementById('saveReserveButton2026').textContent='إضافة الاحتياط';
     document.getElementById('reserve2026').scrollIntoView({behavior:'smooth',block:'start'});
@@ -1956,14 +1957,14 @@ if ('serviceWorker' in navigator) {
   };
   window.editReserve2026=function(i){if(!requireEdit())return;const a=JSON.parse(localStorage.getItem('daily_reserve_2026')||'[]');const x=a[i];if(!x)return;
     reserveDate.value=x.date;reserveAbsent.value=x.absent;reserveSub.value=x.sub;reservePeriod.value=x.period;reserveNotes.value=x.notes||'';
-    editing=i;const btn=document.getElementById('saveReserveButton2026');if(btn)btn.textContent='حفظ تعديل الاحتياط';
+    editing=i;editingMovementSource=x.movementSource20261025||null;const btn=document.getElementById('saveReserveButton2026');if(btn)btn.textContent='حفظ تعديل الاحتياط';
     document.getElementById('reserve2026').scrollIntoView({behavior:'smooth',block:'start'});
   };
   window.addReserve2026=function(){if(!requireEdit())return;const date=reserveDate.value,absent=reserveAbsent.value.trim(),sub=reserveSub.value.trim(),period=reservePeriod.value,notes=reserveNotes.value.trim();if(!date||!absent||!sub)return alert('أدخل التاريخ والمعلمة الغائبة ومعلمة الاحتياط.');
     const movementWarning=window.reserveMovementWarning2026?.(sub,date,period);if(movementWarning)return alert(movementWarning);
     const conflict=reserveConflict(date,sub,period,editing);if(conflict)return alert(conflict);
-    const a=JSON.parse(localStorage.getItem('daily_reserve_2026')||'[]');const item={date,absent,sub,period,notes};if(editing>=0&&editing<a.length)a[editing]=item;else a.push(item);
-    localStorage.setItem('daily_reserve_2026',JSON.stringify(a));editing=-1;
+    const a=JSON.parse(localStorage.getItem('daily_reserve_2026')||'[]');const item={date,absent,sub,period,notes};const linked=window.movementReserveNeeds20261025?.(movementEntries2026(),rows,admins,[],date).find(x=>x.date===date&&movementNormalize2026(x.absent)===movementNormalize2026(absent)&&x.period===period);if(linked)item.movementSource20261025=linked.movementSource20261025;else if(editingMovementSource&&editingMovementSource.date===date&&movementNormalize2026(editingMovementSource.name)===movementNormalize2026(absent))item.movementSource20261025=editingMovementSource;if(editing>=0&&editing<a.length)a[editing]=item;else a.push(item);
+    localStorage.setItem('daily_reserve_2026',JSON.stringify(a));editing=-1;editingMovementSource=null;
     reserveDate.value=reserveAbsent.value=reserveSub.value=reserveNotes.value='';document.getElementById('saveReserveButton2026').textContent='إضافة الاحتياط';renderReserve2026();
   };
   window.renderReserve2026=function(){const b=document.getElementById('reserveBody');if(!b)return;if(window.expireDailyReserve20261023?.()){editing=-1;const btn=document.getElementById('saveReserveButton2026');if(btn)btn.textContent='إضافة الاحتياط';}const a=JSON.parse(localStorage.getItem('daily_reserve_2026')||'[]');
@@ -1995,7 +1996,7 @@ function refreshMovementClock2026(){if(editingStaffMovementIndex2026!==null)retu
 function movementFillName2026(){const id=movementIdentity2026();const field=document.getElementById('movementName2026');if(!field)return;if(id){field.value=id.full;field.readOnly=true}else field.readOnly=false}
 function cancelStaffMovementEdit2026(){editingStaffMovementIndex2026=null;movementSaveButton2026.textContent='حفظ الحركة';movementCancelEdit2026.style.display='none';movementType2026.selectedIndex=0;movementNotes2026.value='';refreshMovementClock2026();movementFillName2026()}
 function editStaffMovement2026(index){const e=movementEntries2026()[index];if(!e||!movementIsMine2026(e))return;editingStaffMovementIndex2026=index;movementName2026.value=movementIdentity2026()?.full||e.name;movementType2026.value=e.type||'إذن بداية الدوام';movementDate2026.value=e.date||'';movementTime2026.value=e.time||'';movementNotes2026.value=e.notes||'';movementSaveButton2026.textContent='حفظ التعديل';movementCancelEdit2026.style.display='inline-block';document.getElementById('staffMovement2026').scrollIntoView({behavior:'smooth',block:'start'})}
-function deleteStaffMovement2026(index){const entries=movementEntries2026();if(!entries[index]||!movementIsMine2026(entries[index]))return;if(!confirm('هل تريدين حذف هذه الحركة؟'))return;entries.splice(index,1);localStorage.setItem('staff_movement_demo_2026',JSON.stringify(entries));cancelStaffMovementEdit2026();renderStaffMovement2026()}
+function deleteStaffMovement2026(index){const entries=movementEntries2026();if(!entries[index]||!movementIsMine2026(entries[index]))return;if(!confirm('هل تريدين حذف هذه الحركة؟'))return;const removedMovement=entries.splice(index,1);localStorage.setItem('staff_movement_demo_2026',JSON.stringify(entries));window.reconcileMovementReserve20261025?.(removedMovement);cancelStaffMovementEdit2026();renderStaffMovement2026()}
 function renderStaffMovement2026(){const body=document.getElementById('movementRows2026');if(!body)return;movementFillName2026();const id=movementIdentity2026();const entries=movementEntries2026();body.replaceChildren();if(id?.ambiguous){body.innerHTML='<tr><td colspan="6">يوجد تشابه في الأسماء الثلاثية. يرجى مراجعة المسؤولة لربط الحساب بالموظفة الصحيحة.</td></tr>';movementSaveButton2026.disabled=true;return}movementSaveButton2026.disabled=false;entries.forEach((e,index)=>{if(e.date!==movementNowKuwait2026().date||!movementIsMine2026(e))return;const tr=document.createElement('tr');[id?.full||e.name,e.type,e.date,e.time,e.notes].forEach(v=>{const td=document.createElement('td');td.textContent=v||'—';tr.appendChild(td)});const td=document.createElement('td');td.style.whiteSpace='nowrap';const edit=document.createElement('button');edit.type='button';edit.textContent='✏️ تعديل';edit.style.margin='3px';edit.onclick=()=>editStaffMovement2026(index);const del=document.createElement('button');del.type='button';del.textContent='🗑️ حذف';del.className='danger';del.style.margin='3px';del.onclick=()=>deleteStaffMovement2026(index);td.append(edit,del);tr.appendChild(td);body.appendChild(tr)});if(!movementDate2026.value)refreshMovementClock2026()}
 function saveStaffMovement2026(){
  const id=movementIdentity2026();if(id?.ambiguous){alert('يوجد أكثر من موظفة بالاسم الثلاثي نفسه؛ يلزم ربط الحساب بالاسم الصحيح أولاً.');return}
@@ -2587,22 +2588,22 @@ if ('serviceWorker' in navigator) {
   pulling=true;status('جارٍ تحميل الحركات النهائية…');
   try{
    const response=await fetch(API+'dq_main_admin_entries',{method:'POST',headers:{apikey:KEY,Authorization:'Bearer '+KEY,'Content-Type':'application/json'},body:JSON.stringify({p_token:mainToken()}),signal:AbortSignal.timeout(20000)});
-   const body=await response.json();if(!response.ok){if(String(body.message||'').includes('ADMIN_SESSION_EXPIRED')){portalEntries=[];window.expireMainAdmin2026();}throw new Error(body.message||'SERVER');}
-   if(!Array.isArray(body))throw new Error('SERVER');portalEntries=body;
+   const body=await response.json();if(!response.ok){if(String(body.message||'').includes('ADMIN_SESSION_EXPIRED')){portalEntries=[];window.movementPortalLoaded20261025=false;window.expireMainAdmin2026();}throw new Error(body.message||'SERVER');}
+   if(!Array.isArray(body))throw new Error('SERVER');portalEntries=body;window.movementPortalLoaded20261025=true;
    renderStaffMovement2026();if(document.getElementById('movementArchive2026')?.classList.contains('active'))renderMovementArchive2026();
    const todayCount=movementEntries2026().filter(x=>x.date===movementNowKuwait2026().date).length;status('متصلة — حركات اليوم: '+todayCount.toLocaleString('ar-KW')+' | إجمالي الحركات لجميع التواريخ: '+movementEntries2026().length.toLocaleString('ar-KW'));
   }catch(e){status('لم يكتمل الاتصال بالمتابعة. تحققي من الدخول الأساسي والإنترنت.');if(interactive)alert('تعذر تحميل المتابعة. تأكدي من تفعيل ملف ربط الدخول الأساسي، ثم سجّلي الدخول بحساب المسؤولة.')}finally{pulling=false}
  }
  const render=window.renderStaffMovement2026;
  window.renderStaffMovement2026=function(){
-  setup();if(role()!=='admin')portalEntries=[];
+  setup();if(role()!=='admin'){portalEntries=[];window.movementPortalLoaded20261025=false;}
   render();const box=document.getElementById('trialPanel2026');if(box)box.style.display=role()==='admin'?'':'none';
   const entries=movementEntries2026().filter(x=>x.date===movementNowKuwait2026().date&&movementIsMine2026(x));
   const trs=[...document.querySelectorAll('#movementRows2026 tr')];
   if(trs.length===entries.length)trs.forEach((tr,i)=>{if(entries[i].portal){const td=tr.lastElementChild;td.replaceChildren();td.textContent='تسجيل عبر الرابط — '+entries[i].kind;}});
  };
  // Editing and writes continue to use only the original synced records.
- function withLocalRecords(action){const combined=window.movementEntries2026;window.movementEntries2026=oldEntries;try{return action()}finally{window.movementEntries2026=combined;window.renderStaffMovement2026()}}
+ function withLocalRecords(action){const combined=window.movementEntries2026;window.movementEntries2026=oldEntries;window.movementLocalScope20261025=true;try{return action()}finally{window.movementEntries2026=combined;window.movementLocalScope20261025=false;window.renderStaffMovement2026()}}
  for(const fn of ['editStaffMovement2026','deleteStaffMovement2026']){
   const original=window[fn];
   window[fn]=function(index){
@@ -2678,10 +2679,10 @@ if ('serviceWorker' in navigator) {
   try{
    if(remote.length){
     const response=await fetch(API+'dq_main_admin_delete_entries',{method:'POST',headers:{apikey:KEY,Authorization:'Bearer '+KEY,'Content-Type':'application/json'},body:JSON.stringify({p_token:mainToken(),p_entries:remote.map(x=>({staffId:x.staffId,date:x.date,registeredAt:x.registeredAt}))}),signal:AbortSignal.timeout(20000)});
-    const body=await response.json();if(!response.ok){if(String(body.message||'').includes('ADMIN_SESSION_EXPIRED')){portalEntries=[];window.expireMainAdmin2026();}throw new Error(body.message||'SERVER');}
-    const removed=new Set((body.deletedIds||[]));portalEntries=portalEntries.filter(x=>!removed.has(x.id));
+    const body=await response.json();if(!response.ok){if(String(body.message||'').includes('ADMIN_SESSION_EXPIRED')){portalEntries=[];window.movementPortalLoaded20261025=false;window.expireMainAdmin2026();}throw new Error(body.message||'SERVER');}
+    const removed=new Set((body.deletedIds||[])),deletedMovements=portalEntries.filter(x=>removed.has(x.id));portalEntries=portalEntries.filter(x=>!removed.has(x.id));window.reconcileMovementReserve20261025?.(deletedMovements);
    }
-   if(local.size){const remaining=oldEntries().filter(x=>!local.has(fingerprint(x)));localStorage.setItem('staff_movement_demo_2026',JSON.stringify(remaining));}
+   if(local.size){const remaining=oldEntries().filter(x=>!local.has(fingerprint(x)));localStorage.setItem('staff_movement_demo_2026',JSON.stringify(remaining));window.reconcileMovementReserve20261025?.(selected.filter(x=>!x.portal));}
    cancelStaffMovementEdit2026();renderStaffMovement2026();renderMovementArchive2026();
    alert('اكتملت عملية الحذف.');
   }catch(e){alert('تعذر إكمال الحذف. تحققي من تشغيل ملف تفعيل الحذف، والربط، والإنترنت. حدّثي الحركات للتأكد من الحالة.');}
@@ -2728,21 +2729,41 @@ if ('serviceWorker' in navigator) {
 </script>
 <script id="mainAdminPermissionSync2026">
 (function(){
+ 'use strict';
  let saving=false;
- for(const name of ['addPermission','editPermission2026','deletePermission']){
+ // Persist account changes only after server confirmation; do not silently claim deletion.
+ for(const name of ['addPermission','editPermissionPrivacy2026','editPermission2026','deletePermission']){
   const original=window[name];if(typeof original!=='function')continue;
-  window[name]=async function(){
-   if(role()!=='admin')return original.apply(this,arguments);
-   if(saving)return alert('انتظري اكتمال حفظ الصلاحيات.');
-   if(!window.dqAdminToken2026)return window.expireMainAdmin2026();
+  window[name]=async function(...args){
+   if(role()!=='admin')return;
+   if(saving)return alert('يرجى انتظار اكتمال حفظ الصلاحيات.');
+   if(!window.dqAdminToken2026){window.expireMainAdmin2026();return;}
    saving=true;
    const before=localStorage.getItem(USERS_KEY)||'[]';
    try{
-    original.apply(this,arguments);
-    const after=localStorage.getItem(USERS_KEY)||'[]';if(after===before)return;
-    await window.dqMainRpc2026('dq_main_admin_save_accounts',{p_token:window.dqAdminToken2026,p_accounts:JSON.parse(after)});
-   }catch(e){localStorage.setItem(USERS_KEY,before);renderPermissions();alert('لم يتم حفظ تغيير الصلاحيات. تحققي من الإنترنت والدخول ثم أعيدي المحاولة.');if(String(e.message).includes('ADMIN_SESSION_EXPIRED'))window.expireMainAdmin2026();}
-   finally{saving=false;}
+    original.apply(this,args);
+    const after=localStorage.getItem(USERS_KEY)||'[]';
+    if(after===before)return;
+    const result=await window.dqMainRpc2026('dq_main_admin_save_accounts',{
+     p_token:window.dqAdminToken2026,p_accounts:JSON.parse(after)
+    });
+    if(result===false || (result&&typeof result==='object'&&(result.ok===false||result.success===false)))
+     throw new Error(result.message||result.error||'SERVER_REJECTED_CHANGE');
+    renderPermissions();
+   }catch(e){
+    localStorage.setItem(USERS_KEY,before);
+    renderPermissions();
+    const msg=String(e&&e.message||e||'خطأ غير معروف');
+    console.error('Permission synchronization failed:',e);
+    if(/ADMIN_SESSION_EXPIRED|INVALID_TOKEN|UNAUTHORIZED/i.test(msg)){
+     alert('انتهت جلسة المسؤولة أو لم تعد صالحة. يرجى تسجيل الدخول من جديد ثم إعادة المحاولة.');
+     window.expireMainAdmin2026();
+    }else if(/Failed to fetch|NetworkError|TimeoutError|abort/i.test(msg)){
+     alert('تعذر الاتصال بقاعدة البيانات. لم يُنفذ التغيير، وتمت استعادة الصلاحيات السابقة.\nالتفاصيل: '+msg);
+    }else{
+     alert('رفضت قاعدة البيانات حفظ تغيير الصلاحيات، ولم يُنفذ الحذف.\nسبب الرفض: '+msg+'\nيرجى إرسال نص الخطأ لإصلاح دالة الحفظ في قاعدة البيانات.');
+    }
+   }finally{saving=false;}
   };
  }
 })();
@@ -3219,15 +3240,41 @@ window.movementReserveNeeds20261025=function(entries,teachers,administrators,ass
    const lesson=String(t.slots?.[day*4+pi]||'').trim();if(!lesson||lesson.includes('بالتناوب')||/^(?:أ|ا|ب|إجراءات|اجراءات)$/.test(lesson))continue;
    const period=periods[pi],key=e.date+'|'+norm(t.name)+'|'+period;
    if(assigned.some(x=>x.date===e.date&&norm(x.absent)===norm(t.name)&&x.period===period))continue;
-   if(!needs.has(key))needs.set(key,{date:e.date,absent:t.name,sub:'',period,notes:e.type+' — '+lesson});
+   if(!needs.has(key))needs.set(key,{date:e.date,absent:t.name,sub:'',period,notes:e.type+' — '+lesson,movementSource20261025:{name:t.name,date:e.date,staffId:t.staffId||t.id||e.staffId||e.staff_id||''}});
   }
  }
  return [...needs.values()].sort((a,b)=>a.date.localeCompare(b.date)||a.absent.localeCompare(b.absent,'ar')||periods.indexOf(a.period)-periods.indexOf(b.period));
+};
+// Reconcile only after an authoritative portal load, or a confirmed deletion.
+window.reconcileMovementReserve20261025=function(deleted){
+ if(role()!=='admin')return;
+ const scoped=Array.isArray(deleted);
+ if(!scoped&&(!window.movementPortalLoaded20261025||window.movementLocalScope20261025))return;
+ let saved;try{saved=JSON.parse(localStorage.getItem('daily_reserve_2026')||'[]')}catch{return}
+ if(!Array.isArray(saved)||!saved.length)return;
+ const source=movementEntries2026(),same=(a,b)=>a.date===b.date&&(norm(a.name)===norm(b.name)||!!((a.staffId||a.staff_id||a.person)&&b.staffId&&String(a.staffId||a.staff_id||a.person)===String(b.staffId)));
+ let changed=false;
+ const kept=saved.filter(item=>{
+  // Older generated rows have this exact movement/lesson note format.
+  const legacy=/^(?:مرضية|طارئة|إجازة مرضية|إجازة طارئة|إذن بداية الدوام|إذن نهاية الدوام)\s+—\s+.+$/.test(String(item.notes||''));
+  if(!item.movementSource20261025&&!legacy)return true;
+  const ref=item.movementSource20261025||{name:item.absent,date:item.date};
+  if(scoped&&!deleted.some(e=>same(e,ref)))return true;
+  const remaining=source.filter(e=>same(e,ref));
+  // Match the recorded movement, without requiring an unchanged lesson grid.
+  const pi=periods.indexOf(item.period);
+  const active=remaining.some(e=>{const t=norm(e.type);return /مرض|طارئ/.test(t)||(/(?:اذن|استئذان).*بداي/.test(t)&&pi>=0&&pi<2)||(/(?:اذن|استئذان).*نهاي/.test(t)&&pi>=2)});
+  if(!active){changed=true;return false}
+  if(!item.movementSource20261025){item.movementSource20261025=ref;changed=true}
+  return true;
+ });
+ if(changed){localStorage.setItem('daily_reserve_2026',JSON.stringify(kept));window.cancelReserveEditAfterSync20261025?.();}
 };
 let pending=[];
 window.assignMovementReserve20261025=function(i){const item=pending[i];if(item)prepareMovementReserve20261025(item)};
 const render=window.renderReserve2026;
 window.renderReserve2026=function(){
+ reconcileMovementReserve20261025();
  const result=render.apply(this,arguments),body=document.getElementById('reserveBody');if(!body)return result;
  let assigned=[];try{assigned=JSON.parse(localStorage.getItem('daily_reserve_2026')||'[]')}catch{};if(!Array.isArray(assigned))assigned=[];
  body.querySelectorAll('tr').forEach((tr,i)=>{
