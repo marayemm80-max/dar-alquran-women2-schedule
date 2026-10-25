@@ -2509,15 +2509,23 @@ if ('serviceWorker' in navigator) {
 <!-- ربط حركة الدوام بأوقات الحصص الرسمية 2026-2027 -->
 <script id="movementPeriodRules2026">
 (function(){
- const normalize=v=>String(v||'').trim().replace(/[أإآ]/g,'ا').replace(/ى/g,'ي').replace(/\s+/g,' ').toLowerCase();
+ const normalize=v=>rosterNorm20261017(rosterCanonicalName20261017(v)).replace(/ـ/g,'').toLowerCase();
  const times={'الأولى':['08:30','09:10'],'الثانية':['09:10','09:50'],'الثالثة':['10:10','10:50'],'الرابعة':['10:50','11:30']};
  function entries(){try{return movementEntries2026()}catch(e){return []}}
  function assess(name,date,period){
-  const m=entries().filter(x=>normalize(x.name)===normalize(name)&&x.date===date);
+  const candidates=rows.filter(r=>[r.name,...(r.rosterAliases20261017||[])].some(n=>normalize(n)===normalize(name)));
+  const teacher=candidates.length===1?candidates[0]:null;
+  const teacherIds=teacher?[teacher.staffId,teacher.id,teacher.rosterLegacyPersonId20261017].filter(Boolean).map(String):[];
+  const teacherNames=teacher?[teacher.name,...(teacher.rosterAliases20261017||[])].map(normalize):[normalize(name)];
+  const m=entries().filter(x=>{
+   if(x.date!==date||/اداري/.test(normalize(x.kind||x.job)))return false;
+   const id=String(x.staffId||x.staff_id||x.person||'');
+   return (id&&teacherIds.includes(id))||teacherNames.includes(normalize(x.name));
+  });
   const t=times[period];if(!m.length)return {blocked:false,message:'لا توجد حركة دوام مسجلة لهذا الاسم والتاريخ على هذا الجهاز (ليس تأكيداً للتوفر).'};
   const types=[...new Set(m.map(x=>x.type))];
   if(!t)return {blocked:true,message:'⚠️ حركة دوام: '+types.join('، ')+' — تعذر تحديد وقت الحصة؛ راجعي التكليف.'};
-  const blocked=m.some(x=>x.type==='مرضية'||x.type==='طارئة'||(x.type==='إذن بداية الدوام'&&t[0]<'10:00')||(x.type==='إذن نهاية الدوام'&&t[1]>'10:00'));
+  const blocked=m.some(x=>{const type=normalize(x.type);return /مرض|طارئ/.test(type)||(/(?:اذن|استئذان).*بداي/.test(type)&&t[0]<'10:00')||(/(?:اذن|استئذان).*نهاي/.test(type)&&t[1]>'10:00')});
   return {blocked,message:(blocked?'⛔ غير متاحة للاحتياط':'✅ لا يتعارض الإذن مع وقت الحصة')+' — '+period+' ('+t.join('–')+') — الحركة: '+types.join('، ')+(blocked?'؛ يُمنع التكليف في هذه الحصة.':'؛ راجعي الجدول الأساسي قبل التكليف.')};
  }
  window.reserveMovementWarning2026=function(name,date,period){const a=assess(name,date,period);return a.blocked?a.message:''};
@@ -3222,6 +3230,11 @@ const render=window.renderReserve2026;
 window.renderReserve2026=function(){
  const result=render.apply(this,arguments),body=document.getElementById('reserveBody');if(!body)return result;
  let assigned=[];try{assigned=JSON.parse(localStorage.getItem('daily_reserve_2026')||'[]')}catch{};if(!Array.isArray(assigned))assigned=[];
+ body.querySelectorAll('tr').forEach((tr,i)=>{
+  const item=assigned[i];if(!item)return;
+  const warning=reserveMovementWarning2026(item.sub,item.date,item.period);
+  if(warning&&tr.cells[3]){const notice=document.createElement('div');notice.textContent='⚠️ تعارض: معلمة الاحتياط لديها حركة دوام تمنع التكليف — يلزم تغيير البديلة';notice.style.cssText='color:#a92525;font-weight:bold;font-size:12px;white-space:normal';notice.title=warning;tr.cells[3].appendChild(notice);}
+ });
  pending=movementReserveNeeds20261025(movementEntries2026(),rows,admins,assigned,movementNowKuwait2026().date);
  body.insertAdjacentHTML('beforeend',pending.map((x,i)=>'<tr data-movement-reserve="1"><td>'+esc(['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس'][new Date(x.date+'T12:00:00Z').getUTCDay()])+'</td><td>'+esc(x.date)+'</td><td>'+esc(x.absent)+'</td><td>بانتظار تعيين بديلة</td><td>'+esc(x.period)+'</td><td>'+esc(x.notes)+'</td><td class="edit-control">'+(canEdit()?'<button onclick="assignMovementReserve20261025('+i+')">تعيين الاحتياط</button>':'')+'</td></tr>').join(''));
  let status=document.getElementById('movementReserveStatus20261025');
