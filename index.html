@@ -1357,7 +1357,7 @@ async function pdfSchedule2026(){
     return h;
   }
   const style=document.createElement('style');
-  style.textContent=`.pdfpage{position:relative;width:1580px;height:1115px;background:#fff;padding:18px 42px 18px;font-family:Tahoma,Arial,sans-serif;direction:rtl;color:#000;overflow:hidden}.pdfhead{height:150px;display:grid;grid-template-columns:210px 1fr 210px;align-items:start;direction:ltr}.pdfhead img{width:150px;max-height:125px;object-fit:contain;justify-self:center}.pdftitle{direction:rtl;text-align:center;font-size:31px;font-weight:700;line-height:1.5;padding-top:22px}.pdftable{width:100%;border-collapse:collapse;table-layout:fixed;font-size:10px;direction:rtl}.pdftable th,.pdftable td{border:1px solid #111;text-align:center;vertical-align:middle;padding:2px;height:31px;line-height:1.15}.pdftable th{font-weight:700}.pdftable .nm{width:180px}.pdftable .leave{width:90px;overflow-wrap:anywhere}.pdftable th:first-child{width:34px}.pdftable th:nth-child(3){width:90px}.pdftable th:nth-child(4){width:65px}.pdftable th:last-child{width:52px}.pdftable .sun{background:#f7e8bd}.pdftable .mon{background:#d7e5f1}.pdftable .tue{background:#dcebd4}.pdftable .wed{background:#f1d7c8}.pdftable .thu{background:#d9e0ea}.time{font-size:8px;margin-top:3px}.pdffoot{position:absolute;bottom:24px;left:50px;right:50px;display:flex;justify-content:space-between;align-items:flex-start;direction:ltr;margin-top:0;padding:0 8px}.sign{direction:rtl;text-align:center;font-size:20px;line-height:2}.sign b{font-size:23px}.notes{direction:rtl;text-align:right;font-size:12px;line-height:1.7;max-width:690px}.notes b{color:#c00}.notes span{display:block;margin-top:7px}`;
+  style.textContent=`.pdfpage{position:relative;width:1580px;height:1115px;background:#fff;padding:18px 42px 18px;font-family:Tahoma,Arial,sans-serif;direction:rtl;color:#000;overflow:hidden}.pdfhead{height:150px;display:grid;grid-template-columns:210px 1fr 210px;align-items:start;direction:ltr}.pdfhead img{width:150px;max-height:125px;object-fit:contain;justify-self:center}.pdftitle{direction:rtl;text-align:center;font-size:31px;font-weight:700;line-height:1.5;padding-top:22px}.pdftable{width:100%;border-collapse:collapse;table-layout:fixed;font-size:10px;direction:rtl}.pdftable th,.pdftable td{border:1px solid #111;text-align:center;vertical-align:middle;padding:2px;height:31px;line-height:1.15}.pdftable th{font-weight:700}.pdftable .nm{width:180px}.pdftable .leave{width:90px;overflow-wrap:anywhere}.pdftable th:first-child{width:34px}.pdftable th:nth-child(3){width:90px}.pdftable th:nth-child(4){width:65px}.pdftable th:last-child{width:52px}.pdftable .sun{background:#f7e8bd}.pdftable .mon{background:#d7e5f1}.pdftable .tue{background:#dcebd4}.pdftable .wed{background:#f1d7c8}.pdftable .thu{background:#d9e0ea}.time{font-size:8px;margin-top:3px}.pdffoot{position:absolute;bottom:24px;left:50px;right:50px;min-height:96px;background:#fff;z-index:2;display:flex;justify-content:space-between;align-items:flex-start;direction:ltr;margin-top:0;padding:0 8px}.sign{direction:rtl;text-align:center;font-size:20px;line-height:2}.sign b{font-size:23px}.notes{direction:rtl;text-align:right;font-size:12px;line-height:1.7;max-width:690px}.notes b{color:#c00}.notes span{display:block;margin-top:7px}`;
   host.appendChild(style);
   try{
     const {jsPDF}=window.jspdf; const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a3',compress:true});
@@ -2060,59 +2060,48 @@ function exportArchivePdf2026(){
  const esc=v=>String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const head='<html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>أرشيف حركة الدوام</title><style>body{font-family:Tahoma,Arial;padding:24px;color:#173b7a}table{width:100%;border-collapse:collapse}td,th{border:1px solid #aaa;padding:8px;text-align:right}th{background:#e6ebf2}</style></head><body>';
  const rows=data.slice(1).map(row=>'<tr>'+row.map(x=>'<td>'+esc(x)+'</td>').join('')+'</tr>').join('');
- w.document.open();w.document.write('<!doctype html>'+head+'<h2>أرشيف حركة الدوام</h2><p>الفترة: '+esc(archiveFrom2026.value||'البداية')+' إلى '+esc(archiveTo2026.value||'النهاية')+'</p><table><thead><tr>'+data[0].map(x=>'<th>'+esc(x)+'</th>').join('')+'</tr></thead><tbody>'+rows+'</tbody></table><p>اختاري حفظ كملف PDF من نافذة الطباعة.</p>\n<style id="unifiedArchiveStyle20261026">
-#unifiedArchive2026 .archive-box{background:#fff;color:#17243b;padding:20px;border-radius:12px;margin:12px 0;border:1px solid #b9c5d6}
-#unifiedArchive2026 table{width:100%;border-collapse:collapse;background:white;color:#111}
-#unifiedArchive2026 th,#unifiedArchive2026 td{border:1px solid #c5cbd5;padding:9px;text-align:center}
-#unifiedArchive2026 th{background:#dce4f0}
-#unifiedArchive2026 input{max-width:250px}
-@media screen{#unifiedArchive2026>h2{color:white}}
-</style>
-<script id="unifiedArchiveScript20261026">
+ w.document.open();w.document.write('<!doctype html>'+head+'<h2>أرشيف حركة الدوام</h2><p>الفترة: '+esc(archiveFrom2026.value||'البداية')+' إلى '+esc(archiveTo2026.value||'النهاية')+'</p><table><thead><tr>'+data[0].map(x=>'<th>'+esc(x)+'</th>').join('')+'</tr></thead><tbody>'+rows+'</tbody></table><p>اختاري حفظ كملف PDF من نافذة الطباعة.</p>\n
+<script id="archive-all-unassigned-reserve-20261026">
 (function(){
  'use strict';
- const activeKey='daily_reserve_2026', archiveKey='daily_reserve_archive_20261026';
- const read=k=>{try{const a=JSON.parse(localStorage.getItem(k)||'[]');return Array.isArray(a)?a:[]}catch{return []}};
- const save=(k,a)=>localStorage.setItem(k,JSON.stringify(a));
- const norm=s=>String(s||'').trim().replace(/\s+/g,' ');
- const identity=x=>[x.date,norm(x.absent),norm(x.sub),x.period].join('|');
- const html=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
- function isAdmin(){return typeof role==='function'&&role()==='admin'}
- function archiveExpired(){
-  const today=typeof movementNowKuwait2026==='function'?movementNowKuwait2026().date:new Date().toISOString().slice(0,10);
-  const active=read(activeKey),old=read(archiveKey),keep=[],seen=new Set(old.map(identity));
-  for(const x of active){if(/^\d{4}-\d{2}-\d{2}$/.test(x.date)&&x.date<today){if(!seen.has(identity(x))){old.push({...x,archivedAt:new Date().toISOString()});seen.add(identity(x))}}else keep.push(x)}
-  if(keep.length!==active.length){try{save(archiveKey,old);save(activeKey,keep)}catch(e){console.error('تعذر حفظ أرشيف الاحتياط',e);alert('تعذر حفظ أرشيف الاحتياط؛ لم يتم حذف بيانات اليوم السابق.');return false}}
-  return keep.length!==active.length;
+ const archiveKey='daily_reserve_archive_20261026',activeKey='daily_reserve_2026';
+ const read=k=>{try{const x=JSON.parse(localStorage.getItem(k)||'[]');return Array.isArray(x)?x:[]}catch{return []}};
+ const key=x=>[x.date,String(x.absent||'').trim(),String(x.period||'').trim()].join('|');
+ function archivePending(){
+  if(typeof movementNowKuwait2026!=='function'||typeof movementReserveNeeds20261025!=='function')return;
+  // Never manufacture records before the attendance portal has successfully loaded.
+  if(!window.movementPortalLoaded20261025||window.movementLocalScope20261025)return;
+  const now=movementNowKuwait2026();if(now.time<'17:00')return;
+  const assigned=read(activeKey),archive=read(archiveKey);
+  const seen=new Set([...assigned,...archive].map(key));
+  const needs=movementReserveNeeds20261025(movementEntries2026(),rows,admins,assigned,now.date);
+  let added=0;
+  for(const x of needs){
+   if(x.date>now.date||seen.has(key(x)))continue;
+   archive.push({...x,sub:'',archiveStatus20261026:'لم تُعيّن بديلة',archivedAt:new Date().toISOString()});
+   seen.add(key(x));added++;
+  }
+  if(added){try{localStorage.setItem(archiveKey,JSON.stringify(archive))}catch(e){console.error('فشل حفظ حصص الاحتياط غير المعينة',e);return}}
+  // Refresh the existing archive, without creating a new section.
+  if(added&&typeof window.renderReserveArchive20261026==='function'&&document.getElementById('reserveArchivePanel20261026')&&!document.getElementById('reserveArchivePanel20261026').hidden)window.renderReserveArchive20261026();
  }
- // Override the expiration function BEFORE the original renderer calls it.
- window.expireDailyReserve20261023=archiveExpired;
- function setup(){
-  if(document.getElementById('unifiedArchive2026'))return;
-  const nav=document.querySelector('nav');
-  const btn=document.createElement('button');btn.id='unifiedArchiveNav2026';btn.textContent='🗂️ الأرشيف';btn.onclick=()=>window.openUnifiedArchive20261026();
-  const old=document.getElementById('movementArchiveNav2026');if(old){old.style.display='none';old.insertAdjacentElement('afterend',btn)}else nav?.appendChild(btn);
-  const section=document.createElement('section');section.id='unifiedArchive2026';section.className='section';
-  section.innerHTML='<h2>🗂️ الأرشيف العام</h2><div class="archive-box"><button class="action" onclick="openMovementArchive2026()">🕒 أرشيف حركة الدوام</button> <button class="action" onclick="openReserveArchive20261026()">🔄 أرشيف الاحتياط اليومي</button><p>تُحفظ حصص الاحتياط المنتهية تلقائياً، ويُحسب عدد الحصص لكل معلمة.</p></div><div class="archive-box" id="reserveArchivePanel20261026" hidden><h3>أرشيف الاحتياط اليومي</h3><label>بحث باسم معلمة الاحتياط <input id="reserveArchiveSearch20261026" oninput="renderReserveArchive20261026()" placeholder="اسم المعلمة"></label> <label>من <input id="reserveArchiveFrom20261026" type="date" onchange="renderReserveArchive20261026()"></label> <label>إلى <input id="reserveArchiveTo20261026" type="date" onchange="renderReserveArchive20261026()"></label><button onclick="clearReserveArchiveFilters20261026()">إظهار الكل</button><h3>إجمالي نصاب الاحتياط</h3><div id="reserveArchiveTotals20261026"></div><h3>تفاصيل الحصص</h3><div style="overflow:auto"><table><thead><tr><th>التاريخ</th><th>الغائبة</th><th>معلمة الاحتياط</th><th>الحصة</th><th>ملاحظات</th><th>إجراء</th></tr></thead><tbody id="reserveArchiveRows20261026"></tbody></table></div></div>';
-  document.querySelector('.container')?.appendChild(section);
-  const home=document.querySelector('#home .cards');if(home){const card=document.createElement('div');card.className='card';card.id='unifiedArchiveCard20261026';card.innerHTML='<div class="icon">🗂️</div><h3>الأرشيف العام</h3><p>حركة الدوام والاحتياط اليومي ونصاب المعلمات.</p>';card.onclick=()=>window.openUnifiedArchive20261026();home.appendChild(card)}
-  // Hide unified archive from staff accounts; archive edits are admin-only.
-  if(!isAdmin()){btn.style.display='none';document.getElementById('unifiedArchiveCard20261026')?.remove()}
-  archiveExpired();
- }
- window.openUnifiedArchive20261026=function(){if(!isAdmin())return alert('الأرشيف للمسؤولة فقط.');show('unifiedArchive2026');document.getElementById('reserveArchivePanel20261026').hidden=true};
- window.openReserveArchive20261026=function(){if(!isAdmin())return;archiveExpired();show('unifiedArchive2026');document.getElementById('reserveArchivePanel20261026').hidden=false;window.renderReserveArchive20261026()};
- window.clearReserveArchiveFilters20261026=function(){['reserveArchiveSearch20261026','reserveArchiveFrom20261026','reserveArchiveTo20261026'].forEach(id=>document.getElementById(id).value='');window.renderReserveArchive20261026()};
- window.renderReserveArchive20261026=function(){if(!isAdmin())return;const q=norm(document.getElementById('reserveArchiveSearch20261026')?.value),from=document.getElementById('reserveArchiveFrom20261026')?.value,to=document.getElementById('reserveArchiveTo20261026')?.value;
-  const all=read(archiveKey),filtered=all.map((x,i)=>({...x,_index:i})).filter(x=>(!q||norm(x.sub).includes(q))&&(!from||x.date>=from)&&(!to||x.date<=to));
-  const counts=new Map();for(const x of filtered)counts.set(norm(x.sub),(counts.get(norm(x.sub))||0)+1);
-  const totals=document.getElementById('reserveArchiveTotals20261026');totals.innerHTML=counts.size?'<table><thead><tr><th>معلمة الاحتياط</th><th>عدد الحصص</th></tr></thead><tbody>'+[...counts].sort((a,b)=>b[1]-a[1]).map(([name,n])=>'<tr><td>'+html(name)+'</td><td>'+n+'</td></tr>').join('')+'</tbody></table>':'لا توجد حصص مؤرشفة مطابقة.';
-  document.getElementById('reserveArchiveRows20261026').innerHTML=filtered.map(x=>'<tr><td>'+html(x.date)+'</td><td>'+html(x.absent)+'</td><td>'+html(x.sub)+'</td><td>'+html(x.period)+'</td><td>'+html(x.notes)+'</td><td><button onclick="editReserveArchive20261026('+x._index+')">تعديل</button> <button class="danger" onclick="deleteReserveArchive20261026('+x._index+')">حذف</button></td></tr>').join('');
+ const previous=window.renderReserve2026;
+ window.renderReserve2026=function(){try{archivePending()}catch(e){console.error('تعذر أرشفة الحصص غير المعينة',e)}return previous.apply(this,arguments)};
+ const oldRenderArchive=window.renderReserveArchive20261026;
+ if(typeof oldRenderArchive==='function')window.renderReserveArchive20261026=function(){
+  const a=read(archiveKey),unassigned=a.filter(x=>!String(x.sub||'').trim()).length;
+  const result=oldRenderArchive.apply(this,arguments);
+  const totals=document.getElementById('reserveArchiveTotals20261026');
+  if(totals){totals.querySelectorAll('tr').forEach(tr=>{const cells=tr.querySelectorAll('td');if(cells.length&& !cells[0].textContent.trim())tr.remove()});}
+  const body=document.getElementById('reserveArchiveRows20261026');
+  if(body){body.querySelectorAll('tr').forEach(tr=>{const cells=tr.querySelectorAll('td');if(cells.length>=3&&!cells[2].textContent.trim())cells[2].textContent='لم تُعيّن بديلة'});}
+  return result;
  };
- window.editReserveArchive20261026=function(i){if(!isAdmin())return;const a=read(archiveKey),x=a[i];if(!x)return;const absent=prompt('اسم المعلمة الغائبة',x.absent);if(absent===null)return;const sub=prompt('اسم معلمة الاحتياط',x.sub);if(sub===null)return;const period=prompt('الحصة',x.period);if(period===null)return;const notes=prompt('ملاحظات',x.notes||'');if(notes===null)return;if(!norm(absent)||!norm(sub)||!norm(period))return alert('لا يمكن ترك الاسم أو الحصة فارغاً');a[i]={...x,absent:norm(absent),sub:norm(sub),period:norm(period),notes};save(archiveKey,a);window.renderReserveArchive20261026()};
- window.deleteReserveArchive20261026=function(i){if(!isAdmin())return;const a=read(archiveKey);if(!a[i]||!confirm('حذف هذه الحصة نهائياً من الأرشيف؟ سيؤثر ذلك على نصاب الاحتياط.'))return;a.splice(i,1);save(archiveKey,a);window.renderReserveArchive20261026()};
- window.addEventListener('storage',e=>{if(e.key===archiveKey&&document.getElementById('reserveArchivePanel20261026')&&!document.getElementById('reserveArchivePanel20261026').hidden)window.renderReserveArchive20261026()});
- if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',setup);else setup();
+ function tick(){try{archivePending();window.renderReserve2026?.()}catch(e){console.error(e)}}
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',tick);else tick();
+ document.addEventListener('visibilitychange',()=>{if(!document.hidden)tick()});
+ window.addEventListener('focus',tick);
+ setInterval(tick,30000);
 })();
 </script>
 </body></html>');w.document.close();installPrintWatermark20261025(w.document);w.focus();w.print();
@@ -2470,9 +2459,10 @@ window.openWhatsAppCodes2026=open;window.whatsAppCodesCore2026={phone};decorate(
  const html=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  function isAdmin(){return typeof role==='function'&&role()==='admin'}
  function archiveExpired(){
-  const today=typeof movementNowKuwait2026==='function'?movementNowKuwait2026().date:new Date().toISOString().slice(0,10);
+  const stamp=movementNowKuwait2026();
+  const today=stamp.date, closed=stamp.time>='17:00';
   const active=read(activeKey),old=read(archiveKey),keep=[],seen=new Set(old.map(identity));
-  for(const x of active){if(/^\d{4}-\d{2}-\d{2}$/.test(x.date)&&x.date<today){if(!seen.has(identity(x))){old.push({...x,archivedAt:new Date().toISOString()});seen.add(identity(x))}}else keep.push(x)}
+  for(const x of active){if(/^\d{4}-\d{2}-\d{2}$/.test(x.date)&&(x.date<today||(x.date===today&&closed))){if(!seen.has(identity(x))){old.push({...x,archivedAt:new Date().toISOString()});seen.add(identity(x))}}else keep.push(x)}
   if(keep.length!==active.length){try{save(archiveKey,old);save(activeKey,keep)}catch(e){console.error('تعذر حفظ أرشيف الاحتياط',e);alert('تعذر حفظ أرشيف الاحتياط؛ لم يتم حذف بيانات اليوم السابق.');return false}}
   return keep.length!==active.length;
  }
@@ -2482,13 +2472,13 @@ window.openWhatsAppCodes2026=open;window.whatsAppCodesCore2026={phone};decorate(
   if(document.getElementById('unifiedArchive2026'))return;
   const nav=document.querySelector('nav');
   const btn=document.createElement('button');btn.id='unifiedArchiveNav2026';btn.textContent='🗂️ الأرشيف';btn.onclick=()=>window.openUnifiedArchive20261026();
-  const old=document.getElementById('movementArchiveNav2026');if(old){old.style.display='none';old.insertAdjacentElement('afterend',btn)}else nav?.appendChild(btn);
+  const old=document.getElementById('movementArchiveNav2026');if(old){old.insertAdjacentElement('afterend',btn)}else nav?.appendChild(btn);
   const section=document.createElement('section');section.id='unifiedArchive2026';section.className='section';
   section.innerHTML='<h2>🗂️ الأرشيف العام</h2><div class="archive-box"><button class="action" onclick="openMovementArchive2026()">🕒 أرشيف حركة الدوام</button> <button class="action" onclick="openReserveArchive20261026()">🔄 أرشيف الاحتياط اليومي</button><p>تُحفظ حصص الاحتياط المنتهية تلقائياً، ويُحسب عدد الحصص لكل معلمة.</p></div><div class="archive-box" id="reserveArchivePanel20261026" hidden><h3>أرشيف الاحتياط اليومي</h3><label>بحث باسم معلمة الاحتياط <input id="reserveArchiveSearch20261026" oninput="renderReserveArchive20261026()" placeholder="اسم المعلمة"></label> <label>من <input id="reserveArchiveFrom20261026" type="date" onchange="renderReserveArchive20261026()"></label> <label>إلى <input id="reserveArchiveTo20261026" type="date" onchange="renderReserveArchive20261026()"></label><button onclick="clearReserveArchiveFilters20261026()">إظهار الكل</button><h3>إجمالي نصاب الاحتياط</h3><div id="reserveArchiveTotals20261026"></div><h3>تفاصيل الحصص</h3><div style="overflow:auto"><table><thead><tr><th>التاريخ</th><th>الغائبة</th><th>معلمة الاحتياط</th><th>الحصة</th><th>ملاحظات</th><th>إجراء</th></tr></thead><tbody id="reserveArchiveRows20261026"></tbody></table></div></div>';
   document.querySelector('.container')?.appendChild(section);
   const home=document.querySelector('#home .cards');if(home){const card=document.createElement('div');card.className='card';card.id='unifiedArchiveCard20261026';card.innerHTML='<div class="icon">🗂️</div><h3>الأرشيف العام</h3><p>حركة الدوام والاحتياط اليومي ونصاب المعلمات.</p>';card.onclick=()=>window.openUnifiedArchive20261026();home.appendChild(card)}
   // Hide unified archive from staff accounts; archive edits are admin-only.
-  if(!isAdmin()){btn.style.display='none';document.getElementById('unifiedArchiveCard20261026')?.remove()}
+  function syncArchiveVisibility(){const allowed=isAdmin();btn.style.display=allowed?'inline-block':'none';const c=document.getElementById('unifiedArchiveCard20261026');if(c)c.style.display=allowed?'block':'none';} const prevApplyRole=window.applyRole;if(typeof prevApplyRole==='function'){window.applyRole=function(){const result=prevApplyRole.apply(this,arguments);syncArchiveVisibility();return result;};}syncArchiveVisibility();
   archiveExpired();
  }
  window.openUnifiedArchive20261026=function(){if(!isAdmin())return alert('الأرشيف للمسؤولة فقط.');show('unifiedArchive2026');document.getElementById('reserveArchivePanel20261026').hidden=true};
@@ -3411,6 +3401,70 @@ const show=window.show;
 window.show=function(id){const result=show.apply(this,arguments);if(id==='reserve2026')renderReserve2026();return result};
 window.addEventListener('storage',e=>{if(['staff_movement_demo_2026','daily_reserve_2026'].includes(e.key))renderReserve2026()});
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>renderReserve2026());else renderReserve2026();
+})();
+</script>
+
+<script id="safe-five-pm-close-20261026">
+(function(){
+ 'use strict';
+ const closed=()=>{const n=movementNowKuwait2026();return {date:n.date,closed:n.time>='17:00',weekend:[5,6].includes(new Date(n.date+'T12:00:00Z').getUTCDay())}};
+ // Movement records remain in their existing storage so the existing archive,
+ // reports and attendance calculations never lose their history.
+ function hideClosedDailyMovement(){
+  const s=closed(),body=document.getElementById('movementRows2026');if(!body)return;
+  if(s.closed){body.querySelectorAll('tr').forEach(tr=>{tr.hidden=true});}
+  let msg=document.getElementById('movementCloseNote20261026');
+  if(!msg){msg=document.createElement('p');msg.id='movementCloseNote20261026';msg.style.cssText='padding:10px;background:#eef3fa;border-radius:7px';body.closest('table')?.before(msg)}
+  msg.textContent=s.closed?'انتهى دوام اليوم الساعة ٥ مساءً؛ سجلات اليوم محفوظة ويمكن للمسؤولة مراجعتها في أرشيف حركة الدوام.':'';
+  msg.hidden=!s.closed;
+ }
+ const render=window.renderStaffMovement2026;
+ window.renderStaffMovement2026=function(){const result=render.apply(this,arguments);hideClosedDailyMovement();return result};
+ const save=window.saveStaffMovement2026;
+ window.saveStaffMovement2026=function(){const s=closed();if(s.closed||s.weekend)return alert(s.weekend?'لا يمكن التسجيل يوم الجمعة أو السبت.':'أُغلق تسجيل حركة الدوام لهذا اليوم الساعة الخامسة مساءً.');return save.apply(this,arguments)};
+ const add=window.addReserve2026;
+ window.addReserve2026=function(){const s=closed(),d=document.getElementById('reserveDate')?.value;if(s.weekend||d&&[5,6].includes(new Date(d+'T12:00:00Z').getUTCDay()))return alert('لا يمكن تسجيل الاحتياط يوم الجمعة أو السبت.');if(d===s.date&&s.closed)return alert('انتهى وقت الاحتياط اليومي الساعة الخامسة مساءً.');return add.apply(this,arguments)};
+ function tick(){try{window.expireDailyReserve20261023?.();if(document.getElementById('staffMovement2026')?.classList.contains('active'))window.renderStaffMovement2026();if(document.getElementById('reserve2026')?.classList.contains('active'))window.renderReserve2026?.()}catch(e){console.warn('تعذر تحديث إغلاق اليوم',e)}}
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',tick);else tick();
+ setInterval(tick,30000);
+})();
+</script>
+
+<script id="reserve-five-pm-visibility-fix-20261026">
+(function(){
+ 'use strict';
+ // The original attendance-to-reserve renderer can re-insert pending rows
+ // after the completed reserve rows have already been archived.
+ const base=window.renderReserve2026;
+ if(typeof base!=='function')return;
+ const now=()=>movementNowKuwait2026();
+ function closedFor(date,stamp){return /^\d{4}-\d{2}-\d{2}$/.test(String(date||''))&&(date<stamp.date||(date===stamp.date&&stamp.time>='17:00'));}
+ function update(){
+   // Use the existing archive routine, never delete completed entries directly.
+   const archived=window.expireDailyReserve20261023?.();
+   const result=base.apply(this,arguments);
+   const stamp=now(),body=document.getElementById('reserveBody');
+   if(!body)return result;
+   // Rows generated from movement records are virtual (not saved assignments).
+   // They must not remain visible as today's reserve after 17:00.
+   body.querySelectorAll('tr[data-movement-reserve="1"]').forEach(tr=>{
+     const date=tr.cells[1]?.textContent.trim();
+     if(closedFor(date,stamp))tr.remove();
+   });
+   const status=document.getElementById('movementReserveStatus20261025');
+   if(status){
+     const pending=body.querySelectorAll('tr[data-movement-reserve="1"]').length;
+     status.textContent=stamp.time>='17:00'?'انتهى دوام اليوم الساعة ٥ مساءً؛ الحصص المسندة محفوظة في أرشيف الاحتياط، ولا تظهر تكليفات معلّقة لليوم المنتهي.':'ربط حركة الدوام — '+pending.toLocaleString('ar-KW')+' حصة بانتظار تعيين الاحتياط.';
+   }
+   if(archived&&document.getElementById('reserveArchivePanel20261026')&&!document.getElementById('reserveArchivePanel20261026').hidden)window.renderReserveArchive20261026?.();
+   return result;
+ }
+ window.renderReserve2026=update;
+ function tick(){try{update()}catch(e){console.error('خطأ تحديث الاحتياط بعد الخامسة',e)}}
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',tick);else tick();
+ document.addEventListener('visibilitychange',()=>{if(!document.hidden)tick()});
+ window.addEventListener('focus',tick);
+ setInterval(tick,30000);
 })();
 </script>
 
