@@ -2451,6 +2451,37 @@ window.openWhatsAppCodes2026=open;window.whatsAppCodesCore2026={phone};decorate(
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',setup);else setup();
 })();
 </script>
+
+<script id="movement-only-daily-empty-after-5pm-20261026">
+/* UI-only: after 17:00 Kuwait time, the daily movement list is empty.
+   Do not change saved records or the existing archive. */
+(function(){
+  const oldRender=window.renderStaffMovement2026;
+  if(typeof oldRender!=='function')return;
+  function isClosed(){
+    if(typeof movementNowKuwait2026!=='function')return false;
+    return movementNowKuwait2026().time >= '17:00';
+  }
+  window.renderStaffMovement2026=function(){
+    const result=oldRender.apply(this,arguments);
+    if(isClosed()){
+      const rows=document.getElementById('movementRows2026');
+      if(rows)rows.replaceChildren();
+    }
+    return result;
+  };
+  let previous='';
+  function update(){
+    if(typeof movementNowKuwait2026!=='function')return;
+    const now=movementNowKuwait2026();
+    const state=now.date+'|'+(isClosed()?'closed':'open');
+    if(previous!==state){previous=state;window.renderStaffMovement2026();}
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',update);else update();
+  setInterval(update,30000);
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)update()});
+})();
+</script>
 </body>
 </html>
 
