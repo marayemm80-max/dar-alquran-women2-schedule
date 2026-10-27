@@ -735,41 +735,46 @@ function editSlot(ri,si){
 }
 
 function swapSlotsSameDay2026(sr,ss,r,s){
-  if(!canEdit() || !rows[sr] || !rows[r]) return false;
-  if(sr===r && ss===s) return false;
-  const from=rows[sr].slots, to=rows[r].slots;
-  const moving=from[ss]||'', displaced=to[s]||'';
+  if(!canEdit() || !rows[sr] || !rows[r] || sr===r && ss===s) return false;
+  const source=rows[sr].slots, target=rows[r].slots;
+  const moving=source[ss]||'', displaced=target[s]||'';
   if(!moving) return false;
-  const changes=[{r:sr,s:ss,v:displaced},{r,s,v:moving}];
+  // Keep each lesson with its original teacher. Never place a lesson in another teacher's row.
+  let changes;
+  if(sr===r){
+    changes=[{r:sr,s:ss,v:displaced},{r:sr,s:s,v:moving}];
+  }else{
+    if(ss===s){
+      alert('لا يمكن تبديل معلمتين في التوقيت نفسه بالسحب؛ لأن ذلك ينقل الحصص إلى معلمة أخرى. لم يتغير الجدول.');
+      return false;
+    }
+    if((source[s]||'') || (displaced && (target[ss]||''))){
+      alert('⚠️ لا يمكن التبديل: توجد حصة أخرى للمعلمة في أحد الموعدين المطلوبين. لم يتم تغيير أي حصة.');
+      return false;
+    }
+    changes=[{r:sr,s:ss,v:''},{r:sr,s:s,v:moving}];
+    if(displaced) changes.push({r:r,s:s,v:''},{r:r,s:ss,v:displaced});
+  }
   const valueAfter=(i,j)=>{
     const change=changes.find(c=>c.r===i&&c.s===j);
     return change?change.v:((rows[i].slots||[])[j]||'');
   };
-  const conflicts=[];
   for(const change of changes){
     const key=normalizeClassKey2026(change.v);
     if(!key) continue;
     for(let i=0;i<rows.length;i++){
-      if(i===change.r)continue;
+      if(i===change.r) continue;
       const other=valueAfter(i,change.s);
-      if(other&&normalizeClassKey2026(other)===key){
-        conflicts.push({change,teacher:rows[i].name||'معلمة أخرى',lesson:other});
+      if(other && normalizeClassKey2026(other)===key){
+        alert('⚠️ تعارض في الفصل مع المعلمة '+(rows[i].name||'')+'. لم يتغير الجدول.');
+        return false;
       }
     }
   }
-  if(conflicts.length){
-    const c=conflicts[0], day=DAYS[Math.floor(c.change.s/4)]||'', period=PERIODS[c.change.s%4]||'';
-    alert(`⚠️ تعارض يمنع النقل\nالمعلمة: ${c.teacher}\nاليوم: ${day}\nالحصة: ${period}\nالبيان: ${c.lesson}\n\nلا يمكن الموافقة على هذا التبديل لأنه سيؤدي إلى تكرار الفصل في الوقت نفسه. لم يتم تغيير الجدول.`);
-    return false;
-  }
-  if(displaced){
-    const sourceDay=DAYS[Math.floor(ss/4)]||'',targetDay=DAYS[Math.floor(s/4)]||'';
-    const sourcePeriod=PERIODS[ss%4]||'',targetPeriod=PERIODS[s%4]||'';
-    const msg=`🔄 طلب الموافقة على تبديل حصتين\n\nالمعلمة الأولى: ${rows[sr].name||''}\n${sourceDay} - الحصة ${sourcePeriod}\n${moving}\n\nالمعلمة الثانية: ${rows[r].name||''}\n${targetDay} - الحصة ${targetPeriod}\n${displaced}\n\nتم فحص التعارض ولا يوجد تعارض ناتج عن التبديل. هل توافق على تبديل الحصتين؟`;
-    if(!confirm(msg))return false;
-  }
-  [from[ss],to[s]]=[displaced,moving];
-  recalcTeacherTotal2026(sr);recalcTeacherTotal2026(r);
+  if(displaced && !confirm('تأكيد تبديل الموعدين مع إبقاء كل حصة مع معلمتها ومادتها وفصلها؟')) return false;
+  for(const change of changes) rows[change.r].slots[change.s]=change.v;
+  recalcTeacherTotal2026(sr);
+  if(sr!==r) recalcTeacherTotal2026(r);
   saveRows();
   return true;
 }
