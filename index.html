@@ -118,7 +118,8 @@ header h1 { font-weight: 900 !important; font-size: clamp(24px, 3vw, 36px) !impo
 .daily-card-2026{background:linear-gradient(135deg,#F7F9FC,#EEF2F7)!important;border:2px solid #AAB4C4!important}
 .daily-card-2026 .icon{font-size:34px}
 .daily-toolbar-2026{display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:#fff;padding:12px;border:1px solid #ddd;border-radius:10px;margin-bottom:10px}
-.daily-class-add-20261028{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0}.daily-class-add-20261028[hidden]{display:none!important}.daily-class-add-20261028 input{width:240px;max-width:100%;margin:0}#dailyClassStatus20261028{flex-basis:100%;font-size:14px;color:#173B7A}
+.daily-class-add-20261028{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0}.daily-class-add-20261028[hidden],#dailyClassActions20261028[hidden]{display:none!important}.daily-class-add-20261028 input{width:240px;max-width:100%;margin:0}#dailyClassStatus20261028{flex-basis:100%;font-size:14px;color:#173B7A}
+#dailyClassActions20261028{display:flex;gap:8px;flex-wrap:wrap}#dailyClassEditForm20261028{flex-basis:100%;padding:12px;border:1px solid #d4b56e;border-radius:8px;background:#fff9e9;box-sizing:border-box}#dailyClassEditForm20261028 small{flex-basis:100%;color:#49412d}.daily-class-edit-button-20261028{background:#996515!important;color:white!important}#dailyClassEditForm20261028 button[type=button]{background:#e6e9ee!important;color:#27384e!important}#dailyClassActions20261028 button,#dailyClassEditForm20261028 button{min-height:40px}
 .daily-note-2026{background:#EEF2F7;border-right:5px solid #173B7A;padding:10px 13px;border-radius:8px;margin-bottom:12px}
 .daily-paper-2026{position:relative;background:#FFFFFF;border:1px solid #B8C0CC;border-radius:18px;padding:34px 38px 26px;max-width:1080px;margin:0 auto;box-shadow:0 8px 24px #00000012;text-align:center;overflow:hidden}
 .daily-paper-2026:before{content:"";position:absolute;inset:0;background:linear-gradient(135deg,#F7F9FC 0%,#fffdf8 45%,#EEF2F7 100%);z-index:0}
@@ -383,12 +384,23 @@ function applySchedulePdfColors20261023(page,palette,offset){
         <option value="courses">الدورات العلمية</option>
       </select>
     </label>
+    <div id="dailyClassActions20261028" class="edit-control" hidden>
+      <button id="dailyClassEditButton20261028" type="button" class="action daily-class-edit-button-20261028" onclick="editDailyClass20261028()">تعديل الاسم</button>
+      <button id="dailyClassDeleteButton20261028" type="button" class="danger" onclick="deleteDailyClass20261028()">حذف الفصل</button>
+    </div>
     <form id="dailyClassAddForm20261028" class="daily-class-add-20261028 edit-control" onsubmit="addDailyClass20261028(event)">
       <label for="dailyClassName20261028">اسم فصل جديد</label>
       <input id="dailyClassName20261028" type="text" placeholder="مثل: رابع مطور، تمهيدي، ٨" autocomplete="off" required>
       <button type="submit" class="action">+ إضافة فصل</button>
     </form>
     <button class="action" onclick="pdfDailySchedule2026()">تصدير PDF</button>
+    <form id="dailyClassEditForm20261028" class="daily-class-add-20261028 edit-control" onsubmit="saveDailyClassName20261028(event)" hidden>
+      <label for="dailyClassEditName20261028">الاسم الجديد</label>
+      <input id="dailyClassEditName20261028" type="text" autocomplete="off" required>
+      <button type="submit" class="action">حفظ الاسم</button>
+      <button type="button" class="action" onclick="cancelDailyClassEdit20261028()">إلغاء</button>
+      <small>سيُحدَّث الاسم في عنوان الجدول وفي الحصص المرتبطة أيضًا.</small>
+    </form>
     <span id="dailyClassStatus20261028" role="status" aria-live="polite"></span>
   </div>
   <div class="daily-note-2026 no-print">
@@ -1439,7 +1451,7 @@ function updateScheduleTable20261028(table,html){
  const normalized=value=>String(value??'').replace(/[٠-٩]/g,c=>'٠١٢٣٤٥٦٧٨٩'.indexOf(c)).replace(/[۰-۹]/g,c=>'۰۱۲۳۴۵۶۷۸۹'.indexOf(c)).replace(/[أإآ]/g,'ا').replace(/ى/g,'ي').replace(/[\u064B-\u065F\u0670ـ]/g,'').replace(/\s+/g,' ').trim().toLowerCase();
  const identity=value=>normalized(value).replace(/\s+/g,'');
  const escapeRegex=value=>value.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
- let previousRaw,definitions=[],patterns=[];
+ let previousRaw,definitions=[],patterns=[],editingValue=null;
  function aliasPattern(alias){
   const text=normalized(alias),compact=text.replace(/\s+/g,''),code=/^\d+[مت]\d*$/.test(compact);
   const characters=[...(code?compact:text)].map(c=>{
@@ -1511,6 +1523,8 @@ function updateScheduleTable20261028(table,html){
   if(select.dataset.classOptions!==signature){select.replaceChildren(...list.map(d=>new Option(d.label,d.value)));select.dataset.classOptions=signature;}
   select.value=list.some(d=>d.value===current)?current:list[0].value;
   const form=document.getElementById('dailyClassAddForm20261028');if(form)form.hidden=!canEdit('daily');
+  const actions=document.getElementById('dailyClassActions20261028');if(actions)actions.hidden=!canEdit('daily')||!dailyClassDefinition20261028(select.value)?.custom;
+  if(editingValue&&(editingValue!==select.value||!canEdit('daily')))cancelDailyClassEdit20261028();
  };
  window.addDailyClass20261028=function(event){
   event?.preventDefault();if(!requireScopeEdit2026('daily'))return;
@@ -1523,6 +1537,80 @@ function updateScheduleTable20261028(table,html){
   definition=dailyClassDefinitions20261028().find(d=>d.key===identity(label));
   refreshDailyClassOptions20261028(definition.value);input.value='';renderDailySchedule2026();
   message.textContent='تمت إضافة «'+definition.label+'». تُعرض حصصه المسجلة في الجدول الدراسي تلقائيًا.';
+ };
+ function selectedCustom(){
+  const definition=dailyClassDefinition20261028(document.getElementById('dailyClassSelect2026').value);
+  return definition?.custom?definition:null;
+ }
+ function storedClasses(){return JSON.parse(localStorage.getItem(KEY)||'[]');}
+ function message(text){document.getElementById('dailyClassStatus20261028').textContent=text;}
+ function linkedSlots(definition){
+  const result=[];
+  rows.forEach((row,ri)=>(row.slots||[]).forEach((raw,si)=>{
+   const matches=scheduleClassMatches20261028(raw),match=matches.find(m=>m.key===definition.key);
+   if(match)result.push({ri,si,raw:String(raw),match,matches});
+  }));return result;
+ }
+ window.cancelDailyClassEdit20261028=function(){
+  editingValue=null;document.getElementById('dailyClassEditForm20261028').hidden=true;
+  document.getElementById('dailyClassEditName20261028').value='';
+ };
+ window.editDailyClass20261028=function(){
+  if(!requireScopeEdit2026('daily'))return;
+  const definition=selectedCustom();if(!definition)return;
+  editingValue=definition.value;
+  const form=document.getElementById('dailyClassEditForm20261028'),input=document.getElementById('dailyClassEditName20261028');
+  form.hidden=false;input.value=definition.label;message('');input.focus();input.select();
+ };
+ window.saveDailyClassName20261028=function(event){
+  event?.preventDefault();if(!requireScopeEdit2026('daily'))return;
+  const definition=selectedCustom();if(!definition||definition.value!==editingValue)return;
+  const input=document.getElementById('dailyClassEditName20261028'),label=input.value.trim();
+  if(!label||!/[\p{L}\p{N}]/u.test(label)){message('اكتبي اسم الفصل أو رقمه أولًا.');input.focus();return;}
+  if(dailyClassDefinitions20261028().some(d=>d.value!==definition.value&&d.aliases.some(a=>identity(a)===identity(label)))){
+   message('يوجد فصل بهذا الاسم. اختاري اسمًا آخر؛ لم يتم التعديل.');input.focus();return;
+  }
+  if(label===definition.label){cancelDailyClassEdit20261028();message('اسم الفصل لم يتغير.');return;}
+  const linked=linkedSlots(definition);
+  if(linked.length&&!requireScopeEdit2026('schedule'))return;
+  // A cell can occasionally contain more than one class; do not silently
+  // rewrite its meaning when changing a code to a free-text name.
+  if(linked.some(cell=>cell.matches.some(m=>m.key!==definition.key))){
+   message('توجد خانة مرتبطة بأكثر من فصل. افصلي حصص هذه الفصول في الجدول الدراسي قبل تعديل الاسم.');return;
+  }
+  const nextRows=rows.map(row=>({...row,slots:Array.isArray(row.slots)?row.slots.slice():row.slots}));
+  for(const cell of linked){
+   let subject=cell.raw;
+   for(const match of cell.matches.filter(m=>m.key===definition.key).sort((a,b)=>b.start-a.start))subject=subject.slice(0,match.start)+subject.slice(match.end);
+   const lesson=subject.replace(/^[\s\-–—:،/|]+|[\s\-–—:،/|]+$/g,'').trim();
+   nextRows[cell.ri].slots[cell.si]=lesson?lesson+' — '+label:label;
+  }
+  try{
+   const updated=storedClasses().map(item=>typeof item==='string'&&identity(item)===definition.key?label:item);
+   const changes={[KEY]:updated};if(linked.length)changes[ROWS_KEY]=nextRows;
+   saveSchoolDataBatch20261028(changes);
+  }catch(error){message(error.recoveryPending?'تعذر إكمال الحفظ. أعيدي فتح البرنامج لاستعادة التعديل المحفوظ قبل المتابعة.':'تعذر حفظ تعديل الاسم. لم يتم التعديل؛ حاولي مرة أخرى.');return;}
+  if(linked.length){rows=nextRows;clearScheduleUndo2026();}
+  cancelDailyClassEdit20261028();
+  const renamed=dailyClassDefinitions20261028().find(d=>d.custom&&d.key===identity(label));
+  refreshDailyClassOptions20261028(renamed.value);
+  if(typeof updateScheduleClassFilter20261028==='function')updateScheduleClassFilter20261028(definition.key,label);
+  if(linked.length)renderAll();renderDailySchedule2026();
+  message('تم تعديل اسم الفصل إلى «'+label+'»'+(linked.length?' وتحديث اسمه في الحصص المرتبطة.':'.'));
+ };
+ window.deleteDailyClass20261028=function(){
+  if(!requireScopeEdit2026('daily'))return;
+  const definition=selectedCustom();if(!definition)return;
+  if(linkedSlots(definition).length){
+   message('لا يمكن حذف «'+definition.label+'» لأن له حصصًا مسجلة. انقلي حصصه أو أزيليها من الجدول الدراسي أولًا، أو استخدمي «تعديل الاسم».');return;
+  }
+  if(!confirm('حذف الفصل «'+definition.label+'» من قائمة الفصول؟'))return;
+  try{saveSchoolDataBatch20261028({[KEY]:storedClasses().filter(item=>typeof item!=='string'||identity(item)!==definition.key)});}
+  catch(error){message(error.recoveryPending?'تعذر إكمال الحفظ. أعيدي فتح البرنامج لاستعادة التعديل المحفوظ قبل المتابعة.':'تعذر حفظ الحذف. لم يُحذف الفصل؛ حاولي مرة أخرى.');return;}
+  cancelDailyClassEdit20261028();
+  refreshDailyClassOptions20261028();
+  if(typeof updateScheduleClassFilter20261028==='function')updateScheduleClassFilter20261028(definition.key,'');
+  renderDailySchedule2026();message('تم حذف الفصل «'+definition.label+'».');
  };
  window.addEventListener('storage',event=>{if(event.key===KEY&&typeof renderDailySchedule2026==='function')renderDailySchedule2026()});
 })();
@@ -1554,6 +1642,7 @@ function updateScheduleTable20261028(table,html){
       (!FILTERS.total||norm(r.total).includes(norm(FILTERS.total))) && classMatch;
   }
   window.getFilteredRows2026=()=>rows.filter(r=>matches(r));
+  window.updateScheduleClassFilter20261028=(previousKey,label)=>{if(FILTERS.className&&normalizeClass2026(FILTERS.className)===previousKey)FILTERS.className=label;};
   window.setScheduleFilter2026=(k,v)=>{const el=document.activeElement,pos=el&&typeof el.selectionStart==='number'?el.selectionStart:v.length;FILTERS[k]=v;renderSchedule();requestAnimationFrame(()=>{const n=document.querySelector('#schedule [data-filter-key=\"'+k+'\"]');if(n){n.focus();try{n.setSelectionRange(pos,pos)}catch(e){}}});};
   window.clearFilters2026=()=>{Object.keys(FILTERS).forEach(k=>FILTERS[k]='');renderSchedule();renderTeachers();};
 
@@ -1689,7 +1778,7 @@ function updateScheduleTable20261028(table,html){
   const CLOUD_ID='dar_quran_women2_pdf_roster_aligned_20261011_v2';
   const SYNC_KEYS=[ROWS_KEY,SUBJECTS_KEY,ADMINS_KEY,USERS_KEY,'daily_reserve_2026','staff_movement_demo_2026','darquran_daily_classes_20261028_v1'];
   const JOURNAL='dq_sync_pending_20261028', BACKUP='dq_before_remote_20261028';
-  const nativeSet=Storage.prototype.setItem;
+  const nativeSet=Storage.prototype.setItem,nativeRemove=Storage.prototype.removeItem;
   let applyingRemote=false,busy=false,timer,conflict=false;
   const equal=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
   function pending(){const raw=localStorage.getItem(JOURNAL);return raw?JSON.parse(raw):{};}
@@ -1720,6 +1809,26 @@ function updateScheduleTable20261028(table,html){
       status('محفوظ على هذا الجهاز — بانتظار تأكيد الحفظ السحابي.');
       clearTimeout(timer);timer=setTimeout(sync,400);
     }catch(e){status('تعذر الحفظ على الجهاز. لا تغلقي الصفحة؛ نزّلي نسخة البيانات.');alert('تعذر حفظ التعديل على الجهاز. لا تغلقي الصفحة.');throw e;}
+  };
+  // Save a class rename and its linked schedule cells in one journal entry.
+  // The existing sync sends all pending keys in one cloud update.
+  window.saveSchoolDataBatch20261028=function(changes){
+    const entries=Object.entries(changes);
+    if(!entries.length||entries.some(([k,v])=>!SYNC_KEYS.includes(k)||!Array.isArray(v)))throw Error('Invalid data batch');
+    const previousJournal=localStorage.getItem(JOURNAL),p=pending(),before={};
+    entries.forEach(([k,v])=>{before[k]=localStorage.getItem(k);const old=value(k);if(!equal(old,v))p[k]={base:p[k]?p[k].base:old,value:v,id:Date.now()+':'+Math.random()};});
+    try{
+      persist(p);
+      entries.forEach(([k,v])=>nativeSet.call(localStorage,k,JSON.stringify(v)));
+    }catch(error){
+      try{
+        entries.forEach(([k])=>{if(before[k]===null)nativeRemove.call(localStorage,k);else nativeSet.call(localStorage,k,before[k]);});
+        if(previousJournal===null)nativeRemove.call(localStorage,JOURNAL);else nativeSet.call(localStorage,JOURNAL,previousJournal);
+      }catch(rollbackError){error.recoveryPending=true;}
+      throw error;
+    }
+    status('محفوظ على هذا الجهاز — بانتظار تأكيد الحفظ السحابي.');
+    clearTimeout(timer);timer=setTimeout(sync,400);
   };
   function applyData(data){
     const changedKeys=SYNC_KEYS.filter(k=>Array.isArray(data[k])&&!equal(value(k),data[k]));
