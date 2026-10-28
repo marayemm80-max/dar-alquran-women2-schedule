@@ -1235,18 +1235,18 @@ function applyRole(){
   const adminOnly=(a.role==="admin" || String(a.name||"").trim().toLowerCase()==="admin");
   permissionsNav.style.display=adminOnly?"inline-block":"none";
   const archiveNav=document.getElementById("movementArchiveNav2026");if(archiveNav)archiveNav.style.display=adminOnly?"inline-block":"none";
-  permissionsCard.style.display=adminOnly?"block":"none";
+  permissionsCard.style.display=adminOnly?"flex":"none";
   const clearBtn2026=document.getElementById("clearScheduleAdminBtn2026");
   if(clearBtn2026) clearBtn2026.style.display=adminOnly?"inline-block":"none";
   const clearCard2026=document.getElementById("clearScheduleAdminCard2026");
-  if(clearCard2026) clearCard2026.style.display=adminOnly?"block":"none";
+  if(clearCard2026) clearCard2026.style.display=adminOnly?"flex":"none";
 
   document.querySelectorAll(".edit-control").forEach(el=>el.style.display=canEdit()?"":"none");
   renderSchedule();
 }
 
 function renderAll(){
-  renderSchedule();
+  if(!currentAccount())renderSchedule();
   renderTeachers();
   renderSubjects();
   renderAdmins();
@@ -1386,6 +1386,23 @@ async function pdfSchedule2026(){
 .export-scope select,.export-scope input{min-width:150px}
 .reserve-table{width:100%;border-collapse:collapse;margin-top:12px}.reserve-table th,.reserve-table td{border:1px solid #bbb;padding:8px;text-align:center}.reserve-table th{background:#DDE2EA}
 </style>
+<script id="stableFilterFields20261028">
+function updateFilterHead20261028(head,html){
+ if(!head)return;
+ if(!head.querySelector('input')){head.innerHTML=html;return;}
+ const template=document.createElement('template');template.innerHTML='<table><thead>'+html+'</thead></table>';
+ const oldInputs=head.querySelectorAll('input'),newInputs=template.content.querySelectorAll('input');
+ if(oldInputs.length!==newInputs.length||head.rows[0]?.cells.length!==template.content.querySelector('thead').rows[0]?.cells.length){head.innerHTML=html;return;}
+ oldInputs.forEach((input,i)=>{if(input!==document.activeElement)input.value=newInputs[i].value;});
+}
+function updateScheduleTable20261028(table,html){
+ const template=document.createElement('template');template.innerHTML='<table>'+html+'</table>';
+ const next=template.content.querySelector('table');
+ if(!table.tHead||!table.tBodies.length){table.innerHTML=html;return;}
+ updateFilterHead20261028(table.tHead,next.tHead.innerHTML);
+ table.tBodies[0].replaceWith(next.tBodies[0]);
+}
+</script>
 <script id="finalEnhancementsScript2026">
 (function(){
   const FILTERS={name:'',dept:'',connection:'',leaveType:'',total:'',className:''};
@@ -1438,7 +1455,7 @@ async function pdfSchedule2026(){
     DAYS.forEach((d,i)=>PERIODS.forEach(p=>h+=`<th class="period ${DAY_CLASSES[i]}">${p}</th>`));
     h+='<th class="no-print"><button onclick="clearFilters2026()">مسح الفرز</button></th></tr></thead><tbody>';
     let visibleNo=0; rows.forEach((r,ri)=>{ if(!matches(r))return; visibleNo++; h+=`<tr><td>${visibleNo}</td><td class="edit name" onclick="openTeacherModal(${ri})">${esc(r.name)}</td><td class="edit" onclick="openTeacherModal(${ri})">${esc(r.dept)}</td><td class="edit" onclick="openTeacherModal(${ri})">${esc(r.connection)}</td><td class="manual-leave-type-20261025" onclick="editManualScheduleLeave20261025(${ri})">${esc(r.manualLeaveType20261025||'')}</td>`; const slots=Array.isArray(r.slots)?r.slots:Array(20).fill(''); const wantedClass=normalizeClass2026(FILTERS.className); for(let si=0;si<20;si++){const raw=slots[si]||'',v=(!wantedClass||lessonClasses2026(raw).includes(wantedClass))?raw:'',di=Math.floor(si/4),draggable=canEdit()&&v?'true':'false';h+=`<td class="slot ${DAY_CLASSES[di]}" draggable="${draggable}" data-r="${ri}" data-s="${si}" onclick="editSlot(${ri},${si})" ondragstart="dragStart(event,${ri},${si})" ondragover="dragOver(event)" ondragleave="event.currentTarget.classList.remove('over')" ondrop="dropSlot(event,${ri},${si})" ondragend="dragEnd(event)">${esc(v)}</td>`;} h+=`<td class="edit" onclick="openTeacherModal(${ri})">${esc(r.total)}</td><td class="no-print edit-control"><button onclick="openTeacherModal(${ri})">✏️ تعديل</button> <button class="danger" onclick="removeTeacher(${ri})">حذف</button></td></tr>`;});
-    scheduleGrid.innerHTML=h;
+    updateScheduleTable20261028(scheduleGrid,h);
     document.querySelectorAll('.edit-control').forEach(el=>el.style.display=canEdit()?'':'none');
   };
 
@@ -1447,7 +1464,7 @@ async function pdfSchedule2026(){
   window.getFilteredTeacherList2026=()=>rows.filter(teacherMatches2026);
   window.filterTeacherPhone2026=value=>{teacherPhoneFilter2026=value.replace(/[٠-٩]/g,c=>String('٠١٢٣٤٥٦٧٨٩'.indexOf(c)));const pos=document.getElementById('teacherPhoneFilter2026')?.selectionStart;renderTeachers();requestAnimationFrame(()=>{const e=document.getElementById('teacherPhoneFilter2026');if(e){e.focus();if(pos!==null&&pos!==undefined)e.setSelectionRange(pos,pos)}})};
   window.renderTeachers=function(){
-    const table=document.querySelector('#teachers table.simple'); if(table){table.querySelector('thead').innerHTML='<tr><th>م</th><th>اسم المعلمة</th><th>القسم</th><th>نوع الارتباط</th><th>رقم الهاتف</th><th>النصاب</th><th class="edit-control">إجراء</th></tr><tr class="filter-row no-print"><th></th><th><input class="filter-input" data-teacher-filter-key="name" placeholder="فرز الاسم" value="'+esc(FILTERS.name)+'" oninput="FILTER_TEACHER(\'name\',this.value)"></th><th><input class="filter-input" data-teacher-filter-key="dept" placeholder="فرز القسم" value="'+esc(FILTERS.dept)+'" oninput="FILTER_TEACHER(\'dept\',this.value)"></th><th><input class="filter-input" data-teacher-filter-key="connection" placeholder="فرز الارتباط" value="'+esc(FILTERS.connection)+'" oninput="FILTER_TEACHER(\'connection\',this.value)"></th><th><input class="filter-input" id="teacherPhoneFilter2026" dir="ltr" type="text" inputmode="tel" placeholder="فرز الهاتف" value="'+esc(teacherPhoneFilter2026)+'" oninput="filterTeacherPhone2026(this.value)"></th><th><input class="filter-input" data-teacher-filter-key="total" placeholder="فرز النصاب" value="'+esc(FILTERS.total)+'" oninput="FILTER_TEACHER(\'total\',this.value)"></th><th></th></tr>';}
+    const table=document.querySelector('#teachers table.simple'); if(table){updateFilterHead20261028(table.querySelector('thead'),'<tr><th>م</th><th>اسم المعلمة</th><th>القسم</th><th>نوع الارتباط</th><th>رقم الهاتف</th><th>النصاب</th><th class="edit-control">إجراء</th></tr><tr class="filter-row no-print"><th></th><th><input class="filter-input" data-teacher-filter-key="name" placeholder="فرز الاسم" value="'+esc(FILTERS.name)+'" oninput="FILTER_TEACHER(\'name\',this.value)"></th><th><input class="filter-input" data-teacher-filter-key="dept" placeholder="فرز القسم" value="'+esc(FILTERS.dept)+'" oninput="FILTER_TEACHER(\'dept\',this.value)"></th><th><input class="filter-input" data-teacher-filter-key="connection" placeholder="فرز الارتباط" value="'+esc(FILTERS.connection)+'" oninput="FILTER_TEACHER(\'connection\',this.value)"></th><th><input class="filter-input" id="teacherPhoneFilter2026" dir="ltr" type="text" inputmode="tel" placeholder="فرز الهاتف" value="'+esc(teacherPhoneFilter2026)+'" oninput="filterTeacherPhone2026(this.value)"></th><th><input class="filter-input" data-teacher-filter-key="total" placeholder="فرز النصاب" value="'+esc(FILTERS.total)+'" oninput="FILTER_TEACHER(\'total\',this.value)"></th><th></th></tr>');}
     let teacherNo=0; teacherList.innerHTML=rows.map((r,i)=>teacherMatches2026(r)?`<tr><td>${++teacherNo}</td><td>${esc(r.name)}</td><td>${esc(r.dept)}</td><td>${esc(r.connection)}</td><td dir="ltr">${esc(r.phone||'')}</td><td>${esc(r.total)}</td><td class="edit-control"><button onclick="openTeacherModal(${i})">تعديل</button> <button class="danger" onclick="removeTeacher(${i})">حذف</button></td></tr>`:'').join('');
     document.querySelectorAll('.edit-control').forEach(el=>el.style.display=canEdit()?'':'none');
   };
@@ -1569,6 +1586,7 @@ async function pdfSchedule2026(){
   function status(msg,ok=false){
     let el=document.getElementById('cloudSyncStatus2026');
     if(!el){el=document.createElement('div');el.id='cloudSyncStatus2026';el.className='sync-note-2026 no-print';el.setAttribute('role','status');document.body.prepend(el);}
+    const signature=msg+'|'+ok+'|'+conflict;if(el.dataset.syncSignature===signature)return;el.dataset.syncSignature=signature;
     el.style.cssText='position:sticky;top:0;z-index:1000;padding:12px;text-align:center;background:'+(ok?'#e8f6ec':'#fff3cd');
     el.replaceChildren(document.createTextNode(msg+' '));
     const btn=document.createElement('button');btn.textContent='تنزيل نسخة بيانات';btn.onclick=backup;el.append(btn);
@@ -1591,6 +1609,12 @@ async function pdfSchedule2026(){
     }catch(e){status('تعذر الحفظ على الجهاز. لا تغلقي الصفحة؛ نزّلي نسخة البيانات.');alert('تعذر حفظ التعديل على الجهاز. لا تغلقي الصفحة.');throw e;}
   };
   function applyData(data){
+    const changedKeys=SYNC_KEYS.filter(k=>Array.isArray(data[k])&&!equal(value(k),data[k]));
+    const memoryChanged=!equal(rows,value(ROWS_KEY)??rows)||!equal(subjects,value(SUBJECTS_KEY)??subjects)||!equal(admins,value(ADMINS_KEY)??admins);
+    if(!changedKeys.length&&!memoryChanged)return;
+    // Remote refresh must not interrupt typing, an open editor or a drag.
+    const focused=document.activeElement;
+    if(changedKeys.length&&((focused&&focused.matches('input,textarea,select,[contenteditable="true"]'))||dragState||document.querySelector('.modal[style*="flex"]')))return;
     applyingRemote=true;
     try{
       const previous={};SYNC_KEYS.forEach(k=>previous[k]=value(k));
@@ -1599,10 +1623,11 @@ async function pdfSchedule2026(){
       const changed=!equal(rows,value(ROWS_KEY));
       rows=loadRows();subjects=loadArray(SUBJECTS_KEY,subjects||[]);admins=loadArray(ADMINS_KEY,admins||[]);
       if(changed&&typeof clearScheduleUndo2026==='function')clearScheduleUndo2026();
-      renderAll();
-      if(typeof renderReserve2026==='function')renderReserve2026();
-      if(typeof renderStaffMovement2026==='function')renderStaffMovement2026();
-      if(typeof renderMovementArchive2026==='function')renderMovementArchive2026();
+      const peopleChanged=memoryChanged||changedKeys.some(k=>[ROWS_KEY,SUBJECTS_KEY,ADMINS_KEY,USERS_KEY].includes(k));
+      if(peopleChanged)renderAll();
+      if((peopleChanged||changedKeys.includes('daily_reserve_2026'))&&typeof renderReserve2026==='function')renderReserve2026();
+      if((peopleChanged||changedKeys.includes('staff_movement_demo_2026'))&&typeof renderStaffMovement2026==='function')renderStaffMovement2026();
+      if(changedKeys.includes('staff_movement_demo_2026')&&typeof renderMovementArchive2026==='function')renderMovementArchive2026();
     }finally{applyingRemote=false;}
   }
   async function readRemote(){
@@ -1691,13 +1716,13 @@ window.pdfSimpleSection2026=async function(kind){
   window.setSubjectFilter2026=v=>{subjectFilter2026=v;renderSubjects();requestAnimationFrame(()=>{const e=document.getElementById('subjectFilter2026');if(e){e.focus();try{e.setSelectionRange(v.length,v.length)}catch(_){}}});};
   window.renderAdmins=function(){
     const table=document.querySelector('#admins table.simple');
-    if(table)table.querySelector('thead').innerHTML='<tr><th>م</th><th>اسم الإدارية</th><th class="edit-control">إجراء</th></tr><tr class="filter-row no-print"><th></th><th><input id="adminFilter2026" class="filter-input" placeholder="فرز اسم الإدارية" value="'+esc(adminFilter2026)+'" oninput="setAdminFilter2026(this.value)"></th><th></th></tr>';
+    if(table)updateFilterHead20261028(table.querySelector('thead'),'<tr><th>م</th><th>اسم الإدارية</th><th class="edit-control">إجراء</th></tr><tr class="filter-row no-print"><th></th><th><input id="adminFilter2026" class="filter-input" placeholder="فرز اسم الإدارية" value="'+esc(adminFilter2026)+'" oninput="setAdminFilter2026(this.value)"></th><th></th></tr>');
     let no=0;adminList.innerHTML=admins.map((x,i)=>(!adminFilter2026||n2026(x).includes(n2026(adminFilter2026)))?`<tr><td>${++no}</td><td>${esc(x)}</td><td class="edit-control"><button onclick="editAdmin(${i})">تعديل</button> <button class="danger" onclick="deleteAdmin(${i})">حذف</button></td></tr>`:'').join('');
     document.querySelectorAll('.edit-control').forEach(el=>el.style.display=canEdit()?'':'none');
   };
   window.renderSubjects=function(){
     const table=document.querySelector('#subjects table.simple');
-    if(table)table.querySelector('thead').innerHTML='<tr><th>م</th><th>المادة</th><th class="edit-control">إجراء</th></tr><tr class="filter-row no-print"><th></th><th><input id="subjectFilter2026" class="filter-input" placeholder="فرز المادة" value="'+esc(subjectFilter2026)+'" oninput="setSubjectFilter2026(this.value)"></th><th></th></tr>';
+    if(table)updateFilterHead20261028(table.querySelector('thead'),'<tr><th>م</th><th>المادة</th><th class="edit-control">إجراء</th></tr><tr class="filter-row no-print"><th></th><th><input id="subjectFilter2026" class="filter-input" placeholder="فرز المادة" value="'+esc(subjectFilter2026)+'" oninput="setSubjectFilter2026(this.value)"></th><th></th></tr>');
     let no=0;subjectList.innerHTML=subjects.map((x,i)=>(!subjectFilter2026||n2026(x).includes(n2026(subjectFilter2026)))?`<tr><td>${++no}</td><td>${esc(x)}</td><td class="edit-control"><button onclick="editSubject(${i})">تعديل</button> <button class="danger" onclick="deleteSubject(${i})">حذف</button></td></tr>`:'').join('');
     document.querySelectorAll('.edit-control').forEach(el=>el.style.display=canEdit()?'':'none');
   };
@@ -1952,7 +1977,7 @@ if ('serviceWorker' in navigator) {
   window.setAdminFilter2026=function(v){adminSearch=v;renderAdmins();requestAnimationFrame(()=>{const el=document.getElementById('adminFilter2026');if(el){el.focus();try{el.setSelectionRange(v.length,v.length)}catch(e){}}});};
   window.getFilteredAdmins2026=function(){return admins.map(adminObj).filter(x=>norm(x.name+' '+x.dept).includes(norm(adminSearch)));};
   window.renderAdmins=function(){setupAdminDept();const table=document.querySelector('#admins table.simple');if(!table)return;
-    table.querySelector('thead').innerHTML='<tr><th>م</th><th>اسم الإدارية</th><th>القسم</th><th class="edit-control">إجراء</th></tr><tr class="filter-row no-print"><th></th><th colspan="2"><input id="adminFilter2026" class="filter-input" placeholder="فرز الاسم أو القسم" oninput="setAdminFilter2026(this.value)"></th><th></th></tr>';
+    updateFilterHead20261028(table.querySelector('thead'),'<tr><th>م</th><th>اسم الإدارية</th><th>القسم</th><th class="edit-control">إجراء</th></tr><tr class="filter-row no-print"><th></th><th colspan="2"><input id="adminFilter2026" class="filter-input" placeholder="فرز الاسم أو القسم" oninput="setAdminFilter2026(this.value)"></th><th></th></tr>');
     const field=document.getElementById('adminFilter2026');field.value=adminSearch;
     let n=0;adminList.innerHTML=admins.map((raw,i)=>{const x=adminObj(raw);return norm(x.name+' '+x.dept).includes(norm(adminSearch))?`<tr><td>${++n}</td><td>${esc(x.name)}</td><td>${esc(x.dept)}</td><td class="edit-control"><button onclick="editAdmin(${i})">تعديل</button> <button class="danger" onclick="deleteAdmin(${i})">حذف</button></td></tr>`:'';}).join('');
     document.querySelectorAll('#admins .edit-control').forEach(el=>el.style.display=canEdit()?'':'none');
@@ -2464,7 +2489,7 @@ window.openWhatsAppCodes2026=open;window.whatsAppCodesCore2026={phone};decorate(
   document.querySelector('.container')?.appendChild(section);
   const home=document.querySelector('#home .cards');if(home){const card=document.createElement('div');card.className='card';card.id='unifiedArchiveCard20261026';card.innerHTML='<div class="icon">🗂️</div><h3>الأرشيف العام</h3><p>حركة الدوام والاحتياط اليومي ونصاب المعلمات.</p>';card.onclick=()=>window.openUnifiedArchive20261026();home.appendChild(card)}
   // Hide unified archive from staff accounts; archive edits are admin-only.
-  function syncArchiveVisibility(){const allowed=isAdmin();btn.style.display=allowed?'inline-block':'none';const c=document.getElementById('unifiedArchiveCard20261026');if(c)c.style.display=allowed?'block':'none';} const prevApplyRole=window.applyRole;if(typeof prevApplyRole==='function'){window.applyRole=function(){const result=prevApplyRole.apply(this,arguments);syncArchiveVisibility();return result;};}syncArchiveVisibility();
+  function syncArchiveVisibility(){const allowed=isAdmin();btn.style.display=allowed?'inline-block':'none';const c=document.getElementById('unifiedArchiveCard20261026');if(c)c.style.display=allowed?'flex':'none';} const prevApplyRole=window.applyRole;if(typeof prevApplyRole==='function'){window.applyRole=function(){const result=prevApplyRole.apply(this,arguments);syncArchiveVisibility();return result;};}syncArchiveVisibility();
   archiveExpired();
  }
  window.openUnifiedArchive20261026=function(){if(!isAdmin())return alert('الأرشيف للمسؤولة فقط.');show('unifiedArchive2026');document.getElementById('reserveArchivePanel20261026').hidden=true};
@@ -2712,8 +2737,8 @@ if ('serviceWorker' in navigator) {
   try{
    const response=await fetch(API+'dq_main_admin_entries',{method:'POST',headers:{apikey:KEY,Authorization:'Bearer '+KEY,'Content-Type':'application/json'},body:JSON.stringify({p_token:mainToken()}),signal:AbortSignal.timeout(20000)});
    const body=await response.json();if(!response.ok){if(String(body.message||'').includes('ADMIN_SESSION_EXPIRED')){portalEntries=[];window.movementPortalLoaded20261025=false;window.expireMainAdmin2026();}throw new Error(body.message||'SERVER');}
-   if(!Array.isArray(body))throw new Error('SERVER');portalEntries=body;window.movementPortalLoaded20261025=true;
-   renderStaffMovement2026();if(document.getElementById('movementArchive2026')?.classList.contains('active'))renderMovementArchive2026();
+   if(!Array.isArray(body))throw new Error('SERVER');const entriesChanged=JSON.stringify(portalEntries)!==JSON.stringify(body);portalEntries=body;window.movementPortalLoaded20261025=true;
+   if(entriesChanged||interactive){renderStaffMovement2026();if(document.getElementById('movementArchive2026')?.classList.contains('active'))renderMovementArchive2026();}
    const todayCount=movementEntries2026().filter(x=>x.date===movementNowKuwait2026().date).length;status('متصلة — حركات اليوم: '+todayCount.toLocaleString('ar-KW')+' | إجمالي الحركات لجميع التواريخ: '+movementEntries2026().length.toLocaleString('ar-KW'));
   }catch(e){status('لم يكتمل الاتصال بالمتابعة. تحققي من الدخول الأساسي والإنترنت.');if(interactive)alert('تعذر تحميل المتابعة. تأكدي من تفعيل ملف ربط الدخول الأساسي، ثم سجّلي الدخول بحساب المسؤولة.')}finally{pulling=false}
  }
@@ -2750,7 +2775,7 @@ if ('serviceWorker' in navigator) {
  window.getFilteredAdmins2026=()=>admins.map(adminObj).filter(matches);
  window.renderAdmins=function(){
   const table=document.querySelector('#admins table.simple');if(!table)return;
-  table.querySelector('thead').innerHTML='<tr><th>م</th><th>اسم الإدارية</th><th>القسم</th><th>رقم الهاتف</th><th class="edit-control">إجراء</th></tr><tr class="filter-row no-print"><th></th><th colspan="3"><input id="adminFilter2026" class="filter-input" placeholder="فرز الاسم أو القسم أو الهاتف" oninput="setAdminFilter2026(this.value)"></th><th></th></tr>';
+  updateFilterHead20261028(table.querySelector('thead'),'<tr><th>م</th><th>اسم الإدارية</th><th>القسم</th><th>رقم الهاتف</th><th class="edit-control">إجراء</th></tr><tr class="filter-row no-print"><th></th><th colspan="3"><input id="adminFilter2026" class="filter-input" placeholder="فرز الاسم أو القسم أو الهاتف" oninput="setAdminFilter2026(this.value)"></th><th></th></tr>');
   document.getElementById('adminFilter2026').value=search;let n=0;
   document.getElementById('adminList').innerHTML=admins.map((x,i)=>{x=adminObj(x);if(!matches(x))return '';return '<tr><td>'+(++n)+'</td><td>'+esc(x.name)+'</td><td>'+esc(x.dept||'')+'</td><td dir="ltr">'+esc(x.phone||'')+'</td><td class="edit-control"><button onclick="editAdmin('+i+')">تعديل</button> <button class="danger" onclick="deleteAdmin('+i+')">حذف</button></td></tr>'}).join('');
   document.querySelectorAll('#admins .edit-control').forEach(x=>x.style.display=canEdit()?'':'none');
@@ -3486,4 +3511,14 @@ installPrintWatermark20261025(document);
 .leave-supervisor-2026,.daily-footer-row-2026>div{direction:rtl!important;text-align:center!important;flex:0 1 auto!important;margin-right:auto!important;margin-left:0!important}
 .leave-supervisor-2026{min-width:280px}
 .daily-footer-row-2026>div{min-width:240px;line-height:1.8}
+</style>
+
+<style id="stableHomeIcons20261028">
+@media screen {
+html{scrollbar-gutter:stable;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+#home .cards{grid-template-columns:repeat(auto-fill,minmax(min(230px,100%),230px));justify-content:center;align-items:stretch}
+#home .card{width:100%;min-height:205px;box-sizing:border-box}
+#home .card .icon{display:flex!important;align-items:center;justify-content:center;flex:0 0 66px;line-height:1;font-size:48px!important}
+#home .card .icon svg{display:block;width:54px!important;height:54px!important;flex-shrink:0}
+}
 </style>
