@@ -549,7 +549,7 @@ function cloneSource(){
 function loadRows(){
   try{
     const v=JSON.parse(localStorage.getItem(ROWS_KEY)||"null");
-    if(Array.isArray(v) && v.length) return updateTeacherRoster20261017(v);
+    if(Array.isArray(v)) return v;
   }catch(e){}
   return cloneSource();
 }
@@ -1558,69 +1558,95 @@ async function pdfSchedule2026(){
   const ENDPOINT=SB_URL+'/rest/v1/dar_quran_data';
   const CLOUD_ID='dar_quran_women2_pdf_roster_aligned_20261011_v2';
   const SYNC_KEYS=[ROWS_KEY,SUBJECTS_KEY,ADMINS_KEY,USERS_KEY,'daily_reserve_2026','staff_movement_demo_2026'];
-  let applyingRemote=false, pushTimer=null, lastRemoteStamp='', localPending=false, lastLocalWrite=0, writeVersion=0, writing=false;
-
-  function snapshot(){
-    const d={};
-    SYNC_KEYS.forEach(k=>{ try{ d[k]=JSON.parse(localStorage.getItem(k)||'null'); }catch(e){ d[k]=null; } });
-    return d;
-  }
-  function headers(extra){ return Object.assign({'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json'},extra||{}); }
-  function status(msg,ok=true){
-    let el=document.getElementById('cloudSyncStatus2026');
-    if(!el){
-      el=document.createElement('div'); el.id='cloudSyncStatus2026'; el.className='sync-note-2026';
-      const old=document.querySelector('.sync-note-2026');
-      if(old) old.replaceWith(el); else (document.querySelector('#permissions')||document.body).prepend(el);
-    }
-    el.style.background=ok?'#e8f6ec':'#fff3cd'; el.style.borderColor=ok?'#78b88a':'#e4cc65'; el.innerHTML='<b>مزامنة الأجهزة:</b> '+msg;
-  }
-  async function pushCloud(){
-    if(applyingRemote || writing || !localPending) return;
-    writing=true;
-    const version=writeVersion;
-    try{
-      const r=await fetch(ENDPOINT,{method:'POST',headers:headers({'Prefer':'resolution=merge-duplicates,return=minimal'}),body:JSON.stringify({id:CLOUD_ID,data:snapshot(),updated_at:new Date().toISOString()})});
-      if(!r.ok) throw new Error(await r.text());
-      if(version===writeVersion){localPending=false;lastRemoteStamp='';status('تم حفظ آخر تعديل سحابيًا ✓');}
-      else status('جارٍ حفظ التعديلات الجديدة...',false);
-    }catch(e){console.error('Cloud push',e);status('لم يكتمل الحفظ السحابي؛ التعديلات محفوظة على هذا الجهاز وستعاد المحاولة.',false);}
-    finally{writing=false;if(localPending){clearTimeout(pushTimer);pushTimer=setTimeout(pushCloud,1500);}}
-  }
-  function queuePush(){localPending=true;writeVersion++;lastLocalWrite=Date.now();clearTimeout(pushTimer);pushTimer=setTimeout(pushCloud,400);status('جارٍ حفظ التعديلات...',false);}
+  const JOURNAL='dq_sync_pending_20261028', BACKUP='dq_before_remote_20261028';
   const nativeSet=Storage.prototype.setItem;
-  Storage.prototype.setItem=function(k,v){ const out=nativeSet.call(this,k,v); if(this===localStorage && SYNC_KEYS.includes(k) && !applyingRemote) queuePush(); return out; };
-
-  function applyData(d){
-    if(Array.isArray(d[ROWS_KEY])) d={...d,[ROWS_KEY]:updateTeacherRoster20261017(d[ROWS_KEY])};
-    const incomingRows=d[ROWS_KEY];
-    const changedRows=Array.isArray(incomingRows) && JSON.stringify(incomingRows)!==JSON.stringify(rows);
-    if(changedRows && typeof clearScheduleUndo2026==='function')clearScheduleUndo2026();
+  let applyingRemote=false,busy=false,timer,conflict=false;
+  const equal=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
+  function pending(){const raw=localStorage.getItem(JOURNAL);return raw?JSON.parse(raw):{};}
+  function value(k){const raw=localStorage.getItem(k);return raw===null?null:JSON.parse(raw);}
+  function persist(p){nativeSet.call(localStorage,JOURNAL,JSON.stringify(p));}
+  function headers(extra){return Object.assign({apikey:SB_KEY,Authorization:'Bearer '+SB_KEY,'Content-Type':'application/json'},extra||{});}
+  function status(msg,ok=false){
+    let el=document.getElementById('cloudSyncStatus2026');
+    if(!el){el=document.createElement('div');el.id='cloudSyncStatus2026';el.className='sync-note-2026 no-print';el.setAttribute('role','status');document.body.prepend(el);}
+    el.style.cssText='position:sticky;top:0;z-index:1000;padding:12px;text-align:center;background:'+(ok?'#e8f6ec':'#fff3cd');
+    el.replaceChildren(document.createTextNode(msg+' '));
+    const btn=document.createElement('button');btn.textContent='تنزيل نسخة بيانات';btn.onclick=backup;el.append(btn);
+    if(conflict){const resolve=document.createElement('button');resolve.textContent='مراجعة تعارض الحفظ';resolve.onclick=resolveConflict;el.append(resolve);}
+  }
+  function backup(){
+    const data={};SYNC_KEYS.forEach(k=>data[k]=value(k));
+    const blob=new Blob([JSON.stringify({format:'dq-safety-backup-20261028',savedAt:new Date().toISOString(),data,pending:pending(),beforeRemote:JSON.parse(localStorage.getItem(BACKUP)||'null')},null,2)],{type:'application/json'});
+    const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='schedule-data-'+Date.now()+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),60000);
+  }
+  Storage.prototype.setItem=function(k,v){
+    if(this!==localStorage||!SYNC_KEYS.includes(k)||applyingRemote)return nativeSet.call(this,k,v);
+    try{
+      const next=JSON.parse(String(v)),old=value(k);if(equal(old,next))return nativeSet.call(this,k,v);
+      const p=pending();p[k]={base:p[k]?p[k].base:old,value:next,id:Date.now()+':'+Math.random()};
+      // Write-ahead journal survives closing the page before the network request.
+      persist(p);nativeSet.call(this,k,v);
+      status('محفوظ على هذا الجهاز — بانتظار تأكيد الحفظ السحابي.');
+      clearTimeout(timer);timer=setTimeout(sync,400);
+    }catch(e){status('تعذر الحفظ على الجهاز. لا تغلقي الصفحة؛ نزّلي نسخة البيانات.');alert('تعذر حفظ التعديل على الجهاز. لا تغلقي الصفحة.');throw e;}
+  };
+  function applyData(data){
     applyingRemote=true;
     try{
-      SYNC_KEYS.forEach(k=>{ if(Object.prototype.hasOwnProperty.call(d,k) && d[k]!==null) nativeSet.call(localStorage,k,JSON.stringify(d[k])); });
-      rows=loadRows(); subjects=loadArray(SUBJECTS_KEY,subjects||[]); admins=loadArray(ADMINS_KEY,admins||[]);
-      if(changedRows) renderAll(); if(typeof renderReserve2026==='function') renderReserve2026(); if(typeof renderStaffMovement2026==='function') renderStaffMovement2026(); if(typeof renderMovementArchive2026==='function') renderMovementArchive2026();
-    }finally{ applyingRemote=false; }
+      const previous={};SYNC_KEYS.forEach(k=>previous[k]=value(k));
+      if(SYNC_KEYS.some(k=>Array.isArray(data[k])&&!equal(previous[k],data[k])))nativeSet.call(localStorage,BACKUP,JSON.stringify(previous));
+      SYNC_KEYS.forEach(k=>{if(Array.isArray(data[k]))nativeSet.call(localStorage,k,JSON.stringify(data[k]));});
+      const changed=!equal(rows,value(ROWS_KEY));
+      rows=loadRows();subjects=loadArray(SUBJECTS_KEY,subjects||[]);admins=loadArray(ADMINS_KEY,admins||[]);
+      if(changed&&typeof clearScheduleUndo2026==='function')clearScheduleUndo2026();
+      renderAll();
+      if(typeof renderReserve2026==='function')renderReserve2026();
+      if(typeof renderStaffMovement2026==='function')renderStaffMovement2026();
+      if(typeof renderMovementArchive2026==='function')renderMovementArchive2026();
+    }finally{applyingRemote=false;}
   }
-  async function pullCloud(first){
+  async function readRemote(){
+    const r=await fetch(ENDPOINT+'?id=eq.'+encodeURIComponent(CLOUD_ID)+'&select=data,updated_at',{headers:headers(),cache:'no-store'});
+    if(!r.ok)throw Error('read');return (await r.json())[0]||null;
+  }
+  async function sync(){
+    if(busy)return;busy=true;
     try{
-      const r=await fetch(ENDPOINT+'?id=eq.'+encodeURIComponent(CLOUD_ID)+'&select=data,updated_at',{headers:headers()});
-      if(!r.ok) throw new Error(await r.text());
-      const a=await r.json();
-      if(!a.length){ if(first){ status('الجدول الجديد جاهز؛ يُحفظ في السحابة عند أول تعديل.',true); } return; }
-      const stamp=a[0].updated_at||'';
-      if(localPending || writing || Date.now()-lastLocalWrite<2500) return;
-      if(localPending || writing) return;
-      if(stamp && stamp!==lastRemoteStamp){ lastRemoteStamp=stamp; applyData(a[0].data||{}); }
-      status('متصلة — البيانات موحّدة بين الأجهزة ✓');
-    }catch(e){ console.error('Cloud pull',e); status('تعذر الاتصال بالسحابة. تحقق من الإنترنت.',false); }
+      const remote=await readRemote(),p=pending(),keys=Object.keys(p),data=remote?.data||{};
+      conflict=keys.some(k=>!equal(data[k]??null,p[k].base)&&!equal(data[k]??null,p[k].value));
+      if(conflict){status('توجد تعديلات مختلفة بين الجهاز والسحابة. احتفظنا بتعديلاتك؛ راجعي التعارض قبل المتابعة.');return;}
+      if(keys.length){
+        const merged={...data};keys.forEach(k=>merged[k]=p[k].value);
+        if(remote&&!remote.updated_at)throw Error('missing revision');
+        const url=remote?ENDPOINT+'?id=eq.'+encodeURIComponent(CLOUD_ID)+'&updated_at=eq.'+encodeURIComponent(remote.updated_at):ENDPOINT;
+        const r=await fetch(url,{method:remote?'PATCH':'POST',headers:headers({Prefer:remote?'return=representation':'resolution=ignore-duplicates,return=representation'}),body:JSON.stringify({id:CLOUD_ID,data:merged,updated_at:new Date().toISOString()})});
+        if(!r.ok)throw Error('write');const saved=await r.json();
+        if(!saved.length)throw Error('concurrent write');
+        const current=pending();keys.forEach(k=>{if(current[k]?.id===p[k].id)delete current[k];else if(current[k])current[k].base=p[k].value;});persist(current);
+        if(Object.keys(current).length){status('محفوظ على الجهاز — جارٍ حفظ التعديلات التالية.');return;}
+        applyData(saved[0].data||merged);
+      }else if(remote)applyData(data);
+      status(remote||keys.length?'تم تأكيد الحفظ السحابي ✓':'جاهز — يبدأ الحفظ السحابي عند أول تعديل.',true);
+    }catch(e){status('لم يكتمل الاتصال أو الحفظ السحابي. التعديلات المعلّقة محفوظة على هذا الجهاز وستعاد المحاولة.');}
+    finally{busy=false;}
   }
-  window.forceCloudSync2026=()=>pullCloud(false);
-  setTimeout(()=>pullCloud(true),700);
-  setInterval(()=>pullCloud(false),3000);
-  window.addEventListener('focus',()=>pullCloud(false));
-  document.addEventListener('visibilitychange',()=>{if(!document.hidden)pullCloud(false)});
+  async function resolveConflict(){
+    if(busy)return;
+    if(!confirm('يوجد اختلاف بين تعديلات هذا الجهاز والسحابة. تنزيل نسخة البيانات أولًا مستحسن. هل تريدين اعتماد تعديلات هذا الجهاز للأقسام المتعارضة؟ إلغاء يبقي النسختين دون تغيير.'))return;
+    busy=true;
+    try{const remote=await readRemote(),p=pending();Object.keys(p).forEach(k=>p[k].base=remote?.data?.[k]??null);persist(p);conflict=false;}
+    catch(e){status('تعذر الاتصال. لم نغيّر البيانات.');}
+    finally{busy=false;}await sync();
+  }
+  // Recover the exact pending values, including empty lists and deletions.
+  try{const p=pending();Object.keys(p).forEach(k=>{if(SYNC_KEYS.includes(k))nativeSet.call(localStorage,k,JSON.stringify(p[k].value));});if(Object.keys(p).length)applyData({});}
+  catch(e){status('تعذر قراءة سجل الحفظ المحلي. لا تحذفي بيانات المتصفح.');return;}
+  window.forceCloudSync2026=sync;
+  window.addEventListener('online',sync);window.addEventListener('focus',sync);
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)sync();});
+  window.addEventListener('beforeunload',e=>{if(Object.keys(pending()).length){e.preventDefault();e.returnValue='';}});
+  setTimeout(sync,700);setInterval(sync,3000);
+
 })();
 </script>
 <script id="scheduleUndoSessionGuard2026">
