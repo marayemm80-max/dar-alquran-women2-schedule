@@ -463,7 +463,7 @@ function applySchedulePdfColors20261023(page,palette,offset){
     <select id="leaveDeptFilter2026" onchange="renderLeaves2026()"><option value="">كل الأقسام</option></select>
     <select id="leaveTypeFilter2026" onchange="renderLeaves2026()"><option value="">كل أنواع الإجازات</option></select>
     <button class="action edit-control" onclick="openLeaveModal2026()">+ إضافة إجازة</button>
-    <button class="action" onclick="pdfLeaves2026()">تصدير PDF للنتائج الظاهرة</button>
+    <button id="leaveClear2026" type="button">مسح البحث والفرز</button><span id="leaveResultCount2026" role="status"></span><button class="action" onclick="pdfLeaves2026()">تصدير PDF للنتائج الظاهرة</button>
   </div>
   <div class="leave-paper-2026" id="leavePaper2026">
     <div class="leave-head-2026">
@@ -490,18 +490,18 @@ function applySchedulePdfColors20261023(page,palette,offset){
   </div>
 </section>
 
-<div id="leaveModal2026" class="modal">
+<style>#leaveModal2026{padding:16px;box-sizing:border-box;overflow:auto}#leaveModal2026 .modalbox{box-sizing:border-box;max-height:calc(100dvh - 32px);overflow:auto;overscroll-behavior:contain}#leaveModal2026 input{min-height:40px;box-sizing:border-box;font-size:16px}#leaveModal2026 .lv-open-end{display:flex;align-items:center;gap:8px}#lvOpenEnd2026{width:auto;min-height:24px}#lvPersonOptions2026{max-height:180px;overflow:auto;border:1px solid #b9cbe0;border-radius:8px}#lvPersonOptions2026 button{display:block;width:100%;text-align:right;padding:12px;border-radius:0;background:#eef4ff;color:#173b7a}#lvPersonOptions2026 button:focus,#lvPersonOptions2026 button:hover{background:#d7e6fa}#lvPersonOptions2026[hidden]{display:none!important}#leaveModal2026 small{display:block;line-height:1.8;color:#50627b}#lvError2026{color:#a32943}#lvError2026:empty{display:none}</style><div id="leaveModal2026" class="modal" role="dialog" aria-modal="true" aria-labelledby="leaveModalTitle2026">
  <div class="modalbox">
   <h3 id="leaveModalTitle2026">إضافة إجازة</h3>
-  <label>الاسم</label><input id="lvName2026">
+  <label>الاسم</label><input id="lvName2026" autocomplete="off" aria-label="البحث عن المعلمة" aria-controls="lvPersonOptions2026"><div id="lvPersonOptions2026" role="listbox" hidden></div><small id="lvPersonNote2026"></small>
   <label>الهاتف</label><input id="lvPhone2026" inputmode="numeric">
   <label>القسم</label><input id="lvDept2026">
   <label>نوع الإجازة</label><input id="lvType2026">
-  <label>تاريخ بداية الإجازة</label><input id="lvStart2026">
-  <label>تاريخ نهاية الإجازة</label><input id="lvEnd2026">
+  <label>تاريخ بداية الإجازة</label><input id="lvStart2026" type="date" dir="ltr"><small id="lvYearNote2026"></small>
+  <label>تاريخ نهاية الإجازة</label><input id="lvEnd2026" type="date" dir="ltr"><label class="lv-open-end"><input id="lvOpenEnd2026" type="checkbox"> نهاية غير محددة</label><small id="lvOriginalDates2026"></small>
   <label>ملاحظة</label><input id="lvNote2026">
   <label>مستند</label><input id="lvDoc2026">
-  <div class="modalrow"><button class="action" onclick="saveLeave2026()">حفظ</button><button onclick="closeLeaveModal2026()">إلغاء</button></div>
+  <p id="lvError2026" role="alert"></p><div class="modalrow"><button class="action" onclick="saveLeave2026()">حفظ</button><button onclick="closeLeaveModal2026()">إلغاء</button></div>
  </div>
 </div>
 
@@ -1882,7 +1882,7 @@ function updateScheduleTable20261028(table,html){
   const SB_KEY='sb_publishable_CpURFDtAk6StsmbsxevEIw_KxQlrrDo';
   const ENDPOINT=SB_URL+'/rest/v1/dar_quran_data';
   const CLOUD_ID='dar_quran_women2_pdf_roster_aligned_20261011_v2';
-  const SYNC_KEYS=[ROWS_KEY,SUBJECTS_KEY,ADMINS_KEY,USERS_KEY,'daily_reserve_2026','staff_movement_demo_2026','darquran_daily_classes_20261028_v1','daily_reserve_archive_20261026','daily_reserve_deleted_20261029','daily_reserve_snapshot_20261029','darquran_schedule_settings_20261029_v1','darquran_leave_periods_20261029_v1','darquran_leave_types_20261029_v1'];
+  const SYNC_KEYS=[ROWS_KEY,SUBJECTS_KEY,ADMINS_KEY,USERS_KEY,'daily_reserve_2026','staff_movement_demo_2026','darquran_daily_classes_20261028_v1','daily_reserve_archive_20261026','daily_reserve_deleted_20261029','daily_reserve_snapshot_20261029','darquran_schedule_settings_20261029_v1','darquran_leave_periods_20261029_v1','darquran_leave_types_20261029_v1','darquran_leaves_independent_2026_v1'];
   const JOURNAL='dq_sync_pending_20261028', BACKUP='dq_before_remote_20261028', REVIEW='dq_sync_review_20261029_v2';
   const nativeSet=Storage.prototype.setItem,nativeRemove=Storage.prototype.removeItem;
   let busy=false,timer,conflict=false,writer=false,ready=false,broken=false,lastIssues=[],lastRemote=null,review={},inFlight=null;
@@ -1920,8 +1920,10 @@ function updateScheduleTable20261028(table,html){
   // The same cell changed differently, or delete-versus-edit, requires a decision.
   const clone=x=>x===undefined?undefined:JSON.parse(JSON.stringify(x));
   const object=x=>x!==null&&typeof x==='object'&&!Array.isArray(x);
+  const legacyLeaveId=(x,i)=>x.id||'legacy-leave:'+JSON.stringify([x.name,x.phone,x.type,i]);
+  const normalizeOldLeaves=a=>a.map((x,i)=>({...x,id:legacyLeaveId(x,i)}));
   const reserveIdentity=x=>x.archiveId20261029||[x.date,String(x.absent||'').trim().replace(/\s+/g,' '),String(x.period||'')].join('|');
-  const labels={};labels['darquran_leave_types_20261029_v1']='أنواع الإجازات';labels['darquran_leave_periods_20261029_v1']='فترات تقارير الإجازات';labels['darquran_schedule_settings_20261029_v1']='إعدادات الجدول';labels[ROWS_KEY]='الجدول والمعلمات';labels[ADMINS_KEY]='الإداريات';labels[SUBJECTS_KEY]='المواد';labels[USERS_KEY]='الصلاحيات';labels['daily_reserve_2026']='الاحتياط اليومي';labels['daily_reserve_archive_20261026']='أرشيف الاحتياط';labels['staff_movement_demo_2026']='حركة الدوام';
+  const labels={};labels['darquran_leaves_independent_2026_v1']='حصر إجازات المعلمات';labels['darquran_leave_types_20261029_v1']='أنواع الإجازات';labels['darquran_leave_periods_20261029_v1']='فترات تقارير الإجازات';labels['darquran_schedule_settings_20261029_v1']='إعدادات الجدول';labels[ROWS_KEY]='الجدول والمعلمات';labels[ADMINS_KEY]='الإداريات';labels[SUBJECTS_KEY]='المواد';labels[USERS_KEY]='الصلاحيات';labels['daily_reserve_2026']='الاحتياط اليومي';labels['daily_reserve_archive_20261026']='أرشيف الاحتياط';labels['staff_movement_demo_2026']='حركة الدوام';
   function listIdentity(k,x){
     if(!object(x))return typeof x+':'+JSON.stringify(x);
     if(k==='daily_reserve_archive_20261026'||k==='daily_reserve_2026'||k==='daily_reserve_snapshot_20261029')return reserveIdentity(x);
@@ -1972,7 +1974,12 @@ function updateScheduleTable20261028(table,html){
   }
   function mergePending(data,p,choices){
     const merged=clone(data),issues=[];
-    for(const k of Object.keys(p))merged[k]=mergeData(p[k].base,p[k].value,data[k]??null,[k],issues,choices);
+    for(const k of Object.keys(p)){
+      const key=JSON.stringify([k]);
+      if(p[k].legacyImport&&!equal(p[k].value,data[k])&&!Object.hasOwn(choices||{},key)){
+        issues.push({path:[k],key,base:null,local:clone(p[k].value),remote:clone(data[k])});
+      }else merged[k]=mergeData(p[k].base,p[k].value,data[k]??null,[k],issues,choices);
+    }
     if(Array.isArray(merged[ROWS_KEY]))merged[ROWS_KEY].forEach((r,i)=>{r.n=i+1;if(!String(r.total??'').trim()||/^\d+$/.test(String(r.total)))r.total=String((r.slots||[]).filter(isCountedLesson2026).length);});
     const deleted=new Set(merged['daily_reserve_deleted_20261029']||[]);
     if(Array.isArray(merged['daily_reserve_archive_20261026']))merged['daily_reserve_archive_20261026']=merged['daily_reserve_archive_20261026'].filter(x=>!deleted.has(reserveIdentity(x)));
@@ -2003,7 +2010,7 @@ function updateScheduleTable20261028(table,html){
     try{
       if(!window.dqPersistenceReady20261029())throw Error('PERSISTENCE_NOT_READY');
       const next=JSON.parse(String(v)),old=value(k);if(equal(old,next))return nativeSet.call(this,k,v);
-      const p=pending();p[k]={base:p[k]?p[k].base:old,value:next,id:Date.now()+':'+Math.random()};
+      const p=pending();p[k]={...(p[k]?.legacyImport?{legacyImport:true}:{}),base:p[k]?p[k].base:old,value:next,id:Date.now()+':'+Math.random()};
       // Write-ahead journal survives closing the page before the network request.
       persist(p);nativeSet.call(this,k,v);
       status('محفوظ على هذا الجهاز — بانتظار تأكيد الحفظ السحابي.');
@@ -2048,6 +2055,7 @@ function updateScheduleTable20261028(table,html){
       if(changedKeys.includes('darquran_schedule_settings_20261029_v1'))window.dqRenderAcademicYear20261029?.();
       if(changedKeys.includes('darquran_leave_periods_20261029_v1'))window.dqRefreshLeavePeriods20261029?.();
       if(changedKeys.includes('darquran_leave_types_20261029_v1'))window.dqRefreshLeaveTypes20261029?.();
+      if(changedKeys.includes('darquran_leaves_independent_2026_v1'))window.dqRefreshOldLeaves20261029?.();
       const peopleChanged=memoryChanged||changedKeys.some(k=>[ROWS_KEY,SUBJECTS_KEY,ADMINS_KEY,USERS_KEY].includes(k));
       if(peopleChanged)renderAll();
       if(!peopleChanged&&changedKeys.includes('darquran_daily_classes_20261028_v1')&&typeof renderDailySchedule2026==='function')renderDailySchedule2026();
@@ -2070,6 +2078,18 @@ function updateScheduleTable20261028(table,html){
     try{
       const remote=await readRemote(),data=remote?.data;
       if(!remote||!data||!Array.isArray(data[ROWS_KEY]))throw Error('MISSING_CLOUD_DATA');
+      const oldLeavesKey='darquran_leaves_independent_2026_v1',oldLeavesMigration='dq_old_leaves_migrated_20261029';
+      if(Array.isArray(data[oldLeavesKey]))data[oldLeavesKey]=normalizeOldLeaves(data[oldLeavesKey]);
+      if(writer&&!localStorage.getItem(oldLeavesMigration)){
+        const localOld=value(oldLeavesKey),p=pending();
+        if(Array.isArray(localOld)&&!p[oldLeavesKey]){
+          nativeSet.call(localStorage,'dq_old_leaves_before_cloud_20261029',JSON.stringify(localOld));
+          const legacy=normalizeOldLeaves(localOld);
+          if(!equal(legacy,data[oldLeavesKey])){p[oldLeavesKey]={base:null,value:legacy,id:crypto.randomUUID(),legacyImport:Array.isArray(data[oldLeavesKey])};persist(p);}
+          nativeSet.call(localStorage,oldLeavesKey,JSON.stringify(legacy));
+        }
+        nativeSet.call(localStorage,oldLeavesMigration,'yes');
+      }
       lastRemote=clone(data);
       // Never push historical built-in rows or invent a replacement empty cloud database.
       if(!writer){if(!Object.keys(pending()).length)applyData(data);status('هذه الصفحة للقراءة — أغلقي صفحة البرنامج الأخرى لتفعيل التعديل هنا.');return;}
@@ -2344,54 +2364,67 @@ window.pdfSimpleSection2026=async function(kind){
   {name:"حنان عبيد المطيري",phone:"50947772",dept:"قرآن كريم",type:"مجلس طبي",start:"١٤ سبتمبر ٢٠٢٦م",end:"",note:"أسبوعين قابلة للتجديد",doc:""},
   {name:"لولوه سعيد الرشيدي",phone:"64952527",dept:"فقه",type:"مجلس طبي",start:"٦ سبتمبر ٢٠٢٦م",end:"",note:"طبيات متكررة",doc:""}
  ];
- let leaves2026=[];
- let editLeaveIndex2026=-1;
-
- function loadLeaves2026(){
-   try{const v=JSON.parse(localStorage.getItem(LEAVES_KEY_2026)||"null"); leaves2026=Array.isArray(v)?v:JSON.parse(JSON.stringify(INITIAL_LEAVES_2026));}
-   catch(e){leaves2026=JSON.parse(JSON.stringify(INITIAL_LEAVES_2026));}
+ const $=id=>document.getElementById(id);
+ const fields=['name','phone','dept','type','start','end','note','doc'];
+ const ids=['lvName2026','lvPhone2026','lvDept2026','lvType2026','lvStart2026','lvEnd2026','lvNote2026','lvDoc2026'];
+ let leaves2026=[],editLeaveIndex2026=-1,originalLeave=null,selectedTeacher=null,suggestions=[];
+ const digits=v=>String(v??'').replace(/[٠-٩۰-۹]/g,c=>String('٠١٢٣٤٥٦٧٨٩'.includes(c)?'٠١٢٣٤٥٦٧٨٩'.indexOf(c):'۰۱۲۳۴۵۶۷۸۹'.indexOf(c)));
+ const normalized=v=>digits(rosterNorm20261017(v)).replace(/ـ/g,'').toLowerCase();
+ const arNums2026=v=>String(v??'').replace(/\d/g,d=>'٠١٢٣٤٥٦٧٨٩'[+d]);
+ function parseDate(v){
+  let text=digits(v).trim().replace(/م$/,'').trim(),match=text.match(/^(\d{4})\s*[-/]\s*(\d{1,2})\s*[-/]\s*(\d{1,2})$/),y,m,d;
+  if(match){[,y,m,d]=match}else{
+   match=text.match(/^(\d{1,2})\s*[-/]\s*(\d{1,2})\s*[-/]\s*(\d{4})$/);
+   if(match){[,d,m,y]=match}else{const months=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];match=text.match(/^(\d{1,2})\s+(\S+)\s+(\d{4})$/);if(!match)return '';d=match[1];m=months.findIndex(x=>normalized(x)===normalized(match[2]))+1;y=match[3];}
+  }
+  const iso=String(y).padStart(4,'0')+'-'+String(m).padStart(2,'0')+'-'+String(d).padStart(2,'0');const dt=new Date(iso+'T12:00:00Z');return !isNaN(dt)&&dt.toISOString().slice(0,10)===iso?iso:'';
  }
- function saveLeavesLocal2026(){localStorage.setItem(LEAVES_KEY_2026,JSON.stringify(leaves2026));renderLeaves2026();}
- function arNums2026(v){return String(v??"").replace(/\d/g,d=>"٠١٢٣٤٥٦٧٨٩"[+d]);}
- function filteredLeaves2026(){
-   const q=(document.getElementById("leaveSearch2026")?.value||"").trim().toLowerCase();
-   const d=document.getElementById("leaveDeptFilter2026")?.value||"";
-   const t=document.getElementById("leaveTypeFilter2026")?.value||"";
-   return leaves2026.map((x,i)=>({x,i})).filter(({x})=>{
-     const blob=[x.name,x.phone,x.dept,x.type,x.start,x.end,x.note,x.doc].join(" ").toLowerCase();
-     return (!q||blob.includes(q))&&(!d||x.dept===d)&&(!t||x.type===t);
-   });
- }
+ function loadLeaves2026(){try{const v=JSON.parse(localStorage.getItem(LEAVES_KEY_2026)||'null');leaves2026=Array.isArray(v)?v:JSON.parse(JSON.stringify(INITIAL_LEAVES_2026));}catch(e){leaves2026=[]}leaves2026=leaves2026.map((x,i)=>({...x,id:x.id||'legacy-leave:'+JSON.stringify([x.name,x.phone,x.type,i])}))}
+ function saveLeavesLocal2026(next){try{localStorage.setItem(LEAVES_KEY_2026,JSON.stringify(next));leaves2026=next;renderLeaves2026();return true}catch(e){$('lvError2026').textContent='تعذر الحفظ. احتفظنا بالمدخلات؛ أعيدي المحاولة.';return false}}
+ function filteredLeaves2026(){const words=normalized($('leaveSearch2026').value).split(/\s+/).filter(Boolean),d=$('leaveDeptFilter2026').value,t=$('leaveTypeFilter2026').value;return leaves2026.map((x,i)=>({x,i})).filter(({x})=>words.every(w=>normalized(fields.map(k=>x[k]).join(' ')).includes(w))&&(!d||x.dept===d)&&(!t||x.type===t))}
+ function options(id,values,label){const el=$(id),old=el.value,items=[...new Set(values.filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ar')),sig=JSON.stringify(items);if(el.dataset.options===sig)return;el.replaceChildren(new Option(label,''),...items.map(x=>new Option(x,x)));el.value=items.includes(old)?old:'';el.dataset.options=sig}
  window.renderLeaves2026=function(){
-   const body=document.getElementById("leaveList2026"); if(!body)return;
-   const dept=document.getElementById("leaveDeptFilter2026"), type=document.getElementById("leaveTypeFilter2026");
-   const dv=dept.value,tv=type.value;
-   const depts=[...new Set(leaves2026.map(x=>x.dept).filter(Boolean))].sort();
-   const types=[...new Set(leaves2026.map(x=>x.type).filter(Boolean))].sort();
-   dept.innerHTML='<option value="">كل الأقسام</option>'+depts.map(x=>`<option>${esc(x)}</option>`).join(""); dept.value=dv;
-   type.innerHTML='<option value="">كل أنواع الإجازات</option>'+types.map(x=>`<option>${esc(x)}</option>`).join(""); type.value=tv;
-   body.innerHTML=filteredLeaves2026().map(({x,i},n)=>`<tr>
-    <td>${arNums2026(n+1)}</td><td>${esc(x.name)}</td><td>${arNums2026(x.phone)}</td><td>${esc(x.dept)}</td><td>${esc(x.type)}</td>
-    <td>${arNums2026(x.start)}</td><td>${arNums2026(x.end)}</td><td>${esc(x.note)}</td><td>${esc(x.doc)}</td>
-    <td class="no-print edit-control"><button onclick="openLeaveModal2026(${i})">تعديل</button> <button class="danger" onclick="deleteLeave2026(${i})">حذف</button></td></tr>`).join("");
+  loadLeaves2026();options('leaveDeptFilter2026',leaves2026.map(x=>x.dept),'كل الأقسام');options('leaveTypeFilter2026',leaves2026.map(x=>x.type),'كل أنواع الإجازات');
+  const data=filteredLeaves2026();$('leaveResultCount2026').textContent='عدد النتائج: '+arNums2026(data.length);
+  $('leaveList2026').innerHTML=data.map(({x,i},n)=>`<tr><td>${arNums2026(n+1)}</td>${fields.map(k=>`<td>${esc(['phone','start','end'].includes(k)?arNums2026(x[k]):x[k]||'')}</td>`).join('')}<td class="no-print edit-control"><button onclick="openLeaveModal2026(${i})">تعديل</button> <button class="danger" onclick="deleteLeave2026(${i})">حذف</button></td></tr>`).join('')||'<tr><td colspan="10">لا توجد إجازات تطابق البحث والفرز.</td></tr>';
+  document.querySelectorAll('#leaveList2026 .edit-control').forEach(x=>x.hidden=!canEdit('leaves'));
  };
+ window.dqRefreshOldLeaves20261029=()=>{if(!$('leaveModal2026').classList.contains('open'))renderLeaves2026()};
+ function roster(){return rows.filter(x=>x.name).map(x=>({key:String(x.staffId||x.id||x.rosterLegacyPersonId20261017||'name:'+x.name+'|'+(x.phone||'')),name:x.name,phone:x.phone||'',dept:x.dept||''}))}
+ function choose(p){selectedTeacher=p;$('lvName2026').value=p.name;$('lvPhone2026').value=p.phone;$('lvDept2026').value=p.dept;$('lvPersonOptions2026').hidden=true;$('lvPersonNote2026').textContent='تم اختيار الاسم من قائمة المعلمات.'}
+ function suggest(){selectedTeacher=null;const words=normalized($('lvName2026').value).split(/\s+/).filter(Boolean);suggestions=roster().filter(p=>words.every(w=>{const text=normalized(p.name+' '+p.phone+' '+p.dept);return w.length===1?text.split(/\s+/).includes(w):text.includes(w)}));const box=$('lvPersonOptions2026');box.hidden=false;box.replaceChildren();for(const p of suggestions.slice(0,60)){const b=document.createElement('button');b.type='button';b.setAttribute('role','option');b.textContent=p.name+' — '+p.dept+' — '+p.phone;b.onmousedown=e=>e.preventDefault();b.onclick=()=>choose(p);box.append(b)}if(!suggestions.length)box.textContent='لا يوجد اسم مطابق في قائمة المعلمات.';$('lvPersonNote2026').textContent='اختاري الاسم الكامل من النتائج لتأكيد المعلمة.'}
+ function bounds(){return window.dqLeaveAcademicBounds20261029?.()}
+ function updateBounds(){const b=bounds(),oldStart=parseDate(originalLeave?.start),oldEnd=parseDate(originalLeave?.end);for(const id of ['lvStart2026','lvEnd2026']){const el=$(id);el.min=b?(oldStart&&oldStart<b.start?oldStart:b.start):'';el.max=b?(oldEnd&&oldEnd>b.end?oldEnd:b.end):''}$('lvYearNote2026').textContent=b?'التواريخ الجديدة ضمن العام الدراسي: '+arNums2026(b.start)+' إلى '+arNums2026(b.end)+'.':'حددي فترة العام الدراسي من إدارة الفترات في ملخص الإجازات.'}
  window.openLeaveModal2026=function(i){
-   if(typeof requireEdit==="function"&&!requireEdit())return;
-   editLeaveIndex2026=Number.isInteger(i)?i:-1; const x=editLeaveIndex2026>=0?leaves2026[editLeaveIndex2026]:{};
-   leaveModalTitle2026.textContent=editLeaveIndex2026>=0?"تعديل الإجازة":"إضافة إجازة";
-   lvName2026.value=x.name||"";lvPhone2026.value=x.phone||"";lvDept2026.value=x.dept||"";lvType2026.value=x.type||"";
-   lvStart2026.value=x.start||"";lvEnd2026.value=x.end||"";lvNote2026.value=x.note||"";lvDoc2026.value=x.doc||"";
-   leaveModal2026.classList.add("open");
+  if(!requireScopeEdit2026('leaves')||!window.dqRequirePersistence20261029?.())return;loadLeaves2026();editLeaveIndex2026=Number.isInteger(i)?i:-1;originalLeave=editLeaveIndex2026>=0?JSON.parse(JSON.stringify(leaves2026[i])):null;const x=originalLeave||{};
+  $('leaveModalTitle2026').textContent=originalLeave?'تعديل الإجازة':'إضافة إجازة';fields.forEach((k,n)=>$(ids[n]).value=x[k]||'');
+  $('lvStart2026').value=parseDate(x.start);$('lvEnd2026').value=parseDate(x.end);$('lvOpenEnd2026').checked=!!originalLeave&&!parseDate(x.end);$('lvEnd2026').disabled=$('lvOpenEnd2026').checked;
+  $('lvOriginalDates2026').textContent=originalLeave?'التواريخ المحفوظة سابقًا: '+(x.start||'غير محددة')+' — '+(x.end||'نهاية غير محددة'):'';
+  const matches=roster().filter(p=>x.person?p.key===x.person:normalized(p.name)===normalized(x.name));selectedTeacher=matches.length===1?matches[0]:null;
+  $('lvPersonOptions2026').hidden=true;$('lvPersonNote2026').textContent=selectedTeacher?'الاسم مرتبط بقائمة المعلمات.':originalLeave?'يمكن الاحتفاظ بالاسم المحفوظ أو البحث واختيار الاسم الكامل من قائمة المعلمات.':'اكتبي جزءًا من الاسم ثم اختاري النتيجة.';$('lvError2026').textContent='';updateBounds();$('leaveModal2026').classList.add('open');$('lvName2026').focus();
  };
- window.closeLeaveModal2026=function(){leaveModal2026.classList.remove("open");editLeaveIndex2026=-1;};
+ window.closeLeaveModal2026=function(){$('leaveModal2026').classList.remove('open');editLeaveIndex2026=-1;originalLeave=null;selectedTeacher=null;$('lvPersonOptions2026').hidden=true};
  window.saveLeave2026=function(){
-   if(typeof requireEdit==="function"&&!requireEdit())return;
-   const x={name:lvName2026.value.trim(),phone:lvPhone2026.value.trim(),dept:lvDept2026.value.trim(),type:lvType2026.value.trim(),start:lvStart2026.value.trim(),end:lvEnd2026.value.trim(),note:lvNote2026.value.trim(),doc:lvDoc2026.value.trim()};
-   if(!x.name)return alert("اكتب اسم المعلمة");
-   if(editLeaveIndex2026>=0)leaves2026[editLeaveIndex2026]=x;else leaves2026.push(x);
-   closeLeaveModal2026();saveLeavesLocal2026();
+  if(!requireScopeEdit2026('leaves')||!window.dqRequirePersistence20261029?.())return;
+  const error=message=>{$('lvError2026').textContent=message};const x=Object.fromEntries(fields.map((k,n)=>[k,$(ids[n]).value.trim()]));
+  const sameName=originalLeave&&x.name===originalLeave.name;
+  if(!selectedTeacher&&!sameName)return error('اختاري الاسم الكامل من قائمة المعلمات قبل الحفظ.');
+  if(selectedTeacher){const current=roster().find(p=>p.key===selectedTeacher.key);if(!current)return error('تغيّرت قائمة المعلمات؛ ابحثي واختاري الاسم مرة أخرى.');x.name=current.name;x.person=current.key;}
+  const start=parseDate(x.start),end=parseDate(x.end),open=$('lvOpenEnd2026').checked,b=bounds();
+  const unchanged=!!originalLeave&&start===parseDate(originalLeave.start)&&(open?!parseDate(originalLeave.end):end===parseDate(originalLeave.end));
+  if(!unchanged){if(!start||(!open&&!end))return error('حددي تاريخ البداية والنهاية أو اختاري نهاية غير محددة.');if(!open&&end<start)return error('تاريخ النهاية يجب ألا يسبق البداية.');if(!b||start<b.start||start>b.end||(!open&&(end<b.start||end>b.end)))return error('التواريخ الجديدة يجب أن تكون ضمن العام الدراسي المحدد.');}
+  // Retain legacy date phrases and records; never silently rewrite old dates.
+  x.start=originalLeave&&start===parseDate(originalLeave.start)?originalLeave.start:start;
+  x.end=open?(originalLeave&&!parseDate(originalLeave.end)?originalLeave.end:''):originalLeave&&end===parseDate(originalLeave.end)?originalLeave.end:end;
+  loadLeaves2026();const next=JSON.parse(JSON.stringify(leaves2026));if(originalLeave){editLeaveIndex2026=next.findIndex(r=>r.id===originalLeave.id);if(JSON.stringify(next[editLeaveIndex2026])!==JSON.stringify(originalLeave))return error('تغيّر السجل؛ أغلقي النافذة وافتحي التعديل مجددًا.');next[editLeaveIndex2026]={...originalLeave,...x}}else next.push({...x,id:crypto.randomUUID()});
+  if(saveLeavesLocal2026(next)){closeLeaveModal2026();$('leaveSearch2026').value='';$('leaveDeptFilter2026').value='';$('leaveTypeFilter2026').value='';renderLeaves2026();}
  };
- window.deleteLeave2026=function(i){if(typeof requireEdit==="function"&&!requireEdit())return;if(confirm("حذف سجل الإجازة؟")){leaves2026.splice(i,1);saveLeavesLocal2026();}};
+ window.deleteLeave2026=function(i){if(!requireScopeEdit2026('leaves')||!window.dqRequirePersistence20261029?.())return;const original=leaves2026[i];if(!original)return;if(confirm('حذف سجل الإجازة؟')){loadLeaves2026();const index=leaves2026.findIndex(r=>r.id===original.id);if(index<0)return renderLeaves2026();if(JSON.stringify(leaves2026[index])!==JSON.stringify(original))return alert('تغيّر السجل؛ راجعي بياناته قبل الحذف.');const next=leaves2026.slice();next.splice(index,1);saveLeavesLocal2026(next)}};
+ $('lvName2026').oninput=suggest;$('lvName2026').onkeydown=e=>{if(e.key==='Escape')$('lvPersonOptions2026').hidden=true;if(e.key==='Enter'&&!$('lvPersonOptions2026').hidden){e.preventDefault();if(suggestions.length===1)choose(suggestions[0]);else $('lvPersonOptions2026 button')?.focus()}if(e.key==='ArrowDown'&&!$('lvPersonOptions2026').hidden){e.preventDefault();$('lvPersonOptions2026 button')?.focus()}};
+ $('lvOpenEnd2026').onchange=()=>{$('lvEnd2026').disabled=$('lvOpenEnd2026').checked};
+ $('leaveModal2026').addEventListener('keydown',e=>{if(e.key==='Escape')closeLeaveModal2026()});
+ $('leaveClear2026').onclick=()=>{$('leaveSearch2026').value='';$('leaveDeptFilter2026').value='';$('leaveTypeFilter2026').value='';renderLeaves2026()};
+ window.addEventListener('storage',e=>{if(e.key===LEAVES_KEY_2026)window.dqRefreshOldLeaves20261029()});
  window.pdfLeaves2026=async function(){
    renderLeaves2026();
    if(typeof html2canvas==="undefined"||!window.jspdf?.jsPDF)return alert("تعذر تحميل أداة PDF. تأكد من اتصال الإنترنت.");
@@ -3552,7 +3585,7 @@ function refreshPeriods(){
  if(select.innerHTML!==markup){select.innerHTML=markup;select.value=periods.some(p=>p.id===selectedId)?selectedId:'custom'}
  const current=periods.find(p=>p.id===select.value);
  if(current){$('llFrom').value=current.start;$('llTo').value=current.end;}
- if($('llManagePeriods'))$('llManagePeriods').hidden=!canManagePeriods();
+ if($('llManagePeriods'))$('llManagePeriods').hidden=!canManagePeriods();if($('llForm')&&!$('llForm').hidden)updateEntryAcademicBounds(editId?state.records[editId]:sourceRecords().find(r=>r.id===$('llSource').value));
 }
 function savePeriodChanges(changes){
  if(!canManagePeriods())return false;
@@ -3565,11 +3598,11 @@ function savePeriodChanges(changes){
 function managePeriods(){
  if(!canManagePeriods()||$('llPeriodsDialog'))return;
  const dialog=document.createElement('dialog');dialog.id='llPeriodsDialog';dialog.dir='rtl';dialog.setAttribute('aria-labelledby','llPeriodsTitle');
- dialog.innerHTML=`<h3 id="llPeriodsTitle">إدارة فترات التقارير</h3><p>عدّلي اسم الفترة وتواريخها أو ترتيبها. حذف فترة يزيلها من هذه القائمة فقط؛ سجلات الإجازات والأرشيف تبقى محفوظة.</p><div id="llPeriodsList"></div><form id="llPeriodForm"><h4 id="llPeriodHeading">إضافة فترة</h4><label>اسم الفترة<input id="llPeriodName" maxlength="100" required placeholder="مثال: الفصل الدراسي الأول ٢٠٢٦–٢٠٢٧"></label><div class="ll-period-dates"><label>من تاريخ<input id="llPeriodStart" type="date" required></label><label>إلى تاريخ<input id="llPeriodEnd" type="date" required></label></div><p id="llPeriodError" role="alert"></p><div class="ll-period-actions"><button type="submit">حفظ الفترة</button><button type="button" id="llPeriodNew">إضافة فترة أخرى</button></div></form><small>«فترة مخصصة» تتيح إدخال أي تاريخين مباشرة. تعديل هذه الفترات لا يغيّر تقويم العطل أو سنة الأرصدة أو العام الدراسي في جدول الحصص.</small><button type="button" id="llPeriodsClose">تم / إغلاق</button>`;
+ dialog.innerHTML=`<h3 id="llPeriodsTitle">إدارة فترات التقارير</h3><p>عدّلي اسم الفترة وتواريخها أو ترتيبها. حذف فترة يزيلها من هذه القائمة فقط؛ سجلات الإجازات والأرشيف تبقى محفوظة.</p><div id="llPeriodsList"></div><button type="button" id="llRestoreAcademicPeriod" hidden>إعادة إظهار العام الدراسي</button><form id="llPeriodForm"><h4 id="llPeriodHeading">إضافة فترة</h4><label>اسم الفترة<input id="llPeriodName" maxlength="100" required placeholder="مثال: الفصل الدراسي الأول ٢٠٢٦–٢٠٢٧"></label><div class="ll-period-dates"><label>من تاريخ<input id="llPeriodStart" type="date" required></label><label>إلى تاريخ<input id="llPeriodEnd" type="date" required></label></div><p id="llPeriodError" role="alert"></p><div class="ll-period-actions"><button type="submit">حفظ الفترة</button><button type="button" id="llPeriodNew">إضافة فترة أخرى</button></div></form><small>«فترة مخصصة» تتيح إدخال أي تاريخين مباشرة. فترة العام الدراسي تحدد حدود تسجيل الإجازات الجديدة. تعديل فترات التقارير لا يغيّر تقويم العطل أو سنة الأرصدة أو عنوان العام في جدول الحصص.</small><button type="button" id="llPeriodsClose">تم / إغلاق</button>`;
  document.body.append(dialog);let editing='';
  function resetPeriod(){editing='';$('llPeriodForm').reset();$('llPeriodStart').value=$('llFrom').value;$('llPeriodEnd').value=$('llTo').value;$('llPeriodHeading').textContent='إضافة فترة';$('llPeriodError').textContent=''}
  function draw(){
-  const periods=reportPeriods();$('llPeriodsList').innerHTML=periods.map((p,i)=>`<div class="ll-period-row"><div><b>${h(p.name)}</b><small dir="ltr">${h(p.start)} — ${h(p.end)}</small></div><div class="ll-period-actions"><button type="button" data-period-edit="${h(p.id)}">تعديل</button><button type="button" data-period-move="${h(p.id)}" data-step="-1" aria-label="تقديم ${h(p.name)}" ${i===0?'disabled':''}>↑</button><button type="button" data-period-move="${h(p.id)}" data-step="1" aria-label="تأخير ${h(p.name)}" ${i===periods.length-1?'disabled':''}>↓</button><button type="button" data-period-delete="${h(p.id)}">حذف</button></div></div>`).join('')||'<p>لا توجد فترات محفوظة. يمكنك إضافة فترة أو استخدام الفترة المخصصة.</p>';
+  const periods=reportPeriods();$('llRestoreAcademicPeriod').hidden=periods.some(p=>p.id==='academic');$('llPeriodsList').innerHTML=periods.map((p,i)=>`<div class="ll-period-row"><div><b>${h(p.name)}</b><small dir="ltr">${h(p.start)} — ${h(p.end)}</small></div><div class="ll-period-actions"><button type="button" data-period-edit="${h(p.id)}">تعديل</button><button type="button" data-period-move="${h(p.id)}" data-step="-1" aria-label="تقديم ${h(p.name)}" ${i===0?'disabled':''}>↑</button><button type="button" data-period-move="${h(p.id)}" data-step="1" aria-label="تأخير ${h(p.name)}" ${i===periods.length-1?'disabled':''}>↓</button><button type="button" data-period-delete="${h(p.id)}">حذف</button></div></div>`).join('')||'<p>لا توجد فترات محفوظة. يمكنك إضافة فترة أو استخدام الفترة المخصصة.</p>';
   dialog.querySelectorAll('[data-period-edit]').forEach(button=>button.onclick=()=>{const p=reportPeriods().find(x=>x.id===button.dataset.periodEdit);if(!p)return;editing=p.id;$('llPeriodHeading').textContent='تعديل الفترة';$('llPeriodName').value=p.name;$('llPeriodStart').value=p.start;$('llPeriodEnd').value=p.end;$('llPeriodError').textContent='';$('llPeriodName').focus()});
   dialog.querySelectorAll('[data-period-delete]').forEach(button=>button.onclick=()=>{if(!canManagePeriods())return;const p=reportPeriods().find(x=>x.id===button.dataset.periodDelete);if(!p||!confirm('حذف الفترة «'+p.name+'» من قائمة التقارير؟ لن تُحذف سجلات الإجازات.'))return;if(savePeriodChanges([{...p,deleted:true}])){if(editing===p.id)resetPeriod();draw()}});
   dialog.querySelectorAll('[data-period-move]').forEach(button=>button.onclick=()=>{if(!canManagePeriods())return;const list=reportPeriods(),i=list.findIndex(p=>p.id===button.dataset.periodMove),j=i+Number(button.dataset.step);if(i<0||j<0||j>=list.length)return;[list[i],list[j]]=[list[j],list[i]];const changes=list.map((p,k)=>({...p,order:(k+1)*10})).filter(p=>p.order!==reportPeriods().find(x=>x.id===p.id)?.order);if(savePeriodChanges(changes))draw()});
@@ -3584,6 +3617,7 @@ function managePeriods(){
   const entry={...existing,id:editing||uid(),name,start,end,order:existing?.order??Math.max(0,...list.map(p=>p.order||0))+10};
   if(savePeriodChanges([entry])){resetPeriod();draw();$('llPeriodError').textContent='حُفظ التعديل على الجهاز؛ تابعي تأكيد الحفظ في الشريط العلوي.'}
  };
+ $('llRestoreAcademicPeriod').onclick=()=>{if(!canManagePeriods())return;const previous={...defaultPeriods.find(p=>p.id==='academic'),...periodChanges().find(p=>p.id==='academic')};if(savePeriodChanges([{...previous,deleted:false}]))draw()};
  $('llPeriodNew').onclick=resetPeriod;$('llPeriodsClose').onclick=()=>dialog.close();
  dialog.addEventListener('close',()=>{dialog.remove();window.forceCloudSync2026?.()},{once:true});resetPeriod();draw();dialog.showModal();
 }
@@ -3650,7 +3684,8 @@ function note(s){$('llStatus').textContent=s}
 function put(){if(!canManage())throw Error('لا توجد صلاحية تعديل ملخص الإجازات');localStorage.setItem(KEY,JSON.stringify(state));dirty=true;localStorage.setItem(KEY+':pending','yes');note('محفوظ على الجهاز؛ جارٍ الحفظ السحابي…');clearTimeout(timer);timer=setTimeout(sync,500);render()}
 function merge(a,b){const out={records:{...a.records},profiles:{...a.profiles}};for(const group of ['records','profiles'])for(const [id,r] of Object.entries(b[group]||{})){if(!out[group][id]||(r.updated||'')>(out[group][id].updated||''))out[group][id]=r}return out}
 async function sync(){if(!canAccess()||busy)return;busy=true;try{const headers={apikey:PUB,Authorization:'Bearer '+PUB,'Content-Type':'application/json'},get=await fetch(API+'?id=eq.'+CLOUD+'&select=data,updated_at&and=(id.neq.dq-read-'+uid()+')',{headers,cache:'no-store'});if(!get.ok)throw Error('قراءة');const remote=await get.json();state=merge(remote[0]?.data||{records:{},profiles:{}},state);const storedState=JSON.stringify(state);if(localStorage.getItem(KEY)!==storedState)localStorage.setItem(KEY,storedState);ready=true;if(dirty&&canManage()){const sent=JSON.stringify(state);const remoteStamp=remote[0]?.updated_at;const res=await fetch(remoteStamp?API+'?id=eq.'+CLOUD+'&updated_at=eq.'+encodeURIComponent(remoteStamp):API,{method:remoteStamp?'PATCH':'POST',headers:{...headers,Prefer:remoteStamp?'return=representation':'resolution=ignore-duplicates,return=representation'},body:JSON.stringify({id:CLOUD,data:state,updated_at:new Date(Math.max(Date.now(),Date.parse(remoteStamp||'')+1||0)).toISOString()})});if(!res.ok)throw Error('حفظ');const saved=await res.json();if(saved.length&&sent===JSON.stringify(state)){dirty=false;localStorage.removeItem(KEY+':pending')}}note(dirty&&canManage()?'جارٍ حفظ التغييرات التالية…':'متصلة — سجل الإجازات محفوظ سحابيًا ✓');render()}catch(e){note('لم يكتمل الاتصال؛ أي تعديل محفوظ على هذا الجهاز، وستعاد محاولة المزامنة.')}finally{busy=false}}
-const css=`#llTypesDialog{font:inherit;color:#20334d;width:min(760px,94vw);max-height:88vh;box-sizing:border-box;overflow:auto;border:1px solid #d8e1eb;border-radius:18px;padding:24px}
+const css=`#leaveLedger2026 .ll-info{background:#eaf3ff;color:#24476c;padding:12px;border:1px solid #c9dcf0;border-radius:9px;margin:12px 0;line-height:1.8}
+#llTypesDialog{font:inherit;color:#20334d;width:min(760px,94vw);max-height:88vh;box-sizing:border-box;overflow:auto;border:1px solid #d8e1eb;border-radius:18px;padding:24px}
 #llTypesDialog::backdrop{background:#10274488}
 .ll-types-header{display:flex;align-items:center;justify-content:space-between;gap:12px}
 #llTypesDialog h3{color:#173b7a;margin:0}
@@ -3697,7 +3732,7 @@ function setup(){const style=document.createElement('style');style.textContent=c
 <div id="llCards" class="ll-cards"></div><div id="llWarnings"></div>
 <div class="ll-panel"><h3>ملخص الموظفات <span id="llCount"></span></h3><button id="llSummaryPdf">PDF الملخص</button><button id="llSummaryXlsx">Excel الملخص</button><div class="ll-scroll"><table><thead><tr>${['م','الاسم / الفئة','مرضية (أيام)','دورية (أيام)','طارئة (أيام)','إجمالي أيام الإجازات','الرضاعة / الحمل'].map(x=>`<th>${x}</th>`).join('')}</tr></thead><tbody id="llSummary"></tbody></table></div></div>
 <div class="ll-panel"><h3>تفاصيل السجلات</h3><button id="llDetailsPdf">PDF التفاصيل</button><button id="llDetailsXlsx">Excel التفاصيل</button><div class="ll-scroll"><table><thead><tr>${['الاسم','النوع','من','إلى','المدة ضمن الفرز','الحالة / المصدر','الملاحظات','الإجراءات'].map(x=>`<th>${x}</th>`).join('')}</tr></thead><tbody id="llDetails"></tbody></table></div></div>
-<div id="llForm" class="ll-panel" hidden><h3 id="llFormTitle">إضافة سجل</h3><form id="llEntry"><div class="ll-tools"><div id="llPersonPicker"><label for="llEPersonSearch">اسم الموظفة<input id="llEPersonSearch" type="text" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="llPersonSuggestions" aria-describedby="llPersonSelection" autocomplete="off" placeholder="اكتبي الاسم ثم اختاري من النتائج" required></label><select id="llEPerson" hidden aria-hidden="true" tabindex="-1"></select><div id="llPersonSuggestions" role="listbox" aria-label="أسماء الموظفات" hidden></div><small id="llPersonSelection">اختاري الموظفة من نتائج البحث.</small></div><label>نوع الإجازة<select id="llEType" required><option value="">اختاري نوع الإجازة</option></select><button type="button" id="llManageTypesForm" hidden>إدارة أنواع الإجازات</button></label><label>تاريخ البداية<input id="llEStart" type="date" required></label><label>تاريخ النهاية<input id="llEEnd" type="date" required></label><label>احتساب الأيام<select id="llEMode"><option value="calendar">أيام تقويمية شاملة البداية والنهاية</option><option value="work">أيام عمل (الأحد إلى الخميس)</option></select></label><label>الساعات الفعلية (للرضاعة والتغيب الجزئي)<input id="llEHours" type="number" min="0.01" step="0.01"></label><label>حالة السجل<select id="llEStatus"><option value="approved">معتمد</option><option value="pending">بانتظار الاعتماد</option><option value="rejected">غير معتمد</option></select></label><label>تاريخ الوضع (للرضاعة)<input id="llBirth" type="date"></label><label>التخفيف<select id="llPlan"><option value="nursing">رضاعة</option><option value="pregnancy">حمل من الشهر السادس</option></select></label><label>رقم القرار / مرجع المرفق<input id="llEDoc"></label></div><p id="llRule" class="ll-warning"></p><p id="llHolidayForm" class="ll-warning" hidden></p><label>ملاحظات إدارية<textarea id="llENote" placeholder="دون تفاصيل صحية"></textarea></label><button type="submit">حفظ السجل</button><button type="button" id="llCancel">إلغاء</button><input type="hidden" id="llSource"></form></div>
+<div id="llForm" class="ll-panel" hidden><h3 id="llFormTitle">إضافة سجل</h3><form id="llEntry"><div class="ll-tools"><div id="llPersonPicker"><label for="llEPersonSearch">اسم الموظفة<input id="llEPersonSearch" type="text" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="llPersonSuggestions" aria-describedby="llPersonSelection" autocomplete="off" placeholder="اكتبي الاسم ثم اختاري من النتائج" required></label><select id="llEPerson" hidden aria-hidden="true" tabindex="-1"></select><div id="llPersonSuggestions" role="listbox" aria-label="أسماء الموظفات" hidden></div><small id="llPersonSelection">اختاري الموظفة من نتائج البحث.</small></div><label>نوع الإجازة<select id="llEType" required><option value="">اختاري نوع الإجازة</option></select><button type="button" id="llManageTypesForm" hidden>إدارة أنواع الإجازات</button></label><label>تاريخ البداية<input id="llEStart" type="date" required></label><label>تاريخ النهاية<input id="llEEnd" type="date" required></label><label>احتساب الأيام<select id="llEMode"><option value="calendar">أيام تقويمية شاملة البداية والنهاية</option><option value="work">أيام عمل (الأحد إلى الخميس)</option></select></label><label>الساعات الفعلية (للرضاعة والتغيب الجزئي)<input id="llEHours" type="number" min="0.01" step="0.01"></label><label>حالة السجل<select id="llEStatus"><option value="approved">معتمد</option><option value="pending">بانتظار الاعتماد</option><option value="rejected">غير معتمد</option></select></label><label>تاريخ الوضع (للرضاعة)<input id="llBirth" type="date"></label><label>التخفيف<select id="llPlan"><option value="nursing">رضاعة</option><option value="pregnancy">حمل من الشهر السادس</option></select></label><label>رقم القرار / مرجع المرفق<input id="llEDoc"></label></div><small id="llEntryYearNote" class="ll-info"></small><p id="llRule" class="ll-warning"></p><p id="llHolidayForm" class="ll-warning" hidden></p><label>ملاحظات إدارية<textarea id="llENote" placeholder="دون تفاصيل صحية"></textarea></label><button type="submit">حفظ السجل</button><button type="button" id="llCancel">إلغاء</button><input type="hidden" id="llSource"></form></div>
 <div id="llProfile" class="ll-panel" hidden><h3>رصيد الموظفة المعتمد عند بداية المتابعة</h3><p>يدخل الرصيد المتاح فعلًا بتاريخ البداية. يُخصم منه الاستخدام المسجل منذ هذا التاريخ وحتى نهاية السنة نفسها؛ لا يضاف إلى إجمالي أيام الفترة.</p><form id="llProfileForm"><div class="ll-tools"><label>الموظفة<select id="llPPerson" required></select></label><label>تاريخ بداية الرصيد<input id="llPDate" type="date" required></label><label>الدورية المتاحة<input id="llPAnnual" type="number" min="0" step="0.5"></label><label>الطارئة المتاحة<input id="llPEmergency" type="number" min="0" max="4" step="1"></label><label>مرضية ٧ أيام فأقل — المتاح<input id="llPShort" type="number" min="0" max="60"></label><label>مرضية أكثر من ٧ أيام — المتاح<input id="llPLong" type="number" min="0" max="120"></label></div><small>الحقل الفارغ يعني أن الرصيد لم يُعتمد بعد. لا تُحتسب الاستحقاقات تلقائيًا من سنوات الخدمة وحدها.</small><button type="submit">حفظ الرصيد</button><button type="button" id="llPCancel">إلغاء</button></form></div>
 <div class="ll-panel"><details><summary>التقويم الدراسي ٢٠٢٦–٢٠٢٧ والعطل</summary><p>التقويم المرسل لمراكز دور القرآن الكريم. فرز الفصل الأول يبدأ من دوام العاملين في ٦ سبتمبر، والفصل الثاني من ٧ فبراير. فترات التسجيل والاختبارات دوام. العطل أدناه للتنبيه والمراجعة، ولا تغيّر عدد الأيام تلقائيًا.</p><div class="ll-scroll"><table><thead><tr><th>البيان</th><th>من</th><th>إلى</th></tr></thead><tbody>${academicCalendar.holidays.map(x=>`<tr style="background:#fff3db"><td>${x.name}</td><td>${ar(x.start)}</td><td>${ar(x.end)}</td></tr>`).join('')}${academicCalendar.events.map(x=>`<tr><td>${x[0]}</td><td>${ar(x[1])}</td><td>${ar(x[2])}</td></tr>`).join('')}</tbody></table></div><small>نهاية العطلة الصيفية المعروضة مستنتجة من بدء دوام العاملين في ٥ سبتمبر ٢٠٢٧. لا يشمل هذا الجدول قائمة مستقلة بكل العطل الرسمية.</small></details></div>
 <div class="ll-panel"><details><summary>دليل أنواع الإجازات والشروط</summary><div id="llTypeGuide"></div><small>مرجع التصنيف: دليل الإجازات المرسل. الموافقة والمستندات والرصيد الفعلي تعتمدها المسؤولة؛ لا تُحسب الرواتب آليًا.</small></details><details><summary>السجلات القديمة التي تحتاج مراجعة</summary><p>يمكن الرجوع إلى صفحة «حصر الإجازات» السابقة. لم تُحوّل تواريخها النصية أو الحالات المفتوحة إلى أرقام تلقائيًا. أدخلي السجل هنا بعد التأكد من نوعه وتواريخه، وراجعي وجوده في حركة الدوام لتجنب التكرار.</p><button id="llOld">فتح حصر الإجازات السابق</button></details></div>`;document.body.append(section);
@@ -3706,7 +3741,7 @@ function setup(){const style=document.createElement('style');style.textContent=c
  const yr=today().slice(0,4);$('llBalanceYear').value=yr;$('llAcademic').onchange=academicPreset;$('llBalanceYear').onchange=render;$('llEStart').onchange=formHolidayNote;$('llEEnd').onchange=formHolidayNote;$('llFrom').value=yr+'-01-01';$('llTo').value=yr+'-12-31';
  for(const id of ['llSearch','llPerson','llJob','llFrom','llTo','llType'])$(id).addEventListener(id==='llSearch'?'input':'change',()=>{if(id==='llFrom'||id==='llTo')$('llAcademic').value='custom';if(id==='llPerson')selected=$('llPerson').value;if(id==='llSearch'||id==='llJob'){selected='';$('llPerson').value='';}clearTimeout(searchTimer);if(id==='llSearch')searchTimer=setTimeout(render,120);else render()});
  $('llYear').onclick=()=>{$('llAcademic').value='custom';$('llBalanceYear').value=today().slice(0,4);$('llFrom').value=today().slice(0,4)+'-01-01';$('llTo').value=today().slice(0,4)+'-12-31';render()};$('llMonth').onclick=()=>{$('llAcademic').value='custom';const d=today();$('llFrom').value=d.slice(0,7)+'-01';const n=new Date(Date.UTC(+d.slice(0,4),+d.slice(5,7),0));$('llTo').value=n.toISOString().slice(0,10);render()};
- $('llAdd').onclick=()=>form();$('llCancel').onclick=()=>{$('llForm').hidden=true};$('llEntry').onsubmit=save;$('llEType').onchange=updateForm;$('llBirth').onchange=()=>{if($('llBirth').value){const b=$('llBirth').value;const d=new Date(b+'T00:00:00Z');d.setUTCFullYear(d.getUTCFullYear()+2);$('llEStart').value=b;$('llEEnd').value=shift(d.toISOString().slice(0,10),-1);formHolidayNote()}};
+ $('llAdd').onclick=()=>form();$('llCancel').onclick=()=>{$('llForm').hidden=true};$('llEntry').onsubmit=save;$('llEType').onchange=updateForm;$('llBirth').onchange=()=>{if($('llBirth').value){const b=$('llBirth').value;const d=new Date(b+'T00:00:00Z');d.setUTCFullYear(d.getUTCFullYear()+2);const bounds=entryAcademicBounds(),last=shift(d.toISOString().slice(0,10),-1);if(!bounds){updateEntryAcademicBounds();return}$('llEStart').value=b<bounds.start?bounds.start:b;$('llEEnd').value=last>bounds.end?bounds.end:last;formHolidayNote()}};
  $('llProfileButton').onclick=()=>profile();$('llPPerson').onchange=loadProfile;$('llPCancel').onclick=()=>{$('llProfile').hidden=true};$('llProfileForm').onsubmit=saveProfile;$('llSync').onclick=sync;$('llOld').onclick=()=>{show('leaves2026');renderLeaves2026()};
  for(const [id,details,pdf]of [['llSummaryPdf',false,true],['llSummaryXlsx',false,false],['llDetailsPdf',true,true],['llDetailsXlsx',true,false]])$(id).onclick=()=>exportReport(details,pdf);
  const oldShow=window.show;window.show=function(id){if(id==='leaveLedger2026'&&!canAccess())return alert('لا توجد لهذا الحساب صلاحية الدخول إلى ملخص الإجازات.');return oldShow.apply(this,arguments)};
@@ -3738,12 +3773,43 @@ function renderContent(){if(!canAccess()||!$('llSummary'))return;const opts='<op
  document.querySelectorAll('#llDetails [data-edit],#llDetails [data-delete]').forEach(b=>b.hidden=!canManage());
  document.querySelectorAll('#llDetails [data-edit]').forEach(b=>b.onclick=()=>form(records().find(r=>r.id===b.dataset.edit)));document.querySelectorAll('#llDetails [data-delete]').forEach(b=>b.onclick=()=>{if(!canManage()||!confirm('حذف السجل؟'))return;const r=state.records[b.dataset.delete];state.records[r.id]={...r,deleted:true,updated:new Date().toISOString()};put()});
 }
-function calendarWarnings(rr){const found=rr.filter(r=>['days','mission'].includes(type(r.type)?.[3])).flatMap(r=>holidayOverlaps(r.start,r.end).map(x=>r.name+' — '+x.name+' ('+ar(x.start)+' إلى '+ar(x.end)+')'));return found.length?'<div class="ll-warning"><b>سجلات تتداخل مع العطل الدراسية</b><br>'+[...new Set(found)].map(h).join('<br>')+'<br>التنبيه للمراجعة؛ لم تُخصم العطل تلقائيًا من مدة الإجازة.</div>':''}
+function calendarWarnings(rr){
+ const {from,to}=range();if(!date(from)||!date(to)||to<from)return '';
+ const found=rr.filter(r=>['days','mission'].includes(type(r.type)?.[3])).flatMap(r=>{
+  const start=r.start>from?r.start:from,end=r.end<to?r.end:to;
+  return holidayOverlaps(start,end).flatMap(holiday=>{
+   const first=holiday.start>start?holiday.start:start,last=holiday.end<end?holiday.end:end;
+   if(!dates(first,last,r.mode).length)return [];
+   return [r.name+' — '+holiday.name+' ('+ar(first)+(last===first?'':' إلى '+ar(last))+')'];
+  });
+ });
+ return found.length?'<div class="ll-info"><b>معلومات العطل ضمن الفترة المعروضة</b><br>'+[...new Set(found)].map(h).join('<br>')+'<br>هذه معلومة عن تداخل التواريخ؛ لا تغيّر حالة الإجازة أو عدد الأيام، ولا تعني وجود خطأ في الحفظ.</div>':'';
+}
+
+// New leave dates are limited to the configured academic-year report period.
+// Existing historical records can retain their dates when only their other fields are edited.
+function entryAcademicBounds(){const period=reportPeriods().find(p=>p.id==='academic');return period&&date(period.start)&&date(period.end)&&period.end>=period.start?period:null}
+function updateEntryAcademicBounds(original){
+ const bounds=entryAcademicBounds();
+ for(const id of ['llEStart','llEEnd']){
+  if(!bounds){$(id).removeAttribute('min');$(id).removeAttribute('max');continue}
+  $(id).min=original?.start&&original.start<bounds.start?original.start:bounds.start;
+  $(id).max=original?.end&&original.end>bounds.end?original.end:bounds.end;
+ }
+ $('llEntryYearNote').textContent=bounds?'الإدخال الجديد وتغيير التواريخ ضمن '+bounds.name+' فقط: من '+ar(bounds.start)+' إلى '+ar(bounds.end)+'. السجلات السابقة تحتفظ بتواريخها.':'فترة العام الدراسي غير مفعّلة. أعيدي إظهار العام الدراسي من «إدارة الفترات» وحددي تواريخه قبل إضافة إجازة جديدة.';
+}
+function allowedEntryAcademicPeriod(start,end){
+ const bounds=entryAcademicBounds();if(bounds&&start>=bounds.start&&end<=bounds.end)return true;
+ const original=editId?state.records[editId]:sourceRecords().find(r=>r.id===$('llSource').value);
+ return !!(original&&!original.deleted&&original.start===start&&original.end===end);
+}
+
+window.dqLeaveAcademicBounds20261029=entryAcademicBounds;
 function warnings(rr){const notices=[];const months=new Set(rr.flatMap(r=>dates(r.start,r.end).map(d=>d.slice(0,7))));for(const p of filteredPeople()){for(const m of months){const f=m+'-01',t=m+'-31',rs=records().filter(r=>r.person===p.id&&r.status==='approved'&&inRange(r,f,t));if(rs.filter(r=>r.type==='mission').reduce((a,r)=>a+amount(r,f,t),0)>5)notices.push(p.name+' — مهمات العمل تتجاوز ٥ أيام في '+m)}const years=new Set(rr.map(r=>r.start.slice(0,4)));for(const y of years){const rs=records().filter(r=>r.person===p.id&&r.status==='approved');if(rs.filter(r=>r.type==='emergency').reduce((n,r)=>n+amount(r,y+'-01-01',y+'-12-31'),0)>4)notices.push(p.name+' — الطارئة تتجاوز ٤ أيام في '+y)}}return notices.length?'<div class="ll-warning">'+notices.map(h).join('<br>')+'</div>':''}
 function personOptions(){return people().map(p=>`<option value="${h(p.id)}">${h(p.name)} — ${p.job}</option>`).join('')}
 function updateForm(){const t=type($('llEType').value),hours=t?.[3]==='hours',plan=t?.[3]==='plan';$('llRule').textContent=t?.[2]||'اختاري نوع الإجازة ثم أدخلي التواريخ والبيانات المطلوبة.';$('llEHours').disabled=!hours;$('llEHours').required=hours;$('llBirth').disabled=!plan;$('llPlan').disabled=!plan;$('llEMode').disabled=hours||plan}
-function form(r){if(!canManage())return;editId=r&&!r.readonly?r.id:'';$('llEntry').reset();$('llEPerson').innerHTML='<option value="">اختاري الموظفة</option>'+personOptions();$('llEPerson').value='';$('llEPersonSearch').value='';$('llEPersonSearch').setCustomValidity('');$('llPersonSelection').textContent='اختاري الموظفة من نتائج البحث.';hidePersonSuggestions();if(r?.person||selected)chooseEntryPerson(r?.person||selected);$('llEPerson').disabled=!!(r?.sourceRef||r?.readonly);$('llEPersonSearch').disabled=$('llEPerson').disabled;entryOriginalType=r?.type||'';refreshEntryTypeOptions(r?.type||(allLeaveTypes().some(t=>t.id==='annual'&&!t.deleted)?'annual':''));$('llEStart').value=r?.start||today();$('llEEnd').value=r?.end||today();$('llEMode').value=r?.mode||'calendar';$('llEHours').value=r?.hours??'';$('llEStatus').value=r?.status||'approved';$('llENote').value=r?.note||'';$('llEDoc').value=r?.doc||'';$('llBirth').value=r?.birth||'';$('llPlan').value=r?.plan||'nursing';$('llSource').value=r?.sourceRef||(r?.readonly?r.id:'');$('llFormTitle').textContent=r?'تعديل / استكمال سجل':'إضافة سجل';updateForm();formHolidayNote();$('llForm').hidden=false;$('llForm').scrollIntoView({behavior:'smooth',block:'start'})}
-function save(ev){ev.preventDefault();if(!canManage())return;if(!ready)return alert('انتظري نجاح الاتصال أولًا حتى لا تتكرر السجلات.');const p=who($('llEPerson').value);if(!p){$('llEPersonSearch').focus();return alert('اختاري الموظفة من نتائج البحث قبل حفظ السجل.');}const t=type($('llEType').value),start=$('llEStart').value,end=$('llEEnd').value;if(!t||(!allLeaveTypes().some(x=>x.id===t[0]&&!x.deleted)&&t[0]!==entryOriginalType))return alert('اختاري نوعًا متاحًا للإدخال؛ النوع المحذوف يبقى لسجلاته السابقة فقط.');if(!date(start)||!date(end)||end<start)return alert('راجعي تاريخ البداية والنهاية.');if(t[3]==='hours'&&start!==end)return alert('سجلي الساعات الفعلية لكل يوم على حدة.');const hours=t[3]==='hours'?Number($('llEHours').value):null;if(t[3]==='hours'&&(!(hours>0)||hours>24))return alert('أدخلي ساعات فعلية بين صفر و٢٤ ساعة.');const mode=t[3]==='days'||t[3]==='mission'?$('llEMode').value:'calendar';if(!dates(start,end,mode).length)return alert('الفترة لا تحتوي أيامًا محسوبة.');const sourceRef=$('llSource').value;const status=$('llEStatus').value;
+function form(r){if(!canManage())return;editId=r&&!r.readonly?r.id:'';$('llEntry').reset();$('llEPerson').innerHTML='<option value="">اختاري الموظفة</option>'+personOptions();$('llEPerson').value='';$('llEPersonSearch').value='';$('llEPersonSearch').setCustomValidity('');$('llPersonSelection').textContent='اختاري الموظفة من نتائج البحث.';hidePersonSuggestions();if(r?.person||selected)chooseEntryPerson(r?.person||selected);$('llEPerson').disabled=!!(r?.sourceRef||r?.readonly);$('llEPersonSearch').disabled=$('llEPerson').disabled;entryOriginalType=r?.type||'';refreshEntryTypeOptions(r?.type||(allLeaveTypes().some(t=>t.id==='annual'&&!t.deleted)?'annual':''));$('llEStart').value=r?.start||today();$('llEEnd').value=r?.end||today();$('llEMode').value=r?.mode||'calendar';$('llEHours').value=r?.hours??'';$('llEStatus').value=r?.status||'approved';$('llENote').value=r?.note||'';$('llEDoc').value=r?.doc||'';$('llBirth').value=r?.birth||'';$('llPlan').value=r?.plan||'nursing';$('llSource').value=r?.sourceRef||(r?.readonly?r.id:'');$('llFormTitle').textContent=r?'تعديل / استكمال سجل':'إضافة سجل';updateEntryAcademicBounds(r);updateForm();formHolidayNote();$('llForm').hidden=false;$('llForm').scrollIntoView({behavior:'smooth',block:'start'})}
+function save(ev){ev.preventDefault();if(!canManage())return;if(!ready)return alert('انتظري نجاح الاتصال أولًا حتى لا تتكرر السجلات.');const p=who($('llEPerson').value);if(!p){$('llEPersonSearch').focus();return alert('اختاري الموظفة من نتائج البحث قبل حفظ السجل.');}const t=type($('llEType').value),start=$('llEStart').value,end=$('llEEnd').value;if(!t||(!allLeaveTypes().some(x=>x.id===t[0]&&!x.deleted)&&t[0]!==entryOriginalType))return alert('اختاري نوعًا متاحًا للإدخال؛ النوع المحذوف يبقى لسجلاته السابقة فقط.');if(!date(start)||!date(end)||end<start)return alert('راجعي تاريخ البداية والنهاية.');if(!allowedEntryAcademicPeriod(start,end)){const bounds=entryAcademicBounds();return alert(bounds?'لا يمكن تسجيل الإجازة أو تغيير تواريخها خارج العام الدراسي المحدد: من '+ar(bounds.start)+' إلى '+ar(bounds.end)+'.':'أعيدي إظهار فترة العام الدراسي من «إدارة الفترات» وحددي تواريخها قبل إضافة إجازة.');}if(t[3]==='hours'&&start!==end)return alert('سجلي الساعات الفعلية لكل يوم على حدة.');const hours=t[3]==='hours'?Number($('llEHours').value):null;if(t[3]==='hours'&&(!(hours>0)||hours>24))return alert('أدخلي ساعات فعلية بين صفر و٢٤ ساعة.');const mode=t[3]==='days'||t[3]==='mission'?$('llEMode').value:'calendar';if(!dates(start,end,mode).length)return alert('الفترة لا تحتوي أيامًا محسوبة.');const sourceRef=$('llSource').value;const status=$('llEStatus').value;
  const conflict=records().find(r=>r.person===p.id&&r.id!==editId&&r.id!==sourceRef&&r.status==='approved'&&status==='approved'&&((r.type===t[0]&&inRange(r,start,end))||(type(r.type)?.[3]==='days'&&t[3]==='days'&&dates(r.start,r.end,r.mode).some(d=>dates(start,end,mode).includes(d)))));if(conflict)return alert('يوجد سجل معتمد متداخل لهذه الموظفة. افتحيه وعدليه لتجنب العد مرتين.');
   if(t[0]==='emergency'&&status==='approved'){const proposed=dates(start,end,mode);for(const y of new Set(proposed.map(d=>d.slice(0,4)))){const days=new Set(proposed.filter(d=>d.startsWith(y)));for(const r of records().filter(r=>r.person===p.id&&r.type==='emergency'&&r.status==='approved'&&r.id!==editId&&r.id!==sourceRef))for(const d of dates(r.start,r.end,r.mode))if(d.startsWith(y))days.add(d);if(days.size>4)return alert('لقد نفد رصيد الإجازات الطارئة لهذا العام (٤ أيام)؛ راجعي المدة.');}}
  if(t[0]==='nursing'&&$('llPlan').value==='nursing'&&!date($('llBirth').value))return alert('أدخلي تاريخ الوضع لتحديد استحقاق الرضاعة.');if(t[0]==='nursing'&&$('llPlan').value==='nursing'){const birth=$('llBirth').value,d=new Date(birth+'T00:00:00Z');d.setUTCFullYear(d.getUTCFullYear()+2);const last=shift(d.toISOString().slice(0,10),-1);if(start<birth||end>last)return alert('فترة الرضاعة يجب أن تقع ضمن سنتين من تاريخ الوضع.');}
