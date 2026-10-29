@@ -570,7 +570,7 @@ function loadRows(){
     const v=JSON.parse(localStorage.getItem(ROWS_KEY)||"null");
     if(Array.isArray(v)) return v;
   }catch(e){}
-  return cloneSource();
+  return []; // Never resurrect the historical seed schedule when browser storage is absent.
 }
 
 function loadArray(key,fallback){
@@ -1776,11 +1776,73 @@ function updateScheduleTable20261028(table,html){
   const SB_KEY='sb_publishable_CpURFDtAk6StsmbsxevEIw_KxQlrrDo';
   const ENDPOINT=SB_URL+'/rest/v1/dar_quran_data';
   const CLOUD_ID='dar_quran_women2_pdf_roster_aligned_20261011_v2';
-  const SYNC_KEYS=[ROWS_KEY,SUBJECTS_KEY,ADMINS_KEY,USERS_KEY,'daily_reserve_2026','staff_movement_demo_2026','darquran_daily_classes_20261028_v1'];
+  const SYNC_KEYS=[ROWS_KEY,SUBJECTS_KEY,ADMINS_KEY,USERS_KEY,'daily_reserve_2026','staff_movement_demo_2026','darquran_daily_classes_20261028_v1','daily_reserve_archive_20261026','daily_reserve_deleted_20261029','daily_reserve_snapshot_20261029'];
   const JOURNAL='dq_sync_pending_20261028', BACKUP='dq_before_remote_20261028';
   const nativeSet=Storage.prototype.setItem,nativeRemove=Storage.prototype.removeItem;
-  let applyingRemote=false,busy=false,timer,conflict=false;
+  let busy=false,timer,conflict=false,writer=false,ready=false,broken=false,lastIssues=[],lastRemote=null,review=null,inFlight=null;
+  const ARCHIVE='daily_reserve_archive_20261026',DELETED='daily_reserve_deleted_20261029',MIGRATION='dq_archive_cloud_migrated_20261029';
+  const readable=()=>ready&&!broken;
+  window.dqPersistenceReady20261029=()=>writer&&readable();
+  window.dqRequirePersistence20261029=function(){if(window.dqPersistenceReady20261029())return true;alert(writer?'انتظري تحميل البيانات وتأكيد الاتصال قبل التعديل.':'هذه الصفحة للقراءة؛ أغلقي الصفحة الأخرى للبرنامج ثم انتظري تفعيل الحفظ هنا.');return false;};
+  // One writer per browser origin. The browser releases the lock on tab close/crash.
+  // Other devices remain independent and use revision checks plus three-way merges.
+  if(navigator.locks){navigator.locks.request('dq-schedule-writer-20261029',async()=>{writer=true;ready=false;try{const p=pending();for(const k of Object.keys(p))if(SYNC_KEYS.includes(k))nativeSet.call(localStorage,k,JSON.stringify(p[k].value));if(Object.keys(p).length){rows=loadRows();subjects=loadArray(SUBJECTS_KEY,subjects);admins=loadArray(ADMINS_KEY,admins);renderAll();}}catch(e){broken=true;}await sync();await new Promise(resolve=>{window.addEventListener('pagehide',resolve,{once:true});});writer=false;ready=false;});}
+  else setTimeout(()=>status('افتحي رابط البرنامج في متصفح حديث يدعم الحفظ الآمن؛ التعديل متوقف لحماية البيانات.'),0);
+  window.addEventListener('pageshow',e=>{if(e.persisted)location.reload();});
   const equal=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
+  // Three-way merge: only fields actually changed on this device are applied.
+  // The same cell changed differently, or delete-versus-edit, requires a decision.
+  const clone=x=>x===undefined?undefined:JSON.parse(JSON.stringify(x));
+  const object=x=>x!==null&&typeof x==='object'&&!Array.isArray(x);
+  const reserveIdentity=x=>x.archiveId20261029||[x.date,String(x.absent||'').trim().replace(/\s+/g,' '),String(x.period||'')].join('|');
+  const labels={};labels[ROWS_KEY]='الجدول والمعلمات';labels[ADMINS_KEY]='الإداريات';labels[SUBJECTS_KEY]='المواد';labels[USERS_KEY]='الصلاحيات';labels['daily_reserve_2026']='الاحتياط اليومي';labels['daily_reserve_archive_20261026']='أرشيف الاحتياط';labels['staff_movement_demo_2026']='حركة الدوام';
+  function listIdentity(k,x){
+    if(!object(x))return typeof x+':'+JSON.stringify(x);
+    if(k==='daily_reserve_archive_20261026'||k==='daily_reserve_2026'||k==='daily_reserve_snapshot_20261029')return reserveIdentity(x);
+    if(k==='staff_movement_demo_2026')return String(x.id||[x.date,x.name,x.type,x.time].join('|'));
+    return String(x.staffId||x.id||x.rosterLegacyPersonId20261017||x.name||'');
+  }
+  function mergeData(base,local,remote,path,issues,choices){
+    if(equal(local,base))return clone(remote);
+    if(equal(remote,base)||equal(local,remote))return clone(local);
+    if(path.length===2&&path[0]==='daily_reserve_archive_20261026'&&base===undefined&&object(local)&&object(remote)){
+      const strip=x=>{const a={...x};delete a.archivedAt;delete a.archiveId20261029;return a;};
+      if(equal(strip(local),strip(remote)))return clone(remote);
+    }
+    const key=JSON.stringify(path);
+    if(choices&&Object.hasOwn(choices,key))return clone(choices[key]==='local'?local:remote);
+    if(path.length===1&&Array.isArray(local)&&Array.isArray(remote)&&(base===null||base===undefined||Array.isArray(base))){
+      base=base||[];
+      const maps=[base,local,remote].map(a=>new Map(a.map(x=>[listIdentity(path[0],x),x])));
+      if(maps.every((m,i)=>m.size===[base,local,remote][i].length)&&maps.every(m=>!m.has(''))){
+        const out=[],keys=[...new Set([...maps[2].keys(),...maps[1].keys(),...maps[0].keys()])];
+        for(const id of keys){const next=mergeData(maps[0].get(id),maps[1].get(id),maps[2].get(id),path.concat(id),issues,choices);if(next!==undefined)out.push(next);}
+        return out;
+      }
+    }
+    if(Array.isArray(base)&&Array.isArray(local)&&Array.isArray(remote)&&path.at(-1)==='slots'&&base.length===local.length&&base.length===remote.length){
+      return base.map((x,i)=>mergeData(x,local[i],remote[i],path.concat(i),issues,choices));
+    }
+    if(object(base)&&object(local)&&object(remote)){
+      const out={};
+      for(const field of new Set([...Object.keys(base),...Object.keys(local),...Object.keys(remote)])){
+        if(path[0]===ROWS_KEY&&(field==='n'||field==='total')){out[field]=remote[field];continue;}
+        const v=mergeData(base[field],local[field],remote[field],path.concat(field),issues,choices);if(v!==undefined)out[field]=v;
+      }
+      return out;
+    }
+    issues.push({path,key,base:clone(base),local:clone(local),remote:clone(remote)});
+    return clone(remote);
+  }
+  function mergePending(data,p,choices){
+    const merged=clone(data),issues=[];
+    for(const k of Object.keys(p))merged[k]=mergeData(p[k].base,p[k].value,data[k]??null,[k],issues,choices);
+    if(Array.isArray(merged[ROWS_KEY]))merged[ROWS_KEY].forEach((r,i)=>{r.n=i+1;if(!String(r.total??'').trim()||/^\d+$/.test(String(r.total)))r.total=String((r.slots||[]).filter(isCountedLesson2026).length);});
+    const deleted=new Set(merged['daily_reserve_deleted_20261029']||[]);
+    if(Array.isArray(merged['daily_reserve_archive_20261026']))merged['daily_reserve_archive_20261026']=merged['daily_reserve_archive_20261026'].filter(x=>!deleted.has(reserveIdentity(x)));
+    return {merged,issues};
+  }
+
   function pending(){const raw=localStorage.getItem(JOURNAL);return raw?JSON.parse(raw):{};}
   function value(k){const raw=localStorage.getItem(k);return raw===null?null:JSON.parse(raw);}
   function persist(p){nativeSet.call(localStorage,JOURNAL,JSON.stringify(p));}
@@ -1788,20 +1850,22 @@ function updateScheduleTable20261028(table,html){
   function status(msg,ok=false){
     let el=document.getElementById('cloudSyncStatus2026');
     if(!el){el=document.createElement('div');el.id='cloudSyncStatus2026';el.className='sync-note-2026 no-print';el.setAttribute('role','status');document.body.prepend(el);}
+    el.classList.add('sync-note-2026','no-print');el.setAttribute('role','status');if(el.parentElement!==document.body)document.body.prepend(el);
     const signature=msg+'|'+ok+'|'+conflict;if(el.dataset.syncSignature===signature)return;el.dataset.syncSignature=signature;
-    el.style.cssText='position:sticky;top:0;z-index:1000;padding:12px;text-align:center;background:'+(ok?'#e8f6ec':'#fff3cd');
+    el.style.cssText='display:block;color:#17324d;direction:rtl;line-height:1.8;position:sticky;top:0;z-index:1000;padding:12px;text-align:center;background:'+(ok?'#e8f6ec':'#fff3cd');
     el.replaceChildren(document.createTextNode(msg+' '));
-    const btn=document.createElement('button');btn.textContent='تنزيل نسخة بيانات';btn.onclick=backup;el.append(btn);
-    if(conflict){const resolve=document.createElement('button');resolve.textContent='مراجعة تعارض الحفظ';resolve.onclick=resolveConflict;el.append(resolve);}
+    const btn=document.createElement('button');btn.textContent='تنزيل نسخة بيانات الجهاز';btn.onclick=backup;el.append(btn);
+    if(conflict&&writer){const resolve=document.createElement('button');resolve.textContent='مراجعة تعارض الحفظ';resolve.onclick=resolveConflict;el.append(resolve);}
   }
   function backup(){
     const data={};SYNC_KEYS.forEach(k=>data[k]=value(k));
-    const blob=new Blob([JSON.stringify({format:'dq-safety-backup-20261028',savedAt:new Date().toISOString(),data,pending:pending(),beforeRemote:JSON.parse(localStorage.getItem(BACKUP)||'null')},null,2)],{type:'application/json'});
+    const blob=new Blob([JSON.stringify({format:'dq-safety-backup-20261028',savedAt:new Date().toISOString(),data,pending:pending(),beforeRemote:JSON.parse(localStorage.getItem(BACKUP)||'null'),lastCloud:lastRemote,leaveLedger:JSON.parse(localStorage.getItem('dq_leave_ledger_20261017_v1')||'null')},null,2)],{type:'application/json'});
     const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='schedule-data-'+Date.now()+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),60000);
   }
   Storage.prototype.setItem=function(k,v){
-    if(this!==localStorage||!SYNC_KEYS.includes(k)||applyingRemote)return nativeSet.call(this,k,v);
+    if(this!==localStorage||!SYNC_KEYS.includes(k))return nativeSet.call(this,k,v);
     try{
+      if(!window.dqPersistenceReady20261029())throw Error('PERSISTENCE_NOT_READY');
       const next=JSON.parse(String(v)),old=value(k);if(equal(old,next))return nativeSet.call(this,k,v);
       const p=pending();p[k]={base:p[k]?p[k].base:old,value:next,id:Date.now()+':'+Math.random()};
       // Write-ahead journal survives closing the page before the network request.
@@ -1813,6 +1877,7 @@ function updateScheduleTable20261028(table,html){
   // Save a class rename and its linked schedule cells in one journal entry.
   // The existing sync sends all pending keys in one cloud update.
   window.saveSchoolDataBatch20261028=function(changes){
+    if(!window.dqPersistenceReady20261029())throw Error('PERSISTENCE_NOT_READY');
     const entries=Object.entries(changes);
     if(!entries.length||entries.some(([k,v])=>!SYNC_KEYS.includes(k)||!Array.isArray(v)))throw Error('Invalid data batch');
     const previousJournal=localStorage.getItem(JOURNAL),p=pending(),before={};
@@ -1836,9 +1901,8 @@ function updateScheduleTable20261028(table,html){
     if(!changedKeys.length&&!memoryChanged)return;
     // Remote refresh must not interrupt typing, an open editor or a drag.
     const focused=document.activeElement;
-    if(changedKeys.length&&((focused&&focused.matches('input,textarea,select,[contenteditable="true"]'))||dragState||document.querySelector('.modal[style*="flex"]')))return;
-    applyingRemote=true;
-    try{
+    if((changedKeys.length||memoryChanged)&&((focused&&focused.matches('input,textarea,select,[contenteditable="true"]'))||dragState||document.querySelector('.modal.open,dialog[open]')))return false;
+    {
       const previous={};SYNC_KEYS.forEach(k=>previous[k]=value(k));
       if(SYNC_KEYS.some(k=>Array.isArray(data[k])&&!equal(previous[k],data[k])))nativeSet.call(localStorage,BACKUP,JSON.stringify(previous));
       SYNC_KEYS.forEach(k=>{if(Array.isArray(data[k]))nativeSet.call(localStorage,k,JSON.stringify(data[k]));});
@@ -1851,45 +1915,92 @@ function updateScheduleTable20261028(table,html){
       if((peopleChanged||changedKeys.includes('daily_reserve_2026'))&&typeof renderReserve2026==='function')renderReserve2026();
       if((peopleChanged||changedKeys.includes('staff_movement_demo_2026'))&&typeof renderStaffMovement2026==='function')renderStaffMovement2026();
       if(changedKeys.includes('staff_movement_demo_2026')&&typeof renderMovementArchive2026==='function')renderMovementArchive2026();
-    }finally{applyingRemote=false;}
+      if(changedKeys.includes(ARCHIVE)&&typeof renderReserveArchive20261026==='function'&&document.getElementById('reserveArchiveRows20261026'))renderReserveArchive20261026();
+    }
+    return true;
   }
+  // Unique valid filter prevents an older service worker from replaying a cached database read during upgrade.
   async function readRemote(){
-    const r=await fetch(ENDPOINT+'?id=eq.'+encodeURIComponent(CLOUD_ID)+'&select=data,updated_at',{headers:headers(),cache:'no-store'});
+    const r=await fetch(ENDPOINT+'?id=eq.'+encodeURIComponent(CLOUD_ID)+'&select=data,updated_at&and=(id.neq.dq-read-'+crypto.randomUUID()+')',{headers:headers(),cache:'no-store',signal:AbortSignal.timeout(20000)});
     if(!r.ok)throw Error('read');return (await r.json())[0]||null;
   }
-  async function sync(){
-    if(busy)return;busy=true;
+  function schedule(){clearTimeout(timer);timer=setTimeout(sync,500);}
+  function sync(){if(inFlight)return inFlight;inFlight=runSync().finally(()=>{inFlight=null;});return inFlight;}
+  async function runSync(){
+    if(busy||broken||window.dqAccountSaving20261029)return;busy=true;
     try{
-      const remote=await readRemote(),p=pending(),keys=Object.keys(p),data=remote?.data||{};
-      conflict=keys.some(k=>!equal(data[k]??null,p[k].base)&&!equal(data[k]??null,p[k].value));
-      if(conflict){status('توجد تعديلات مختلفة بين الجهاز والسحابة. احتفظنا بتعديلاتك؛ راجعي التعارض قبل المتابعة.');return;}
+      const remote=await readRemote(),data=remote?.data;
+      if(!remote||!data||!Array.isArray(data[ROWS_KEY]))throw Error('MISSING_CLOUD_DATA');
+      lastRemote=clone(data);
+      // Never push historical built-in rows or invent a replacement empty cloud database.
+      if(!writer){if(!Object.keys(pending()).length)applyData(data);status('هذه الصفحة للقراءة — أغلقي صفحة البرنامج الأخرى لتفعيل التعديل هنا.');return;}
+      // Import the previously device-only archive once, keeping cloud deletion markers.
+      if(!localStorage.getItem(MIGRATION)){
+        const localArchive=value(ARCHIVE)||[],p=pending();
+        if(localArchive.length&&!p[ARCHIVE]){p[ARCHIVE]={base:Array.isArray(data[ARCHIVE])?[]:null,value:localArchive,id:crypto.randomUUID()};persist(p);}
+        nativeSet.call(localStorage,MIGRATION,'yes');
+      }
+      let p=pending(),keys=Object.keys(p);
+      const signature=JSON.stringify([remote.updated_at,p]);
+      const choices=review?.signature===signature?review.choices:null;
+      const result=mergePending(data,p,choices),merged=result.merged;
+      lastIssues=result.issues;conflict=lastIssues.length>0;
+      if(conflict){ready=true;status('يوجد اختلاف في نفس البيانات. احتفظنا بنسختك؛ افتحي مراجعة تعارض الحفظ.');return;}
       if(keys.length){
-        const merged={...data};keys.forEach(k=>merged[k]=p[k].value);
-        if(remote&&!remote.updated_at)throw Error('missing revision');
-        const url=remote?ENDPOINT+'?id=eq.'+encodeURIComponent(CLOUD_ID)+'&updated_at=eq.'+encodeURIComponent(remote.updated_at):ENDPOINT;
-        const r=await fetch(url,{method:remote?'PATCH':'POST',headers:headers({Prefer:remote?'return=representation':'resolution=ignore-duplicates,return=representation'}),body:JSON.stringify({id:CLOUD_ID,data:merged,updated_at:new Date().toISOString()})});
-        if(!r.ok)throw Error('write');const saved=await r.json();
-        if(!saved.length)throw Error('concurrent write');
+        if(!remote.updated_at)throw Error('MISSING_REVISION');
+        const r=await fetch(ENDPOINT+'?id=eq.'+encodeURIComponent(CLOUD_ID)+'&updated_at=eq.'+encodeURIComponent(remote.updated_at),{method:'PATCH',headers:headers({Prefer:'return=representation'}),signal:AbortSignal.timeout(20000),body:JSON.stringify({id:CLOUD_ID,data:merged,updated_at:new Date(Math.max(Date.now(),Date.parse(remote.updated_at)+1)).toISOString()})});
+        if(!r.ok)throw Error('WRITE_FAILED');const saved=await r.json();
+        if(!saved.length){schedule();throw Error('CONCURRENT_WRITE');}
+        if(!saved[0].data||keys.some(k=>!equal(saved[0].data[k],merged[k])))throw Error('SAVE_NOT_CONFIRMED');
         const current=pending();keys.forEach(k=>{if(current[k]?.id===p[k].id)delete current[k];else if(current[k])current[k].base=p[k].value;});persist(current);
-        if(Object.keys(current).length){status('محفوظ على الجهاز — جارٍ حفظ التعديلات التالية.');return;}
-        applyData(saved[0].data||merged);
-      }else if(remote)applyData(data);
-      status(remote||keys.length?'تم تأكيد الحفظ السحابي ✓':'جاهز — يبدأ الحفظ السحابي عند أول تعديل.',true);
-    }catch(e){status('لم يكتمل الاتصال أو الحفظ السحابي. التعديلات المعلّقة محفوظة على هذا الجهاز وستعاد المحاولة.');}
-    finally{busy=false;}
+        lastRemote=clone(saved[0].data);review=null;ready=true;
+        if(!Object.keys(current).length)applyData(saved[0].data);
+      }else{ready=true;applyData(data);}
+      // Rendering can archive completed records; those writes must be journaled, too.
+      if(Object.keys(pending()).length){status('محفوظ على هذا الجهاز — جارٍ تأكيد الحفظ السحابي.');schedule();}
+      else status('تم تأكيد الحفظ السحابي للجدول والأرشيف ✓ — تحديث ٢٩ أكتوبر',true);
+    }catch(e){
+      if(e.name==='QuotaExceededError'){ready=false;status('مساحة حفظ المتصفح غير كافية. أوقفنا التعديل؛ نزّلي نسخة البيانات قبل المتابعة.');return;}
+      if(e.message==='MISSING_CLOUD_DATA'){ready=false;status('لم نجد بيانات سحابية مكتملة. أوقفنا التعديل لحماية البيانات؛ لم نستبدلها بجدول قديم أو فارغ.');}
+      else status('لم يكتمل تأكيد الحفظ السحابي. أي تعديل معلّق محفوظ على هذا الجهاز وستعاد المحاولة.');
+    }finally{busy=false;}
   }
   async function resolveConflict(){
-    if(busy)return;
-    if(!confirm('يوجد اختلاف بين تعديلات هذا الجهاز والسحابة. تنزيل نسخة البيانات أولًا مستحسن. هل تريدين اعتماد تعديلات هذا الجهاز للأقسام المتعارضة؟ إلغاء يبقي النسختين دون تغيير.'))return;
+    if(busy||!writer)return;
     busy=true;
-    try{const remote=await readRemote(),p=pending();Object.keys(p).forEach(k=>p[k].base=remote?.data?.[k]??null);persist(p);conflict=false;}
-    catch(e){status('تعذر الاتصال. لم نغيّر البيانات.');}
-    finally{busy=false;}await sync();
+    try{
+      const remote=await readRemote(),p=pending();if(!remote?.data)return;
+      const result=mergePending(remote.data,p),choices={};
+      if(!result.issues.length){review=null;return;}
+      const dialog=document.createElement('dialog');dialog.dir='rtl';dialog.style.cssText='max-width:850px;width:94vw;box-sizing:border-box;max-height:80vh;overflow:auto;border-radius:14px;padding:24px';
+      const title=document.createElement('h3');title.textContent='مراجعة اختلافات الحفظ';dialog.append(title);
+      const help=document.createElement('p');help.textContent='اختاري القيمة المطلوبة لكل اختلاف. بقية التعديلات تبقى محفوظة. إلغاء يحتفظ بالنسختين.';dialog.append(help);
+      const fieldNames={name:'الاسم',absent:'المعلمة الغائبة',sub:'معلمة الاحتياط',date:'التاريخ',type:'نوع الحركة',time:'الوقت',period:'الحصة',notes:'ملاحظات',phone:'الهاتف',dept:'القسم',connection:'نوع الارتباط',manualLeaveType20261025:'نوع الإجازة',role:'الصلاحية',scopes:'الأقسام المسموحة'};
+      const captions={admin:'مسؤول',edit:'تعديل',view:'مشاهدة',schedule:'الجدول الدراسي',teachers:'المعلمات',admins:'الإداريات',reserve:'الاحتياط',daily:'الجدول اليومي',subjects:'المواد',staffMovement:'حركة الدوام',leaveLedger:'ملخص الإجازات'};
+      function display(v){
+        if(v===undefined)return 'محذوف';if(v===null)return 'غير موجود';
+        if(Array.isArray(v))return v.map(display).join('، ');
+        if(object(v)){const lines=Object.entries(fieldNames).filter(([k])=>v[k]!==undefined).map(([k,label])=>label+': '+display(v[k]));if(Array.isArray(v.slots))v.slots.forEach((lesson,i)=>{if(lesson)lines.push(DAYS[Math.floor(i/4)]+' / '+PERIODS[i%4]+': '+lesson);});return lines.join('\n')||'بيانات ربط السجل';}
+        return captions[v]||String(v||'فارغ');
+      }
+      function issueLabel(issue){const path=issue.path,k=path[0],all=[...(p[k]?.value||[]),...(p[k]?.base||[]),...(remote.data[k]||[])];const record=all.find(x=>listIdentity(k,x)===path[1]);let label=(labels[k]||'بيانات البرنامج')+(record&&object(record)?' — '+(record.name||[record.date,record.absent,record.period].filter(Boolean).join(' / ')):'');if(path[2]==='slots'&&Number.isInteger(path[3]))label+=' — '+DAYS[Math.floor(path[3]/4)]+' / الحصة '+PERIODS[path[3]%4];else if(path[2])label+=' — '+(fieldNames[path[2]]||'بيانات إضافية');return label;}
+
+      for(const issue of result.issues){
+        const field=document.createElement('fieldset'),legend=document.createElement('legend');legend.textContent=issueLabel(issue);field.append(legend);
+        for(const side of ['local','remote']){const label=document.createElement('label'),radio=document.createElement('input'),pre=document.createElement('pre');radio.type='radio';radio.name=issue.key;radio.value=side;radio.onchange=()=>choices[issue.key]=side;label.append(radio,document.createTextNode(side==='local'?' تعديلي على هذا الجهاز':' المحفوظ في السحابة'));pre.textContent=display(issue[side]);pre.style.cssText='white-space:pre-wrap;max-height:180px;overflow:auto;background:#f4f6fa;padding:10px';field.append(label,pre);}dialog.append(field);
+      }
+      const accept=document.createElement('button'),cancel=document.createElement('button');accept.textContent='حفظ الاختيارات';cancel.textContent='إلغاء';dialog.append(accept,cancel);document.body.append(dialog);
+      const selected=await new Promise(resolve=>{accept.onclick=()=>{if(Object.keys(choices).length!==result.issues.length){alert('اختاري قيمة لكل اختلاف أولًا.');return;}resolve(true);};cancel.onclick=()=>resolve(false);dialog.oncancel=e=>{e.preventDefault();resolve(false);};dialog.showModal();});
+      dialog.close();dialog.remove();
+      if(selected)review={signature:JSON.stringify([remote.updated_at,p]),choices};
+    }catch(e){status('تعذر تحميل المقارنة؛ بقيت البيانات محفوظة دون تغيير.');}
+    finally{busy=false;schedule();}
   }
   // Recover the exact pending values, including empty lists and deletions.
-  try{const p=pending();Object.keys(p).forEach(k=>{if(SYNC_KEYS.includes(k))nativeSet.call(localStorage,k,JSON.stringify(p[k].value));});if(Object.keys(p).length)applyData({});}
-  catch(e){status('تعذر قراءة سجل الحفظ المحلي. لا تحذفي بيانات المتصفح.');return;}
+  try{pending();}
+  catch(e){broken=true;status('تعذر قراءة سجل الحفظ المحلي. لا تحذفي بيانات المتصفح.');return;}
   window.forceCloudSync2026=sync;
+  window.dqMergeData20261029=mergePending;
   window.addEventListener('online',sync);window.addEventListener('focus',sync);
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)sync();});
   window.addEventListener('beforeunload',e=>{if(Object.keys(pending()).length){e.preventDefault();e.returnValue='';}});
@@ -2152,7 +2263,7 @@ window.pdfSimpleSection2026=async function(kind){
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', function () {
-    navigator.serviceWorker.register('./service-worker.js').catch(function (err) {
+    navigator.serviceWorker.register('./service-worker.js',{updateViaCache:'none'}).then(registration=>registration.update()).catch(function (err) {
       console.warn('Service worker registration failed:', err);
     });
   });
@@ -2202,7 +2313,7 @@ if ('serviceWorker' in navigator) {
     if(match)return `⚠️ تعارض: المعلمة ${sub} مسجلة مسبقاً في الاحتياط بالتاريخ والحصة نفسيهما.`;
     return '';
   }
-  let editing=-1,editingMovementSource=null;
+  let editing=-1,editingMovementSource=null,editingOriginal=null;
   window.cancelReserveEditAfterSync20261025=function(){editing=-1;editingMovementSource=null;const b=document.getElementById('saveReserveButton2026');if(b)b.textContent='إضافة الاحتياط';};
   window.prepareMovementReserve20261025=function(item){
     if(!requireEdit())return;
@@ -2214,13 +2325,13 @@ if ('serviceWorker' in navigator) {
   };
   window.editReserve2026=function(i){if(!requireEdit())return;const a=JSON.parse(localStorage.getItem('daily_reserve_2026')||'[]');const x=a[i];if(!x)return;
     reserveDate.value=x.date;reserveAbsent.value=x.absent;reserveSub.value=x.sub;reservePeriod.value=x.period;reserveNotes.value=x.notes||'';
-    editing=i;editingMovementSource=x.movementSource20261025||null;const btn=document.getElementById('saveReserveButton2026');if(btn)btn.textContent='حفظ تعديل الاحتياط';
+    editing=i;editingOriginal=JSON.stringify(x);editingMovementSource=x.movementSource20261025||null;const btn=document.getElementById('saveReserveButton2026');if(btn)btn.textContent='حفظ تعديل الاحتياط';
     document.getElementById('reserve2026').scrollIntoView({behavior:'smooth',block:'start'});
   };
   window.addReserve2026=function(){if(!requireEdit())return;const date=reserveDate.value,absent=reserveAbsent.value.trim(),sub=reserveSub.value.trim(),period=reservePeriod.value,notes=reserveNotes.value.trim();if(!date||!absent||!sub)return alert('أدخل التاريخ والمعلمة الغائبة ومعلمة الاحتياط.');
     const movementWarning=window.reserveMovementWarning2026?.(sub,date,period);if(movementWarning)return alert(movementWarning);
     const conflict=reserveConflict(date,sub,period,editing);if(conflict)return alert(conflict);
-    const a=JSON.parse(localStorage.getItem('daily_reserve_2026')||'[]');const item={date,absent,sub,period,notes};const linked=window.movementReserveNeeds20261025?.(movementEntries2026(),rows,admins,[],date).find(x=>x.date===date&&movementNormalize2026(x.absent)===movementNormalize2026(absent)&&x.period===period);if(linked)item.movementSource20261025=linked.movementSource20261025;else if(editingMovementSource&&editingMovementSource.date===date&&movementNormalize2026(editingMovementSource.name)===movementNormalize2026(absent))item.movementSource20261025=editingMovementSource;if(editing>=0&&editing<a.length)a[editing]=item;else a.push(item);
+    const a=JSON.parse(localStorage.getItem('daily_reserve_2026')||'[]');if(editing>=0){const found=a.findIndex(x=>JSON.stringify(x)===editingOriginal);if(found<0)return alert('تغيّر سجل الاحتياط أثناء التعديل. أُبقيت بياناتك في النموذج؛ افتحي السجل مجددًا للمراجعة.');editing=found;}const item={date,absent,sub,period,notes};const linked=window.movementReserveNeeds20261025?.(movementEntries2026(),rows,admins,[],date).find(x=>x.date===date&&movementNormalize2026(x.absent)===movementNormalize2026(absent)&&x.period===period);if(linked)item.movementSource20261025=linked.movementSource20261025;else if(editingMovementSource&&editingMovementSource.date===date&&movementNormalize2026(editingMovementSource.name)===movementNormalize2026(absent))item.movementSource20261025=editingMovementSource;if(editing>=0&&editing<a.length)a[editing]=item;else a.push(item);
     localStorage.setItem('daily_reserve_2026',JSON.stringify(a));editing=-1;editingMovementSource=null;
     reserveDate.value=reserveAbsent.value=reserveSub.value=reserveNotes.value='';document.getElementById('saveReserveButton2026').textContent='إضافة الاحتياط';renderReserve2026();
   };
@@ -2665,15 +2776,8 @@ window.openWhatsAppCodes2026=open;window.whatsAppCodesCore2026={phone};decorate(
  const identity=x=>[x.date,norm(x.absent),norm(x.sub),x.period].join('|');
  const html=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  function isAdmin(){return typeof role==='function'&&role()==='admin'}
- function archiveExpired(){
-  const today=typeof movementNowKuwait2026==='function'?movementNowKuwait2026().date:new Date().toISOString().slice(0,10);
-  const active=read(activeKey),old=read(archiveKey),keep=[],seen=new Set(old.map(identity));
-  for(const x of active){if(/^\d{4}-\d{2}-\d{2}$/.test(x.date)&&x.date<today){if(!seen.has(identity(x))){old.push({...x,archivedAt:new Date().toISOString()});seen.add(identity(x))}}else keep.push(x)}
-  if(keep.length!==active.length){try{save(archiveKey,old);save(activeKey,keep)}catch(e){console.error('تعذر حفظ أرشيف الاحتياط',e);alert('تعذر حفظ أرشيف الاحتياط؛ لم يتم حذف بيانات اليوم السابق.');return false}}
-  return keep.length!==active.length;
- }
- // Override the expiration function BEFORE the original renderer calls it.
- window.expireDailyReserve20261023=archiveExpired;
+ function archiveExpired(){return window.expireDailyReserve20261023?.()||false;}
+
  function setup(){
   if(document.getElementById('unifiedArchive2026'))return;
   const nav=document.querySelector('nav');
@@ -2696,8 +2800,8 @@ window.openWhatsAppCodes2026=open;window.whatsAppCodesCore2026={phone};decorate(
   const totals=document.getElementById('reserveArchiveTotals20261026');totals.innerHTML=counts.size?'<table><thead><tr><th>معلمة الاحتياط</th><th>عدد الحصص</th></tr></thead><tbody>'+[...counts].sort((a,b)=>b[1]-a[1]).map(([name,n])=>'<tr><td>'+html(name)+'</td><td>'+n+'</td></tr>').join('')+'</tbody></table>':'لا توجد حصص مؤرشفة مطابقة.';
   document.getElementById('reserveArchiveRows20261026').innerHTML=filtered.map(x=>'<tr><td>'+html(x.date)+'</td><td>'+html(x.absent)+'</td><td>'+html(x.sub)+'</td><td>'+html(x.period)+'</td><td>'+html(x.notes)+'</td><td><button onclick="editReserveArchive20261026('+x._index+')">تعديل</button> <button class="danger" onclick="deleteReserveArchive20261026('+x._index+')">حذف</button></td></tr>').join('');
  };
- window.editReserveArchive20261026=function(i){if(!isAdmin())return;const a=read(archiveKey),x=a[i];if(!x)return;const absent=prompt('اسم المعلمة الغائبة',x.absent);if(absent===null)return;const sub=prompt('اسم معلمة الاحتياط',x.sub);if(sub===null)return;const period=prompt('الحصة',x.period);if(period===null)return;const notes=prompt('ملاحظات',x.notes||'');if(notes===null)return;if(!norm(absent)||!norm(sub)||!norm(period))return alert('لا يمكن ترك الاسم أو الحصة فارغاً');a[i]={...x,absent:norm(absent),sub:norm(sub),period:norm(period),notes};save(archiveKey,a);window.renderReserveArchive20261026()};
- window.deleteReserveArchive20261026=function(i){if(!isAdmin())return;const a=read(archiveKey);if(!a[i]||!confirm('حذف هذه الحصة نهائياً من الأرشيف؟ سيؤثر ذلك على نصاب الاحتياط.'))return;a.splice(i,1);save(archiveKey,a);window.renderReserveArchive20261026()};
+ window.editReserveArchive20261026=function(i){if(!isAdmin())return;const a=read(archiveKey),x=a[i];if(!x)return;const absent=prompt('اسم المعلمة الغائبة',x.absent);if(absent===null)return;const sub=prompt('اسم معلمة الاحتياط',x.sub);if(sub===null)return;const period=prompt('الحصة',x.period);if(period===null)return;const notes=prompt('ملاحظات',x.notes||'');if(notes===null)return;if(!norm(absent)||!norm(sub)||!norm(period))return alert('لا يمكن ترك الاسم أو الحصة فارغاً');a[i]={...x,archiveId20261029:window.reserveArchiveIdentity20261029(x),absent:norm(absent),sub:norm(sub),period:norm(period),notes};save(archiveKey,a);window.renderReserveArchive20261026()};
+ window.deleteReserveArchive20261026=function(i){if(!isAdmin())return;const a=read(archiveKey);if(!a[i]||!confirm('حذف هذه الحصة نهائياً من الأرشيف؟ سيؤثر ذلك على نصاب الاحتياط.'))return;const x=a[i],deleted=read('daily_reserve_deleted_20261029'),key=window.reserveArchiveIdentity20261029(x);a.splice(i,1);if(!deleted.includes(key))deleted.push(key);saveSchoolDataBatch20261028({[archiveKey]:a,daily_reserve_deleted_20261029:deleted});window.renderReserveArchive20261026()};
  window.addEventListener('storage',e=>{if(e.key===archiveKey&&document.getElementById('reserveArchivePanel20261026')&&!document.getElementById('reserveArchivePanel20261026').hidden)window.renderReserveArchive20261026()});
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',setup);else setup();
 })();
@@ -2842,13 +2946,7 @@ window.openWhatsAppCodes2026=open;window.whatsAppCodesCore2026={phone};decorate(
  setTimeout(()=>{rebuildScopeChecks2026();renderPermissions();applySectionVisibility2026()},0);
 })();
 </script>
-<script>
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', function () {
-    navigator.serviceWorker.register('./service-worker.js');
-  });
-}
-</script>
+<!-- Service worker is registered once above. -->
 
 <!-- ربط حركة الدوام بأوقات الحصص الرسمية 2026-2027 -->
 <script id="movementPeriodRules2026">
@@ -3081,7 +3179,7 @@ if ('serviceWorker' in navigator) {
    if(role()!=='admin')return;
    if(saving)return alert('يرجى انتظار اكتمال حفظ الصلاحيات.');
    if(!window.dqAdminToken2026){window.expireMainAdmin2026();return;}
-   saving=true;
+   saving=true;window.dqAccountSaving20261029=true;
    const before=localStorage.getItem(USERS_KEY)||'[]';
    try{
     original.apply(this,args);
@@ -3106,7 +3204,7 @@ if ('serviceWorker' in navigator) {
     }else{
      alert('رفضت قاعدة البيانات حفظ تغيير الصلاحيات، ولم يُنفذ الحذف.\nسبب الرفض: '+msg+'\nيرجى إرسال نص الخطأ لإصلاح دالة الحفظ في قاعدة البيانات.');
     }
-   }finally{saving=false;}
+   }finally{saving=false;window.dqAccountSaving20261029=false;window.forceCloudSync2026?.();}
   };
  }
 })();
@@ -3192,7 +3290,7 @@ function render(){
 }
 
 const nursingUse=['nursing_use','رضاعة — استخدام فعلي','يسجل الاستخدام الفعلي يومًا بيوم، بحد ساعتين صباحًا، ضمن فترة رضاعة معتمدة.','hours','#dff3ed'];
-const type=id=>rules.find(x=>x[0]===id)||(id==='nursing_use'?nursingUse:null), canAccess=()=>localStorage.getItem('loggedIn')==='yes'&&(role()==='admin'||(typeof hasScope2026==='function'&&hasScope2026('leaveLedger'))), canManage=()=>canAccess()&&(role()==='admin'||role()==='edit');
+const type=id=>rules.find(x=>x[0]===id)||(id==='nursing_use'?nursingUse:null), canAccess=()=>localStorage.getItem('loggedIn')==='yes'&&(role()==='admin'||(typeof hasScope2026==='function'&&hasScope2026('leaveLedger'))), canManage=()=>window.dqPersistenceReady20261029?.()&&canAccess()&&(role()==='admin'||role()==='edit');
 function date(s){return /^\d{4}-\d{2}-\d{2}$/.test(s||'')&&!isNaN(Date.parse(s+'T00:00:00Z'))&&new Date(s+'T00:00:00Z').toISOString().slice(0,10)===s?s:''}
 function shift(s,n){const d=new Date(s+'T00:00:00Z');d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10)}
 function buildDates(a,b,mode='calendar'){if(!date(a)||!date(b)||b<a)return [];let out=[];for(let d=a;d<=b;d=shift(d,1)){if(out.length>20000)throw Error('المدة طويلة جدًا');const wd=new Date(d+'T00:00:00Z').getUTCDay();if(mode==='calendar'||(wd!==5&&wd!==6))out.push(d)}return out}
@@ -3343,7 +3441,7 @@ function errorText(e){const m=String(e?.message||'');
  return 'تعذر إكمال الاتصال بقاعدة البيانات؛ سيعاد إكمال إنشاء الرمز عند الاتصال.';
 }
 async function pump(){
- if(running)return;running=true;
+ if(running||!window.dqPersistenceReady20261029?.())return;running=true;
  try{
   for(const entry of all()){
    const {person,kind}=entry,meta=person[META];
@@ -3434,35 +3532,39 @@ const panel=document.querySelector('#staffMovement2026 .movement-panel');if(pane
 <script id="dailyRules20261023">
 (function(){
  const key='daily_reserve_2026';
- window.expireDailyReserve20261023=function(){
+ window.reserveArchiveIdentity20261029=x=>x.archiveId20261029||[x.date,String(x.absent||'').trim().replace(/\s+/g,' '),String(x.period||'')].join('|');
+ window.reserveDateFinished20261029=function(date){
   const today=movementNowKuwait2026().date;
   const hour=Number(new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Kuwait',hour:'2-digit',hourCycle:'h23'}).format(new Date()));
-  const finished=date=>/^\d{4}-\d{2}-\d{2}$/.test(String(date||''))&&(date<today||(date===today&&hour>=17));
-  const archiveKey='daily_reserve_archive_20261026';
-  let active,archive;
-  try{active=JSON.parse(localStorage.getItem(key)||'[]');archive=JSON.parse(localStorage.getItem(archiveKey)||'[]')}catch(e){return false}
-  if(!Array.isArray(active)||!Array.isArray(archive))return false;
-  const id=x=>[x.date,String(x.absent||'').trim(),String(x.sub||'').trim(),String(x.period||'')].join('|');
-  const seen=new Set(archive.map(id)),keep=[],completed=[];
-  for(const x of active){if(finished(x.date))completed.push(x);else keep.push(x)}
-  // Preserve unassigned replacement lessons as part of the completed daily report.
-  const dates=new Set(completed.map(x=>x.date));
-  if(finished(today))dates.add(today);
-  for(const date of dates){
-   try{
-    if(typeof movementReserveNeeds20261025!=='function'||typeof movementEntries2026!=='function')continue;
-    const pending=movementReserveNeeds20261025(movementEntries2026(),rows,admins,active,date);
-    for(const x of pending)if(x.date===date)completed.push({...x,sub:'لم تُعيَّن بديلة',notes:x.notes||'لم يتم تعيين بديلة'});
-   }catch(e){console.warn('تعذر قراءة الاحتياط غير المعيّن',e)}
-  }
-  for(const x of completed){const k=id(x);if(!seen.has(k)){archive.push({...x,archivedAt:new Date().toISOString()});seen.add(k)}}
-  if(!completed.length)return false;
+  return /^\d{4}-\d{2}-\d{2}$/.test(String(date||''))&&(date<today||(date===today&&hour>=17));
+ };
+ window.expireDailyReserve20261023=function(){
+  if(!window.dqPersistenceReady20261029?.()||role()!=='admin')return false;
+  const archiveKey='daily_reserve_archive_20261026',deletedKey='daily_reserve_deleted_20261029',snapshotKey='daily_reserve_snapshot_20261029';
+  const read=k=>JSON.parse(localStorage.getItem(k)||'[]'),id=window.reserveArchiveIdentity20261029,finished=window.reserveDateFinished20261029;
   try{
-   localStorage.setItem(archiveKey,JSON.stringify(archive));
-   if(JSON.stringify(JSON.parse(localStorage.getItem(archiveKey)))!==JSON.stringify(archive))throw Error('ARCHIVE_VERIFY_FAILED');
-   if(keep.length!==active.length)localStorage.setItem(key,JSON.stringify(keep));
+   const active=read(key),archive=read(archiveKey),deleted=read(deletedKey),previousSnapshot=read(snapshotKey);
+   if(![active,archive,deleted,previousSnapshot].every(Array.isArray))throw Error('INVALID_ARCHIVE');
+   const today=movementNowKuwait2026().date,keep=active.filter(x=>!finished(x.date)),completed=active.filter(x=>finished(x.date)),seen=new Set(archive.map(id)),removed=new Set(deleted);
+   let snapshot=previousSnapshot;
+   // Record today's actual needs while the day's timetable is known. Never infer
+   // a past day's unassigned lessons from a subsequently edited timetable.
+   if(window.movementPortalLoaded20261025&&!window.movementLocalScope20261025){
+    const needs=movementReserveNeeds20261025(movementEntries2026(),rows,admins,[],today).filter(x=>x.date===today);
+    snapshot=previousSnapshot.filter(x=>x.date!==today).concat(needs);
+   }
+   const assigned=new Set(completed.map(id));
+   for(const x of snapshot)if(finished(x.date)&&!assigned.has(id(x))){completed.push({...x,sub:'لم تُعيَّن بديلة',notes:x.notes||'لم يتم تعيين بديلة'});assigned.add(id(x));}
+   for(const x of completed){const identity=id(x);if(!seen.has(identity)&&!removed.has(identity)){archive.push({...x,archiveId20261029:identity,archivedAt:new Date().toISOString()});seen.add(identity);}}
+   snapshot=snapshot.filter(x=>!finished(x.date));
+   const changes={};
+   if(JSON.stringify(archive)!==localStorage.getItem(archiveKey)&&completed.length)changes[archiveKey]=archive;
+   if(keep.length!==active.length)changes[key]=keep;
+   if(JSON.stringify(snapshot)!==JSON.stringify(previousSnapshot))changes[snapshotKey]=snapshot;
+   // A single durable journal entry contains BOTH the archive and daily removal.
+   if(Object.keys(changes).length)saveSchoolDataBatch20261028(changes);
    return keep.length!==active.length;
-  }catch(e){console.error('تعذر حفظ أرشيف الاحتياط؛ لم يتم حذف الكشف',e);return false}
+  }catch(e){console.error('تعذر الأرشفة الآمنة؛ احتفظنا بكشف اليوم دون تفريغ.',e);return false;}
  };
 
  const save=window.saveStaffMovement2026;
@@ -3671,7 +3773,7 @@ window.movementReserveNeeds20261025=function(entries,teachers,administrators,ass
 };
 // Reconcile only after an authoritative portal load, or a confirmed deletion.
 window.reconcileMovementReserve20261025=function(deleted){
- if(role()!=='admin')return;
+ if(role()!=='admin'||!window.dqPersistenceReady20261029?.())return;
  const scoped=Array.isArray(deleted);
  if(!scoped&&(!window.movementPortalLoaded20261025||window.movementLocalScope20261025))return;
  let saved;try{saved=JSON.parse(localStorage.getItem('daily_reserve_2026')||'[]')}catch{return}
@@ -3679,6 +3781,7 @@ window.reconcileMovementReserve20261025=function(deleted){
  const source=movementEntries2026(),same=(a,b)=>a.date===b.date&&(norm(a.name)===norm(b.name)||!!((a.staffId||a.staff_id||a.person)&&b.staffId&&String(a.staffId||a.staff_id||a.person)===String(b.staffId)));
  let changed=false;
  const kept=saved.filter(item=>{
+  if(window.reserveDateFinished20261029?.(item.date))return true;
   // Older generated rows have this exact movement/lesson note format.
   const legacy=/^(?:مرضية|طارئة|إجازة مرضية|إجازة طارئة|إذن بداية الدوام|إذن نهاية الدوام)\s+—\s+.+$/.test(String(item.notes||''));
   if(!item.movementSource20261025&&!legacy)return true;
@@ -3698,6 +3801,7 @@ let pending=[];
 window.assignMovementReserve20261025=function(i){const item=pending[i];if(item)prepareMovementReserve20261025(item)};
 const render=window.renderReserve2026;
 window.renderReserve2026=function(){
+ window.expireDailyReserve20261023?.();
  reconcileMovementReserve20261025();
  const result=render.apply(this,arguments),body=document.getElementById('reserveBody');if(!body)return result;
  let assigned=[];try{assigned=JSON.parse(localStorage.getItem('daily_reserve_2026')||'[]')}catch{};if(!Array.isArray(assigned))assigned=[];
@@ -3775,3 +3879,12 @@ html{scrollbar-gutter:stable;-webkit-text-size-adjust:100%;text-size-adjust:100%
 #home .card .icon svg{display:block;width:54px!important;height:54px!important;flex-shrink:0}
 }
 </style>
+
+<script id="persistenceEditGuards20261029">
+(function(){
+ const mutations=['editSlot','dragStart','dropSlot','openTeacherModal','saveTeacherModal','addTeacherFromSchedule','addTeacherManager','removeTeacher','resetSchedule','clearAllScheduleLessonsAdmin2026','addSubject','editSubject','deleteSubject','addAdmin','editAdmin','deleteAdmin','addReserve2026','deleteReserve2026','editReserve2026','editReserveArchive20261026','deleteReserveArchive20261026','saveStaffMovement2026','deleteStaffMovement2026','editManualScheduleLeave20261025','addDailyClass20261028','editDailyClass20261028','deleteDailyClass20261028','saveDailyClassName20261028','addPermission','editPermissionPrivacy2026','editPermission2026','deletePermission'];
+ for(const name of mutations){const old=window[name];if(typeof old==='function')window[name]=function(...args){if(!window.dqRequirePersistence20261029())return;return old.apply(this,args);};}
+ const oldScope=window.requireScopeEdit2026;
+ if(typeof oldScope==='function')window.requireScopeEdit2026=function(...args){return window.dqRequirePersistence20261029()&&oldScope.apply(this,args);};
+})();
+</script>
