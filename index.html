@@ -1777,9 +1777,9 @@ function updateScheduleTable20261028(table,html){
   const ENDPOINT=SB_URL+'/rest/v1/dar_quran_data';
   const CLOUD_ID='dar_quran_women2_pdf_roster_aligned_20261011_v2';
   const SYNC_KEYS=[ROWS_KEY,SUBJECTS_KEY,ADMINS_KEY,USERS_KEY,'daily_reserve_2026','staff_movement_demo_2026','darquran_daily_classes_20261028_v1','daily_reserve_archive_20261026','daily_reserve_deleted_20261029','daily_reserve_snapshot_20261029'];
-  const JOURNAL='dq_sync_pending_20261028', BACKUP='dq_before_remote_20261028';
+  const JOURNAL='dq_sync_pending_20261028', BACKUP='dq_before_remote_20261028', REVIEW='dq_sync_review_20261029_v2';
   const nativeSet=Storage.prototype.setItem,nativeRemove=Storage.prototype.removeItem;
-  let busy=false,timer,conflict=false,writer=false,ready=false,broken=false,lastIssues=[],lastRemote=null,review=null,inFlight=null;
+  let busy=false,timer,conflict=false,writer=false,ready=false,broken=false,lastIssues=[],lastRemote=null,review={},inFlight=null;
   const ARCHIVE='daily_reserve_archive_20261026',DELETED='daily_reserve_deleted_20261029',MIGRATION='dq_archive_cloud_migrated_20261029';
   const readable=()=>ready&&!broken;
   window.dqPersistenceReady20261029=()=>writer&&readable();
@@ -1789,7 +1789,27 @@ function updateScheduleTable20261028(table,html){
   if(navigator.locks){navigator.locks.request('dq-schedule-writer-20261029',async()=>{writer=true;ready=false;try{const p=pending();for(const k of Object.keys(p))if(SYNC_KEYS.includes(k))nativeSet.call(localStorage,k,JSON.stringify(p[k].value));if(Object.keys(p).length){rows=loadRows();subjects=loadArray(SUBJECTS_KEY,subjects);admins=loadArray(ADMINS_KEY,admins);renderAll();}}catch(e){broken=true;}await sync();await new Promise(resolve=>{window.addEventListener('pagehide',resolve,{once:true});});writer=false;ready=false;});}
   else setTimeout(()=>status('افتحي رابط البرنامج في متصفح حديث يدعم الحفظ الآمن؛ التعديل متوقف لحماية البيانات.'),0);
   window.addEventListener('pageshow',e=>{if(e.persisted)location.reload();});
-  const equal=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
+  // JSONB can reorder object fields. Compare JSON values, preserving array order.
+  function equal(a,b){
+    if(a===b)return true;
+    if(a===null||b===null||typeof a!=='object'||typeof b!=='object')return false;
+    if(Array.isArray(a)||Array.isArray(b))return Array.isArray(a)&&Array.isArray(b)&&a.length===b.length&&a.every((v,i)=>equal(v,b[i]));
+    const keys=Object.keys(a);return keys.length===Object.keys(b).length&&keys.every(k=>Object.hasOwn(b,k)&&equal(a[k],b[k]));
+  }
+  function saveReview(next){nativeSet.call(localStorage,REVIEW,JSON.stringify(next));review=next;}
+  function reviewedMerge(data,p){
+    const first=mergePending(data,p),choices={},valid={};
+    for(const issue of first.issues){
+      const decision=review[issue.key];
+      // Keep a choice across unrelated edits, but never reuse it for changed values.
+      if(decision&&['local','remote'].includes(decision.side)&&equal(decision.local,issue.local)&&equal(decision.remote,issue.remote)){
+        choices[issue.key]=decision.side;valid[issue.key]=decision;
+      }
+    }
+    if(!equal(review,valid))saveReview(valid);
+    return Object.keys(choices).length?mergePending(data,p,choices):first;
+  }
+
   // Three-way merge: only fields actually changed on this device are applied.
   // The same cell changed differently, or delete-versus-edit, requires a decision.
   const clone=x=>x===undefined?undefined:JSON.parse(JSON.stringify(x));
@@ -1859,7 +1879,7 @@ function updateScheduleTable20261028(table,html){
   }
   function backup(){
     const data={};SYNC_KEYS.forEach(k=>data[k]=value(k));
-    const blob=new Blob([JSON.stringify({format:'dq-safety-backup-20261028',savedAt:new Date().toISOString(),data,pending:pending(),beforeRemote:JSON.parse(localStorage.getItem(BACKUP)||'null'),lastCloud:lastRemote,leaveLedger:JSON.parse(localStorage.getItem('dq_leave_ledger_20261017_v1')||'null')},null,2)],{type:'application/json'});
+    const blob=new Blob([JSON.stringify({format:'dq-safety-backup-20261028',savedAt:new Date().toISOString(),data,pending:pending(),conflictDecisions:review,beforeRemote:JSON.parse(localStorage.getItem(BACKUP)||'null'),lastCloud:lastRemote,leaveLedger:JSON.parse(localStorage.getItem('dq_leave_ledger_20261017_v1')||'null')},null,2)],{type:'application/json'});
     const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='schedule-data-'+Date.now()+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),60000);
   }
   Storage.prototype.setItem=function(k,v){
@@ -1941,24 +1961,27 @@ function updateScheduleTable20261028(table,html){
         nativeSet.call(localStorage,MIGRATION,'yes');
       }
       let p=pending(),keys=Object.keys(p);
-      const signature=JSON.stringify([remote.updated_at,p]);
-      const choices=review?.signature===signature?review.choices:null;
-      const result=mergePending(data,p,choices),merged=result.merged;
+      const result=reviewedMerge(data,p),merged=result.merged;
       lastIssues=result.issues;conflict=lastIssues.length>0;
       if(conflict){ready=true;status('يوجد اختلاف في نفس البيانات. احتفظنا بنسختك؛ افتحي مراجعة تعارض الحفظ.');return;}
       if(keys.length){
-        if(!remote.updated_at)throw Error('MISSING_REVISION');
-        const r=await fetch(ENDPOINT+'?id=eq.'+encodeURIComponent(CLOUD_ID)+'&updated_at=eq.'+encodeURIComponent(remote.updated_at),{method:'PATCH',headers:headers({Prefer:'return=representation'}),signal:AbortSignal.timeout(20000),body:JSON.stringify({id:CLOUD_ID,data:merged,updated_at:new Date(Math.max(Date.now(),Date.parse(remote.updated_at)+1)).toISOString()})});
-        if(!r.ok)throw Error('WRITE_FAILED');const saved=await r.json();
-        if(!saved.length){schedule();throw Error('CONCURRENT_WRITE');}
-        if(!saved[0].data||keys.some(k=>!equal(saved[0].data[k],merged[k])))throw Error('SAVE_NOT_CONFIRMED');
+        let confirmed=data;
+        // Choosing cloud values needs no write if no local change remains.
+        if(!keys.every(k=>equal(data[k]??null,merged[k]??null))){
+          if(!remote.updated_at)throw Error('MISSING_REVISION');
+          const r=await fetch(ENDPOINT+'?id=eq.'+encodeURIComponent(CLOUD_ID)+'&updated_at=eq.'+encodeURIComponent(remote.updated_at),{method:'PATCH',headers:headers({Prefer:'return=representation'}),signal:AbortSignal.timeout(20000),body:JSON.stringify({id:CLOUD_ID,data:merged,updated_at:new Date(Math.max(Date.now(),Date.parse(remote.updated_at)+1)).toISOString()})});
+          if(!r.ok)throw Error('WRITE_FAILED');const saved=await r.json();
+          if(!saved.length){schedule();throw Error('CONCURRENT_WRITE');}
+          if(!saved[0].data||keys.some(k=>!equal(saved[0].data[k],merged[k])))throw Error('SAVE_NOT_CONFIRMED');
+          confirmed=saved[0].data;
+        }
         const current=pending();keys.forEach(k=>{if(current[k]?.id===p[k].id)delete current[k];else if(current[k])current[k].base=p[k].value;});persist(current);
-        lastRemote=clone(saved[0].data);review=null;ready=true;
-        if(!Object.keys(current).length)applyData(saved[0].data);
-      }else{ready=true;applyData(data);}
+        lastRemote=clone(confirmed);saveReview({});ready=true;
+        if(!Object.keys(current).length)applyData(confirmed);
+      }else{saveReview({});ready=true;applyData(data);}
       // Rendering can archive completed records; those writes must be journaled, too.
       if(Object.keys(pending()).length){status('محفوظ على هذا الجهاز — جارٍ تأكيد الحفظ السحابي.');schedule();}
-      else status('تم تأكيد الحفظ السحابي للجدول والأرشيف ✓ — تحديث ٢٩ أكتوبر',true);
+      else status('تم تأكيد الحفظ السحابي للجدول والأرشيف ✓ — تحديث ٢٩ أكتوبر / إصلاح المراجعة ٢',true);
     }catch(e){
       if(e.name==='QuotaExceededError'){ready=false;status('مساحة حفظ المتصفح غير كافية. أوقفنا التعديل؛ نزّلي نسخة البيانات قبل المتابعة.');return;}
       if(e.message==='MISSING_CLOUD_DATA'){ready=false;status('لم نجد بيانات سحابية مكتملة. أوقفنا التعديل لحماية البيانات؛ لم نستبدلها بجدول قديم أو فارغ.');}
@@ -1970,8 +1993,8 @@ function updateScheduleTable20261028(table,html){
     busy=true;
     try{
       const remote=await readRemote(),p=pending();if(!remote?.data)return;
-      const result=mergePending(remote.data,p),choices={};
-      if(!result.issues.length){review=null;return;}
+      const result=reviewedMerge(remote.data,p),choices={};
+      if(!result.issues.length)return;
       const dialog=document.createElement('dialog');dialog.dir='rtl';dialog.style.cssText='max-width:850px;width:94vw;box-sizing:border-box;max-height:80vh;overflow:auto;border-radius:14px;padding:24px';
       const title=document.createElement('h3');title.textContent='مراجعة اختلافات الحفظ';dialog.append(title);
       const help=document.createElement('p');help.textContent='اختاري القيمة المطلوبة لكل اختلاف. بقية التعديلات تبقى محفوظة. إلغاء يحتفظ بالنسختين.';dialog.append(help);
@@ -1992,12 +2015,18 @@ function updateScheduleTable20261028(table,html){
       const accept=document.createElement('button'),cancel=document.createElement('button');accept.textContent='حفظ الاختيارات';cancel.textContent='إلغاء';dialog.append(accept,cancel);document.body.append(dialog);
       const selected=await new Promise(resolve=>{accept.onclick=()=>{if(Object.keys(choices).length!==result.issues.length){alert('اختاري قيمة لكل اختلاف أولًا.');return;}resolve(true);};cancel.onclick=()=>resolve(false);dialog.oncancel=e=>{e.preventDefault();resolve(false);};dialog.showModal();});
       dialog.close();dialog.remove();
-      if(selected)review={signature:JSON.stringify([remote.updated_at,p]),choices};
+      if(selected){
+        const decisions={...review};
+        for(const issue of result.issues)decisions[issue.key]={side:choices[issue.key],local:clone(issue.local),remote:clone(issue.remote)};
+        saveReview(decisions);
+        status('تم حفظ اختياراتك على الجهاز — جارٍ تأكيد المزامنة.');
+      }
     }catch(e){status('تعذر تحميل المقارنة؛ بقيت البيانات محفوظة دون تغيير.');}
     finally{busy=false;schedule();}
+    await sync();
   }
   // Recover the exact pending values, including empty lists and deletions.
-  try{pending();}
+  try{pending();const saved=JSON.parse(localStorage.getItem(REVIEW)||'{}');if(object(saved))review=saved;}
   catch(e){broken=true;status('تعذر قراءة سجل الحفظ المحلي. لا تحذفي بيانات المتصفح.');return;}
   window.forceCloudSync2026=sync;
   window.dqMergeData20261029=mergePending;
