@@ -989,7 +989,7 @@ function saveTeacherModal(){
     r.name=name;r.dept=dept;r.connection=connection;r.phone=phone;
     r.total=document.getElementById('mTotal').value.trim();
   }
-  closeTeacherModal();saveRows();
+  saveRows();closeTeacherModal();
 }
 function addTeacherFromSchedule(){
   if(!requireEdit()) return;
@@ -1460,12 +1460,12 @@ function printSchedule2026(){
     window.print();
   }
 }
-async function pdfSchedule2026(){
+async function pdfSchedule2026(selectedRows=rows){
   if(typeof html2canvas==="undefined" || !window.jspdf || !window.jspdf.jsPDF){
     alert("تعذر تحميل أداة PDF. تأكد من اتصال الإنترنت ثم حاول مرة أخرى."); return;
   }
   const exportAcademicYearStart=window.dqAcademicYearStart20261029();
-  const exportRowsSnapshot=rows.map(r=>({...r,slots:Array.isArray(r.slots)?r.slots.slice():Array(20).fill('')}));
+  const exportRowsSnapshot=selectedRows.map(r=>({...r,slots:Array.isArray(r.slots)?r.slots.slice():Array(20).fill('')}));
   if(!exportRowsSnapshot.length){alert('لا توجد صفوف لتصديرها.');return;}
   const btns=[...document.querySelectorAll('button')].filter(b=>b.getAttribute('onclick')==='pdfSchedule2026()');
   btns.forEach(b=>{b.disabled=true; b.dataset.oldText=b.textContent; b.textContent='جاري تجهيز PDF...';});
@@ -1489,7 +1489,7 @@ async function pdfSchedule2026(){
     return h;
   }
   const style=document.createElement('style');
-  style.textContent=`.schedule-pdf-export-20261028 .pdfpage{position:relative;box-sizing:border-box;width:1580px;height:1117px;display:flex;flex-direction:column;background:#fff;padding:18px 42px 42px;font-family:Tahoma,Arial,sans-serif;direction:rtl;color:#000;overflow:hidden}.schedule-pdf-export-20261028 .pdfhead{height:150px;flex:0 0 150px;display:grid;grid-template-columns:210px 1fr 210px;align-items:start;direction:ltr}.schedule-pdf-export-20261028 .pdfhead img{width:150px;max-height:125px;object-fit:contain;justify-self:center}.schedule-pdf-export-20261028 .pdftitle{direction:rtl;text-align:center;font-size:31px;font-weight:700;line-height:1.5;padding-top:22px}.schedule-pdf-export-20261028 .pdfbody{flex:1 1 auto;min-height:0}.schedule-pdf-export-20261028 .pdftable{width:100%;margin:0;border-collapse:collapse;table-layout:fixed;font-size:10px;direction:rtl}.schedule-pdf-export-20261028 .pdftable th,.schedule-pdf-export-20261028 .pdftable td{border:1px solid #111;text-align:center;vertical-align:middle;padding:2px;height:31px;line-height:1.15;white-space:normal;overflow-wrap:anywhere}.schedule-pdf-export-20261028 .pdftable th{font-weight:700}.schedule-pdf-export-20261028 .pdftable .nm{width:180px}.schedule-pdf-export-20261028 .pdftable .leave{width:90px;overflow-wrap:anywhere}.schedule-pdf-export-20261028 .pdftable th:first-child{width:34px}.schedule-pdf-export-20261028 .pdftable th:nth-child(3){width:90px}.schedule-pdf-export-20261028 .pdftable th:nth-child(4){width:65px}.schedule-pdf-export-20261028 .pdftable th:last-child{width:52px}.schedule-pdf-export-20261028 .pdftable .sun{background:#f7e8bd}.schedule-pdf-export-20261028 .pdftable .mon{background:#d7e5f1}.schedule-pdf-export-20261028 .pdftable .tue{background:#dcebd4}.schedule-pdf-export-20261028 .pdftable .wed{background:#f1d7c8}.schedule-pdf-export-20261028 .pdftable .thu{background:#d9e0ea}.schedule-pdf-export-20261028 .time{font-size:8px;margin-top:3px}.schedule-pdf-export-20261028 .pdffoot{position:static;flex:0 0 auto;display:flex;gap:24px;justify-content:space-between;align-items:flex-start;direction:ltr;margin-top:${dqFooterGapPixels20261105()}px;padding:0 8px}.schedule-pdf-export-20261028 .sign{direction:rtl;text-align:center;font-size:20px;line-height:2}.schedule-pdf-export-20261028 .sign b{font-size:23px}.schedule-pdf-export-20261028 .notes{direction:rtl;text-align:right;font-size:12px;line-height:1.7;max-width:690px}.schedule-pdf-export-20261028 .notes b{color:#c00}.schedule-pdf-export-20261028 .notes span{display:block;margin-top:7px}`;
+  style.textContent=`.schedule-pdf-export-20261028 .pdfpage{position:relative;box-sizing:border-box;width:1580px;height:1117px;display:flex;flex-direction:column;background:#fff;padding:18px 42px 42px;font-family:Tahoma,Arial,sans-serif;direction:rtl;color:#000;overflow:hidden}.schedule-pdf-export-20261028 .pdfhead{min-height:150px;flex:0 0 auto;display:grid;grid-template-columns:210px 1fr 210px;align-items:start;direction:ltr}.schedule-pdf-export-20261028 .pdfhead img{width:150px;max-height:125px;object-fit:contain;justify-self:center}.schedule-pdf-export-20261028 .pdftitle{direction:rtl;text-align:center;font-size:26px;font-weight:700;line-height:1.4;padding-top:14px}.schedule-pdf-export-20261028 .pdfbody{flex:1 1 auto;min-height:0}.schedule-pdf-export-20261028 .pdftable{width:100%;margin:0;border-collapse:collapse;table-layout:fixed;font-size:10px;direction:rtl}.schedule-pdf-export-20261028 .pdftable th,.schedule-pdf-export-20261028 .pdftable td{border:1px solid #111;text-align:center;vertical-align:middle;padding:2px;height:31px;line-height:1.15;white-space:normal;overflow-wrap:anywhere}.schedule-pdf-export-20261028 .pdftable th{font-weight:700}.schedule-pdf-export-20261028 .pdftable .nm{width:180px}.schedule-pdf-export-20261028 .pdftable .leave{width:90px;overflow-wrap:anywhere}.schedule-pdf-export-20261028 .pdftable th:first-child{width:34px}.schedule-pdf-export-20261028 .pdftable th:nth-child(3){width:90px}.schedule-pdf-export-20261028 .pdftable th:nth-child(4){width:65px}.schedule-pdf-export-20261028 .pdftable th:last-child{width:52px}.schedule-pdf-export-20261028 .pdftable .sun{background:#f7e8bd}.schedule-pdf-export-20261028 .pdftable .mon{background:#d7e5f1}.schedule-pdf-export-20261028 .pdftable .tue{background:#dcebd4}.schedule-pdf-export-20261028 .pdftable .wed{background:#f1d7c8}.schedule-pdf-export-20261028 .pdftable .thu{background:#d9e0ea}.schedule-pdf-export-20261028 .time{font-size:8px;margin-top:3px}.schedule-pdf-export-20261028 .pdffoot{position:static;flex:0 0 auto;display:flex;gap:24px;justify-content:space-between;align-items:flex-start;direction:ltr;margin-top:${dqFooterGapPixels20261105()}px;padding:0 8px}.schedule-pdf-export-20261028 .sign{direction:rtl;text-align:center;font-size:20px;line-height:2}.schedule-pdf-export-20261028 .sign b{font-size:23px}.schedule-pdf-export-20261028 .notes{direction:rtl;text-align:right;font-size:12px;line-height:1.7;max-width:690px}.schedule-pdf-export-20261028 .notes b{color:#c00}.schedule-pdf-export-20261028 .notes span{display:block;margin-top:7px}`;
   host.appendChild(style);
   try{
     const {jsPDF}=window.jspdf; const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a3',compress:true});
@@ -1781,7 +1781,7 @@ function updateScheduleTable20261028(table,html){
 
   const oldPdf=window.pdfSchedule2026;
   window.pdfSchedule2026=async function(){
-    const original=rows; const q=document.getElementById('exportTeacher')?.value??'';
+    const q=document.getElementById('exportTeacher')?.value??'';
     let selected;
     if(q!==''){
       const r=rows[Number(q)];
@@ -1791,7 +1791,7 @@ function updateScheduleTable20261028(table,html){
       selected=getFilteredRows2026();
       if(!selected.length){alert('لا توجد نتائج مطابقة للفرز.');return;}
     }
-    try{rows=selected; await oldPdf();} finally{rows=original;}
+    return oldPdf(selected);
   };
 
   function addExportControls(){
@@ -2196,7 +2196,7 @@ rows=loadRows();subjects=loadArray(SUBJECTS_KEY,subjects);admins=loadArray(ADMIN
       }else{saveReview({});ready=true;applyData(data);}
       // Rendering can archive completed records; those writes must be journaled, too.
       if(Object.keys(pending()).length){status('محفوظ على هذا الجهاز — جارٍ تأكيد الحفظ السحابي.');schedule();}
-      else {const stamp=confirmedAt&&!isNaN(Date.parse(confirmedAt))?new Intl.DateTimeFormat('ar-KW',{timeZone:'Asia/Kuwait',year:'numeric',month:'long',day:'numeric',hour:'2-digit',minute:'2-digit'}).format(new Date(confirmedAt)):'غير متاح';status('تم تأكيد الحفظ السحابي للجدول والأرشيف والحصر ✓ — آخر حفظ لهذه البيانات: '+stamp+' — إصدار البرنامج: ٣٠ أكتوبر ٢٠٢٦',true);}
+      else {const stamp=confirmedAt&&!isNaN(Date.parse(confirmedAt))?new Intl.DateTimeFormat('ar-KW',{timeZone:'Asia/Kuwait',year:'numeric',month:'long',day:'numeric',hour:'2-digit',minute:'2-digit'}).format(new Date(confirmedAt)):'غير متاح';status('تم تأكيد الحفظ السحابي للجدول والأرشيف والحصر ✓ — آخر حفظ لهذه البيانات: '+stamp+' — إصدار البرنامج: ٥ نوفمبر ٢٠٢٦',true);}
     }catch(e){
       if(e.name==='QuotaExceededError'){ready=false;status('مساحة حفظ المتصفح غير كافية. أوقفنا التعديل؛ نزّلي نسخة البيانات قبل المتابعة.');return;}
       if(e.message==='MISSING_CLOUD_DATA'){ready=false;status('لم نجد بيانات سحابية مكتملة. أوقفنا التعديل لحماية البيانات؛ لم نستبدلها بجدول قديم أو فارغ.');}
@@ -2264,7 +2264,7 @@ window.addEventListener('pagehide',()=>{if(typeof clearScheduleUndo2026==='funct
 window.pdfSimpleSection2026=async function(kind){
   if(typeof html2canvas==='undefined'||!window.jspdf||!window.jspdf.jsPDF){alert('تعذر تحميل أداة PDF. تأكد من اتصال الإنترنت.');return;}
   const cfg={
-    teachers:{title:'قائمة المعلمات',headers:['م','اسم المعلمة','القسم','نوع الارتباط','رقم الهاتف','النصاب'],rows:()=>rows.map((r,i)=>[i+1,r.name,r.dept,r.connection,r.phone||'',r.total]),file:'المعلمات.pdf'},
+    teachers:{title:'قائمة المعلمات',headers:['م','اسم المعلمة','القسم','نوع الارتباط','رقم الهاتف','النصاب'],rows:()=>rows.map((r,i)=>[i+1,r.name,r.dept,r.connection,r.phone||'',dqTotal20261105(r)]),file:'المعلمات.pdf'},
     subjects:{title:'قائمة المواد',headers:['م','المادة'],rows:()=>subjects.map((x,i)=>[i+1,x]),file:'المواد.pdf'},
     admins:{title:'قائمة الإداريات',headers:['م','اسم الإدارية'],rows:()=>admins.map((x,i)=>[i+1,x]),file:'الإداريات.pdf'}
   }[kind];
@@ -2310,7 +2310,7 @@ window.pdfSimpleSection2026=async function(kind){
     let data,title,headers,file;
     if(kind==='teachers'){
       const rr=typeof getFilteredTeacherList2026==='function'?getFilteredTeacherList2026():rows;
-      data=rr.map((r,i)=>[i+1,r.name,r.dept,r.connection,r.phone||'',r.total]);title='قائمة المعلمات';headers=['م','اسم المعلمة','القسم','نوع الارتباط','رقم الهاتف','النصاب'];file='المعلمات_حسب_الفرز.pdf';
+      data=rr.map((r,i)=>[i+1,r.name,r.dept,r.connection,r.phone||'',dqTotal20261105(r)]);title='قائمة المعلمات';headers=['م','اسم المعلمة','القسم','نوع الارتباط','رقم الهاتف','النصاب'];file='المعلمات_حسب_الفرز.pdf';
     }else if(kind==='admins'){
       const aa=getFilteredAdmins2026();data=aa.map((x,i)=>[i+1,x]);title='قائمة الإداريات';headers=['م','اسم الإدارية'];file='الإداريات_حسب_الفرز.pdf';
     }else if(kind==='subjects'){
@@ -4883,10 +4883,23 @@ html{scrollbar-gutter:stable;-webkit-text-size-adjust:100%;text-size-adjust:100%
 <script id="persistenceEditGuards20261029">
 (function(){
  const mutations=['editSlot','dragStart','dropSlot','openTeacherModal','saveTeacherModal','addTeacherFromSchedule','addTeacherManager','removeTeacher','resetSchedule','clearAllScheduleLessonsAdmin2026','addSubject','editSubject','deleteSubject','addAdmin','editAdmin','deleteAdmin','addReserve2026','deleteReserve2026','editReserve2026','editReserveArchive20261026','deleteReserveArchive20261026','saveStaffMovement2026','deleteStaffMovement2026','editManualScheduleLeave20261025','addDailyClass20261028','editDailyClass20261028','deleteDailyClass20261028','saveDailyClassName20261028','addPermission','editPermissionPrivacy2026','editPermission2026','deletePermission'];
- for(const name of mutations){const old=window[name];if(typeof old==='function')window[name]=function(...args){if(!window.dqRequirePersistence20261029())return;return old.apply(this,args);};}
+ const required={addSubject:'subjects',editSubject:'subjects',deleteSubject:'subjects',addAdmin:'admins',editAdmin:'admins',deleteAdmin:'admins',addReserve2026:'reserve',editReserve2026:'reserve',deleteReserve2026:'reserve'};
+ for(const name of mutations){const old=window[name];if(typeof old==='function')window[name]=function(...args){if(!window.dqRequirePersistence20261029())return;if(required[name]&&!requireScopeEdit2026(required[name]))return;return old.apply(this,args);};}
  const oldScope=window.requireScopeEdit2026;
  if(typeof oldScope==='function')window.requireScopeEdit2026=function(...args){return window.dqRequirePersistence20261029()&&oldScope.apply(this,args);};
 })();
 </script>
 
 <script>dqInstallBrand20261105();</script>
+
+<script id="native-print-header-reviewed-20261105">
+(function(){
+ let printing=false;
+ window.addEventListener('beforeprint',()=>{
+  const table=document.getElementById('scheduleGrid');if(!table?.tHead)return;
+  printing=true;
+  table.tHead.innerHTML='<tr><th rowspan="3" class="meta num">م</th><th rowspan="3" class="meta name">الاسم</th><th rowspan="3" class="meta dept">القسم</th><th rowspan="3" class="meta conn">نوع الارتباط</th><th colspan="20" class="meta">أيام الأسبوع</th><th rowspan="3" class="meta total">إجمالي نصاب الحصص</th></tr><tr>'+DAYS.map((day,i)=>'<th colspan="4" class="'+DAY_CLASSES[i]+'">'+esc(day)+'</th>').join('')+'</tr><tr>'+DAYS.map((day,i)=>PERIODS.map(period=>'<th class="period '+DAY_CLASSES[i]+'">'+esc(period)+'</th>').join('')).join('')+'</tr>';
+ });
+ window.addEventListener('afterprint',()=>{if(printing){printing=false;renderSchedule()}});
+})();
+</script>
