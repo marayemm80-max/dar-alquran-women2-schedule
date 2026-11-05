@@ -605,6 +605,10 @@ function dqTotalMatch20261105(r,filter){
  if(['بدون نصاب','بلا نصاب','بدون','صفر'].includes(q))return n===0;
  return q.split(/[,،;؛\s]+/).filter(Boolean).some(x=>/^\d+$/.test(x)&&Number(x)===n);
 }
+function dqFooterGapPixels20261105(){
+ const value=Number(dqBrand20261105().footerGap)||0;
+ return Math.max(2,26+value*(value<0?2.4:12));
+}
 function dqBrand20261105(){
  const defaults={center:'مركز دار القرآن غرب عبدالله المبارك نساء ٢',appTitle:'نظام إدارة جدول حصص',exportTitle:'جدول نصاب حصص معلمات',signTitle:'مشرفة مركز دار قرآن غرب عبدالله المبارك',signName:'أ. هيله العتيبي',notes:'ملاحظة: ١- دورة الأسماء الحسنى تقام تحت مظلة أنشطة التواصل وتحت إشراف التوجيه الفني.\n٢- الدورات العلمية بانتظار صدور قرار الموافقة من الإدارة.',leftLogo:'',rightLogo:'',footerGap:0};
  try{const all=JSON.parse(localStorage.getItem('darquran_schedule_settings_20261029_v1')||'[]');return {...defaults,...all.find(x=>x.id==='branding-20261105')};}catch{return defaults}
@@ -621,7 +625,7 @@ function dqInstallBrand20261105(){
   if(btn)btn.hidden=role()!=='admin';
   let foot=document.getElementById('dqScheduleFooter20261105');
   if(!foot){foot=document.createElement('div');foot.id='dqScheduleFooter20261105';foot.className='dq-native-footer';document.getElementById('schedule')?.append(foot)}
-  if(foot){foot.replaceChildren();const note=document.createElement('div'),sign=document.createElement('div');note.textContent=b.notes;sign.textContent=b.signTitle+'\n'+b.signName;foot.append(note,sign);foot.style.marginTop=(26+b.footerGap*12)+'px'}
+  if(foot){foot.replaceChildren();const note=document.createElement('div'),sign=document.createElement('div');note.textContent=b.notes;sign.textContent=b.signTitle+'\n'+b.signName;foot.append(note,sign);foot.style.marginTop=dqFooterGapPixels20261105()+'px'}
   for(const [key,side] of [['leftLogo','left'],['rightLogo','right']]){let img=document.getElementById('dqHomeLogo'+side);if(!img){img=document.createElement('img');img.id='dqHomeLogo'+side;img.style.cssText='max-width:100px;max-height:85px;margin:8px';document.querySelector('#home .welcome')?.prepend(img)}if(b[key])img.src=b[key];img.hidden=!b[key]}
 
  };
@@ -644,13 +648,13 @@ function dqEditBrand20261105(){
  if(role()!=='admin')return;
  document.getElementById('dqBrandDialog20261105')?.remove();
  const b=dqBrand20261105(),d=document.createElement('dialog');d.id='dqBrandDialog20261105';d.dir='rtl';d.style.cssText='width:min(720px,90vw);max-height:85vh;overflow:auto;border:0;border-radius:16px;padding:24px';
- d.innerHTML='<h2>إعدادات اسم المركز والرأس والتذييل</h2><form method="dialog"><div id="dqBrandFields20261105"></div><p>التذييل يأتي بعد آخر سطر، مع حجز مساحة له عند تقسيم الصفحات.</p><label>مسافة إضافية قبل التذييل (٠–١٠)<input name="footerGap" type="number" min="0" max="10" step="1"></label><label>الشعار الأيسر<input type="file" name="leftLogo" accept="image/*"></label><img data-preview="leftLogo" style="max-height:80px"><label>الشعار الأيمن<input type="file" name="rightLogo" accept="image/*"></label><img data-preview="rightLogo" style="max-height:80px"><p id="dqBrandError20261105" style="color:#a00"></p><button type="submit">حفظ الإعدادات</button> <button type="button" id="dqBrandCancel20261105">إلغاء</button></form>';
+ d.innerHTML='<h2>إعدادات اسم المركز والرأس والتذييل</h2><form method="dialog"><div id="dqBrandFields20261105"></div><p>التذييل يأتي بعد آخر سطر، مع حجز مساحة له عند تقسيم الصفحات.</p><label>مسافة التذييل (من −١٠ إلى ١٠؛ السالب يقرّب التذييل)<input name="footerGap" type="number" min="-10" max="10" step="1"></label><label>الشعار الأيسر<input type="file" name="leftLogo" accept="image/*"></label><img data-preview="leftLogo" style="max-height:80px"><label>الشعار الأيمن<input type="file" name="rightLogo" accept="image/*"></label><img data-preview="rightLogo" style="max-height:80px"><p id="dqBrandError20261105" style="color:#a00"></p><button type="submit">حفظ الإعدادات</button> <button type="button" id="dqBrandCancel20261105">إلغاء</button></form>';
  const f=d.querySelector('form'),fields=d.querySelector('#dqBrandFields20261105');
  for(const [key,label] of [['center','اسم المركز'],['appTitle','عنوان النظام'],['exportTitle','عنوان كشف النصاب'],['signTitle','صفة التوقيع'],['signName','اسم الموقعة'],['notes','الملاحظة أسفل الكشف']]){const l=document.createElement('label');l.textContent=label;l.style.display='block';const input=document.createElement(key==='notes'?'textarea':'input');input.name=key;input.value=b[key];input.style.cssText='display:block;width:95%;margin:8px 0 14px;padding:10px';if(key==='notes')input.rows=4;l.append(input);fields.append(l)}
  f.elements.footerGap.value=b.footerGap;const logos={leftLogo:b.leftLogo,rightLogo:b.rightLogo};
  for(const key of ['leftLogo','rightLogo']){const preview=d.querySelector('[data-preview="'+key+'"]');if(logos[key])preview.src=logos[key];f.elements[key].onchange=async e=>{const file=e.target.files[0];if(!file)return;try{const bitmap=await createImageBitmap(file),c=document.createElement('canvas'),scale=Math.min(1,600/Math.max(bitmap.width,bitmap.height));c.width=Math.round(bitmap.width*scale);c.height=Math.round(bitmap.height*scale);c.getContext('2d').drawImage(bitmap,0,0,c.width,c.height);bitmap.close();logos[key]=c.toDataURL('image/png');preview.src=logos[key]}catch{d.querySelector('#dqBrandError20261105').textContent='تعذر قراءة الشعار. اختاري صورة أخرى.'}}}
  d.querySelector('#dqBrandCancel20261105').onclick=()=>d.remove();
- f.onsubmit=e=>{e.preventDefault();if(role()!=='admin')return;if(!window.dqRequirePersistence20261029?.())return;const value={id:'branding-20261105',...logos};for(const key of ['center','appTitle','exportTitle','signTitle','signName','notes'])value[key]=f.elements[key].value.trim();const gap=Number(f.elements.footerGap.value);if(!value.center||!value.appTitle||!Number.isInteger(gap)||gap<0||gap>10){d.querySelector('#dqBrandError20261105').textContent='أدخلي اسم المركز وعنوان النظام ومسافة صحيحة من ٠ إلى ١٠.';return}value.footerGap=gap;try{const key='darquran_schedule_settings_20261029_v1',all=JSON.parse(localStorage.getItem(key)||'[]');localStorage.setItem(key,JSON.stringify([...all.filter(x=>x.id!==value.id),value]));dqApplyBrand20261105();d.remove()}catch{d.querySelector('#dqBrandError20261105').textContent='تعذر حفظ الإعدادات. أعيدي المحاولة.'}};
+ f.onsubmit=e=>{e.preventDefault();if(role()!=='admin')return;if(!window.dqRequirePersistence20261029?.())return;const value={id:'branding-20261105',...logos};for(const key of ['center','appTitle','exportTitle','signTitle','signName','notes'])value[key]=f.elements[key].value.trim();const gap=Number(f.elements.footerGap.value);if(!value.center||!value.appTitle||!Number.isInteger(gap)||gap< -10||gap>10){d.querySelector('#dqBrandError20261105').textContent='أدخلي اسم المركز وعنوان النظام ومسافة صحيحة من −١٠ إلى ١٠.';return}value.footerGap=gap;try{const key='darquran_schedule_settings_20261029_v1',all=JSON.parse(localStorage.getItem(key)||'[]');localStorage.setItem(key,JSON.stringify([...all.filter(x=>x.id!==value.id),value]));dqApplyBrand20261105();d.remove()}catch{d.querySelector('#dqBrandError20261105').textContent='تعذر حفظ الإعدادات. أعيدي المحاولة.'}};
  document.body.append(d);d.showModal();
 }
 
@@ -1217,7 +1221,7 @@ async function exportRows(rr,filename){
     ws.addImage(rightId, {tl:{col:22.3,row:0.05}, ext:{width:105,height:88}});
   } catch(e) { console.warn("Excel logos",e); }
 
-  const footerStart = rr.length + 5 + dqBrand20261105().footerGap;
+  const footerStart = rr.length + 5 + Math.max(0,Number(dqBrand20261105().footerGap)||0);
   ws.mergeCells(footerStart,1,footerStart,11);
   ws.getCell(footerStart,1).value=dqBrand20261105().notes;
   ws.mergeCells(footerStart+1,1,footerStart+1,11);
@@ -1234,7 +1238,7 @@ async function exportRows(rr,filename){
     cell.alignment={horizontal:(c>=16?"center":"right"),vertical:"middle",wrapText:true,readingOrder:"rtl"};
   }
   ws.getRow(footerStart).height=Math.max(24,Math.ceil(dqBrand20261105().notes.length/75)*14); ws.getRow(footerStart+1).height=24; ws.getRow(footerStart+2).height=22;
-  ws.pageSetup.printArea=`A1:Y${footerStart+2}`;
+  ws.pageSetup.printArea=`A1:Y${footerStart+1}`;
   ws.headerFooter.oddFooter='';
 
   exportColors.body.forEach((row,i)=>row.forEach((x,c)=>{const cell=ws.getCell(i+5,c+1);cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF'+x.bg}};cell.font={...cell.font,color:{argb:'FF'+x.fg},bold:x.bold}}));
@@ -1485,14 +1489,14 @@ async function pdfSchedule2026(){
     return h;
   }
   const style=document.createElement('style');
-  style.textContent=`.schedule-pdf-export-20261028 .pdfpage{position:relative;box-sizing:border-box;width:1580px;height:1117px;display:flex;flex-direction:column;background:#fff;padding:18px 42px 42px;font-family:Tahoma,Arial,sans-serif;direction:rtl;color:#000;overflow:hidden}.schedule-pdf-export-20261028 .pdfhead{height:150px;flex:0 0 150px;display:grid;grid-template-columns:210px 1fr 210px;align-items:start;direction:ltr}.schedule-pdf-export-20261028 .pdfhead img{width:150px;max-height:125px;object-fit:contain;justify-self:center}.schedule-pdf-export-20261028 .pdftitle{direction:rtl;text-align:center;font-size:31px;font-weight:700;line-height:1.5;padding-top:22px}.schedule-pdf-export-20261028 .pdfbody{flex:1 1 auto;min-height:0}.schedule-pdf-export-20261028 .pdftable{width:100%;margin:0;border-collapse:collapse;table-layout:fixed;font-size:10px;direction:rtl}.schedule-pdf-export-20261028 .pdftable th,.schedule-pdf-export-20261028 .pdftable td{border:1px solid #111;text-align:center;vertical-align:middle;padding:2px;height:31px;line-height:1.15;white-space:normal;overflow-wrap:anywhere}.schedule-pdf-export-20261028 .pdftable th{font-weight:700}.schedule-pdf-export-20261028 .pdftable .nm{width:180px}.schedule-pdf-export-20261028 .pdftable .leave{width:90px;overflow-wrap:anywhere}.schedule-pdf-export-20261028 .pdftable th:first-child{width:34px}.schedule-pdf-export-20261028 .pdftable th:nth-child(3){width:90px}.schedule-pdf-export-20261028 .pdftable th:nth-child(4){width:65px}.schedule-pdf-export-20261028 .pdftable th:last-child{width:52px}.schedule-pdf-export-20261028 .pdftable .sun{background:#f7e8bd}.schedule-pdf-export-20261028 .pdftable .mon{background:#d7e5f1}.schedule-pdf-export-20261028 .pdftable .tue{background:#dcebd4}.schedule-pdf-export-20261028 .pdftable .wed{background:#f1d7c8}.schedule-pdf-export-20261028 .pdftable .thu{background:#d9e0ea}.schedule-pdf-export-20261028 .time{font-size:8px;margin-top:3px}.schedule-pdf-export-20261028 .pdffoot{position:static;flex:0 0 auto;display:flex;gap:24px;justify-content:space-between;align-items:flex-start;direction:ltr;margin-top:${26+dqBrand20261105().footerGap*12}px;padding:0 8px}.schedule-pdf-export-20261028 .sign{direction:rtl;text-align:center;font-size:20px;line-height:2}.schedule-pdf-export-20261028 .sign b{font-size:23px}.schedule-pdf-export-20261028 .notes{direction:rtl;text-align:right;font-size:12px;line-height:1.7;max-width:690px}.schedule-pdf-export-20261028 .notes b{color:#c00}.schedule-pdf-export-20261028 .notes span{display:block;margin-top:7px}`;
+  style.textContent=`.schedule-pdf-export-20261028 .pdfpage{position:relative;box-sizing:border-box;width:1580px;height:1117px;display:flex;flex-direction:column;background:#fff;padding:18px 42px 42px;font-family:Tahoma,Arial,sans-serif;direction:rtl;color:#000;overflow:hidden}.schedule-pdf-export-20261028 .pdfhead{height:150px;flex:0 0 150px;display:grid;grid-template-columns:210px 1fr 210px;align-items:start;direction:ltr}.schedule-pdf-export-20261028 .pdfhead img{width:150px;max-height:125px;object-fit:contain;justify-self:center}.schedule-pdf-export-20261028 .pdftitle{direction:rtl;text-align:center;font-size:31px;font-weight:700;line-height:1.5;padding-top:22px}.schedule-pdf-export-20261028 .pdfbody{flex:1 1 auto;min-height:0}.schedule-pdf-export-20261028 .pdftable{width:100%;margin:0;border-collapse:collapse;table-layout:fixed;font-size:10px;direction:rtl}.schedule-pdf-export-20261028 .pdftable th,.schedule-pdf-export-20261028 .pdftable td{border:1px solid #111;text-align:center;vertical-align:middle;padding:2px;height:31px;line-height:1.15;white-space:normal;overflow-wrap:anywhere}.schedule-pdf-export-20261028 .pdftable th{font-weight:700}.schedule-pdf-export-20261028 .pdftable .nm{width:180px}.schedule-pdf-export-20261028 .pdftable .leave{width:90px;overflow-wrap:anywhere}.schedule-pdf-export-20261028 .pdftable th:first-child{width:34px}.schedule-pdf-export-20261028 .pdftable th:nth-child(3){width:90px}.schedule-pdf-export-20261028 .pdftable th:nth-child(4){width:65px}.schedule-pdf-export-20261028 .pdftable th:last-child{width:52px}.schedule-pdf-export-20261028 .pdftable .sun{background:#f7e8bd}.schedule-pdf-export-20261028 .pdftable .mon{background:#d7e5f1}.schedule-pdf-export-20261028 .pdftable .tue{background:#dcebd4}.schedule-pdf-export-20261028 .pdftable .wed{background:#f1d7c8}.schedule-pdf-export-20261028 .pdftable .thu{background:#d9e0ea}.schedule-pdf-export-20261028 .time{font-size:8px;margin-top:3px}.schedule-pdf-export-20261028 .pdffoot{position:static;flex:0 0 auto;display:flex;gap:24px;justify-content:space-between;align-items:flex-start;direction:ltr;margin-top:${dqFooterGapPixels20261105()}px;padding:0 8px}.schedule-pdf-export-20261028 .sign{direction:rtl;text-align:center;font-size:20px;line-height:2}.schedule-pdf-export-20261028 .sign b{font-size:23px}.schedule-pdf-export-20261028 .notes{direction:rtl;text-align:right;font-size:12px;line-height:1.7;max-width:690px}.schedule-pdf-export-20261028 .notes b{color:#c00}.schedule-pdf-export-20261028 .notes span{display:block;margin-top:7px}`;
   host.appendChild(style);
   try{
     const {jsPDF}=window.jspdf; const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a3',compress:true});
     if(document.fonts?.ready)await document.fonts.ready;
     let offset=0,pageNumber=0;
     while(offset<exportRowsSnapshot.length){
-      const batch=exportRowsSnapshot.slice(offset,offset+20);
+      const batch=exportRowsSnapshot.slice(offset);
       const wrap=document.createElement('div');wrap.innerHTML=pageHtml(batch,offset);
       const page=wrap.firstElementChild;host.appendChild(page);
       applySchedulePdfColors20261023(page,exportColors,offset);
@@ -1503,8 +1507,8 @@ async function pdfSchedule2026(){
       while(tbody.rows.length>1&&!fits())tbody.deleteRow(tbody.rows.length-1);
       if(!fits())throw Error('إحدى خانات الجدول أطول من مساحة الصفحة. راجعي النص الطويل قبل إعادة التصدير.');
       const gap=page.querySelector('.pdffoot').getBoundingClientRect().top-table.getBoundingClientRect().bottom;
-      if(gap<24)throw Error('تعذر توفير المسافة المطلوبة قبل التذييل.');
-      page.querySelector('.pdffoot').style.marginTop=(26+dqBrand20261105().footerGap*12)+'px';body.style.flex='0 0 auto';
+      if(gap+0.5<dqFooterGapPixels20261105())throw Error('تعذر توفير المسافة المطلوبة قبل التذييل.');
+      page.querySelector('.pdffoot').style.marginTop=(dqFooterGapPixels20261105())+'px';body.style.flex='0 0 auto';
       const count=tbody.rows.length;
       const canvas=await html2canvas(page,{scale:1.55,useCORS:true,backgroundColor:'#ffffff',logging:false});
       if(pageNumber++)doc.addPage('a3','landscape');
