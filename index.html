@@ -1957,6 +1957,112 @@ function updateScheduleTable20261028(table,html){
   const readable=()=>ready&&!broken;
   window.dqPersistenceReady20261029=()=>writer&&readable();
   window.dqRequirePersistence20261029=function(){if(window.dqPersistenceReady20261029())return true;alert(writer?'انتظري تحميل البيانات وتأكيد الاتصال قبل التعديل.':'هذه الصفحة للقراءة؛ أغلقي الصفحة الأخرى للبرنامج ثم انتظري تفعيل الحفظ هنا.');return false;};
+  // Restore uses the same write-ahead journal and revision checks as normal edits.
+  const RESTORE_TX='dq_restore_transaction_20261106';
+  const restoreKeys=SYNC_KEYS.filter(k=>k!==USERS_KEY);
+  const ledgerKey='dq_leave_ledger_20261017_v1';
+  const restoreAllowed=new Set([...restoreKeys,JOURNAL,ledgerKey,ledgerKey+':pending',ledgerKey+':pending-base',ledgerKey+':changed-records',ledgerKey+':changed-profiles']);
+  function recoverRestore(){
+    const raw=localStorage.getItem(RESTORE_TX);if(!raw)return;
+    const tx=JSON.parse(raw);
+    if(!tx||typeof tx!=='object'||!tx.writes||typeof tx.writes!=='object'||Array.isArray(tx.writes)||Object.keys(tx.writes).some(k=>!restoreAllowed.has(k)||typeof tx.writes[k]!=='string'))throw Error('INVALID_RESTORE_TRANSACTION');
+    for(const [k,v]of Object.entries(tx.writes))nativeSet.call(localStorage,k,v);
+    nativeRemove.call(localStorage,RESTORE_TX);
+  }
+  try{recoverRestore()}catch(e){broken=true;}
+  function backupPayload(){
+    const data={};SYNC_KEYS.forEach(k=>data[k]=value(k));
+    return {format:'dq-safety-backup-20261028',schemaVersion:2,cloudId:CLOUD_ID,center:typeof dqBrand20261105==='function'?dqBrand20261105().center:'',savedAt:new Date().toISOString(),data,pending:pending(),conflictDecisions:review,beforeRemote:JSON.parse(localStorage.getItem(BACKUP)||'null'),lastCloud:lastRemote,leaveLedger:JSON.parse(localStorage.getItem(ledgerKey)||'null'),leaveLedgerBlockedDrafts:JSON.parse(localStorage.getItem(ledgerKey+':blocked-drafts')||'[]')};
+  }
+  function treeValid(v,depth=0){
+    if(depth>30)return false;
+    if(v===null||['string','boolean','number'].includes(typeof v))return true;
+    if(Array.isArray(v))return v.every(x=>treeValid(x,depth+1));
+    return object(v)&&Object.keys(v).every(k=>!['__proto__','constructor','prototype'].includes(k)&&treeValid(v[k],depth+1));
+  }
+  function validateRestore(file){
+    if(!object(file)||file.format!=='dq-safety-backup-20261028'||!object(file.data)||!treeValid(file))throw Error('الملف ليس نسخة بيانات صالحة لهذا البرنامج.');
+    if(file.cloudId&&file.cloudId!==CLOUD_ID)throw Error('هذه النسخة تخص مركزًا أو برنامجًا آخر.');
+    if(!Array.isArray(file.data[ROWS_KEY])||!file.savedAt||isNaN(Date.parse(file.savedAt)))throw Error('النسخة لا تحتوي على جدول معلمات وتاريخ حفظ صحيحين.');
+    const changes={};
+    for(const k of restoreKeys){if(file.data[k]===null||file.data[k]===undefined)continue;if(!Array.isArray(file.data[k]))throw Error('بنية البيانات غير صحيحة في '+(labels[k]||'إعدادات البرنامج'));changes[k]=file.data[k];}
+    const names=new Set(),ids=new Set();
+    for(const r of changes[ROWS_KEY]){
+      if(!object(r)||typeof r.name!=='string'||!r.name.trim()||!Array.isArray(r.slots)||r.slots.length!==20||r.slots.some(x=>typeof x!=='string'))throw Error('النسخة تحتوي على صف معلمة غير مكتمل.');
+      const id=listIdentity(ROWS_KEY,r);if(ids.has(id))throw Error('توجد هوية معلمة مكررة في النسخة.');ids.add(id);
+    }
+    if(changes[SUBJECTS_KEY]?.some(x=>typeof x!=='string'))throw Error('قائمة المواد غير صحيحة.');
+    if(changes[ADMINS_KEY]?.some(x=>typeof x!=='string'&&(!object(x)||typeof x.name!=='string')))throw Error('قائمة الإداريات غير صحيحة.');
+    for(const k of ['daily_reserve_2026',ARCHIVE,'daily_reserve_snapshot_20261029'])if(changes[k]?.some(x=>!object(x)||typeof x.absent!=='string'||typeof x.date!=='string'||typeof x.period!=='string'))throw Error('بيانات الاحتياط غير مكتملة.');
+    if(changes[DELETED]?.some(x=>typeof x!=='string'))throw Error('سجل حذف الأرشيف غير صحيح.');
+    const leaves=file.leaveLedger;
+    if(leaves!==null&&leaves!==undefined){
+      if(!object(leaves)||!object(leaves.records)||!object(leaves.profiles))throw Error('بيانات ملخص الإجازات غير مكتملة.');
+      for(const [id,r]of Object.entries(leaves.records))if(!object(r)||r.id!==id||(!r.deleted&&(!r.person||!r.type||!/^\d{4}-\d{2}-\d{2}$/.test(r.start||'')||!['approved','pending','rejected'].includes(r.status))))throw Error('سجل إجازة غير صالح في النسخة.');
+      if(Object.values(leaves.profiles).some(x=>!object(x)))throw Error('أرصدة الإجازات غير صحيحة.');
+    }
+    return {changes,leaves:leaves??null,savedAt:file.savedAt,legacy:!file.cloudId,center:file.center||''};
+  }
+  const restoreFingerprint=()=>JSON.stringify([...restoreKeys.map(k=>value(k)),localStorage.getItem(ledgerKey)]);
+  async function prepareRestore(){
+    if(role()!=='admin'||!window.dqRequirePersistence20261029())throw Error('الاستعادة متاحة للمسؤولة من نافذة الحفظ الأساسية فقط.');
+    await sync();await window.dqLeaveBackup20261106?.refresh();
+    if(!writer||!ready||busy||conflict||Object.keys(pending()).length||!window.dqLeaveBackup20261106?.clean())throw Error('انتظري تأكيد حفظ البيانات وملخص الإجازات وحل أي تعارض قبل الاستعادة.');
+    const remote=await readRemote();if(!remote?.data||restoreKeys.some(k=>Array.isArray(remote.data[k])&&!equal(remote.data[k],value(k))))throw Error('تغيرت البيانات السحابية؛ أغلقي المعاينة وانتظري تحديث البيانات ثم اختاري النسخة مجددًا.');
+    return {local:restoreFingerprint(),remote:clone(remote.data)};
+  }
+  async function executeRestore(plan,guard){
+    if(role()!=='admin'||!writer||!ready||conflict||Object.keys(pending()).length||restoreFingerprint()!==guard.local)throw Error('تغيرت البيانات أثناء المعاينة؛ افتحي النسخة من جديد.');
+    const remote=await readRemote();
+    await window.dqLeaveBackup20261106.refresh();
+    if(role()!=='admin'||!writer||!ready||busy||!window.dqLeaveBackup20261106.clean()||restoreFingerprint()!==guard.local||!equal(remote?.data,guard.remote))throw Error('تغيرت بيانات المركز أثناء المعاينة؛ لم تُنفذ الاستعادة. اختاري الملف مجددًا.');
+    const writes={},journal={};
+    for(const [k,v]of Object.entries(plan.changes)){if(equal(value(k),v))continue;journal[k]={base:value(k),value:v,id:crypto.randomUUID()};writes[k]=JSON.stringify(v);}
+    writes[JOURNAL]=JSON.stringify(journal);
+    if(plan.leaves)Object.assign(writes,window.dqLeaveBackup20261106.prepare(plan.leaves));
+    const transaction=JSON.stringify({savedAt:new Date().toISOString(),writes});
+    // One durable envelope can replay a tab close between individual key writes.
+    try{nativeSet.call(localStorage,RESTORE_TX,transaction)}catch(e){throw Error('لا توجد مساحة كافية لتجهيز الاستعادة على هذا الجهاز؛ لم نغيّر البيانات الحالية. احتفظي بنسخة الأمان وجرّبي من جهاز آخر.');}
+    try{for(const [k,v]of Object.entries(writes))nativeSet.call(localStorage,k,v);nativeRemove.call(localStorage,RESTORE_TX);}
+    catch(e){broken=true;ready=false;throw Error('لم تكتمل الكتابة على الجهاز. لا تتابعي التعديل؛ احتفظنا بطلب الاستعادة لاستكماله عند إعادة الفتح، ومعك نسخة الأمان.');}
+    rows=loadRows();subjects=loadArray(SUBJECTS_KEY,subjects);admins=loadArray(ADMINS_KEY,admins);clearScheduleUndo2026();
+    window.dqLeaveBackup20261106.adopt();renderAll();
+    window.dqRenderAcademicYear20261029?.();window.dqRefreshWorkCalendar20261101?.();window.dqRefreshLeaveTypes20261029?.();window.dqRefreshLeavePeriods20261029?.();window.dqRefreshOldLeaves20261029?.();
+    await sync();await window.dqLeaveBackup20261106.refresh();
+    return !Object.keys(pending()).length&&!conflict&&window.dqLeaveBackup20261106.clean();
+  }
+  window.dqOpenRestore20261106=function(){
+    if(role()!=='admin')return;
+    document.getElementById('dqRestoreDialog20261106')?.remove();
+    const d=document.createElement('dialog');d.id='dqRestoreDialog20261106';d.dir='rtl';d.style.cssText='width:min(820px,94vw);max-height:88vh;overflow:auto;border:0;border-radius:16px;padding:24px;font:16px/1.8 Tahoma,Arial';
+    d.innerHTML='<h2>استعادة نسخة احتياطية</h2><p>اختاري ملف JSON الذي نُزّل من «تنزيل نسخة بيانات الجهاز». لن تتغير البيانات عند اختيار الملف.</p><p>الاستعادة تستبدل الأقسام الموجودة بالنسخة. الأقسام الغائبة من نسخة قديمة تبقى كما هي. حسابات الدخول ورموز الموظفات وحركات رابط الموظفات تبقى مرتبطة بالخادم ولا تُستبدل بهذا الملف.</p><input id="dqRestoreFile20261106" type="file" accept=".json,application/json"><div id="dqRestorePreview20261106"></div><p id="dqRestoreMessage20261106" role="status"></p><button id="dqRestoreSafety20261106" disabled>تنزيل نسخة أمان من البيانات الحالية</button><label style="display:block"><input id="dqRestoreAck20261106" type="checkbox" disabled> حفظت نسخة الأمان وأوافق على استبدال البيانات بالأقسام المعروضة.</label><button id="dqRestoreApply20261106" disabled>تنفيذ الاستعادة</button> <button id="dqRestoreClose20261106">إغلاق</button>';
+    document.body.append(d);let selected=null,guard=null,safety=false,working=false;
+    const $=id=>d.querySelector('#'+id+'20261106'),message=s=>{$('dqRestoreMessage').textContent=s};
+    $('dqRestoreClose').onclick=()=>{if(!working)d.close()};d.oncancel=e=>{if(working)e.preventDefault()};d.onclose=()=>d.remove();
+    $('dqRestoreFile').onchange=async e=>{
+      selected=null;guard=null;safety=false;$('dqRestoreAck').checked=false;$('dqRestoreAck').disabled=true;$('dqRestoreApply').disabled=true;$('dqRestoreSafety').disabled=true;$('dqRestorePreview').replaceChildren();
+      const file=e.target.files[0];if(!file)return;
+      try{if(file.size>20*1024*1024)throw Error('حجم النسخة أكبر من الحد المدعوم (٢٠ ميغابايت).');message('جارٍ فحص النسخة وتأكيد اتصال الحفظ…');const parsed=validateRestore(JSON.parse(await file.text()));const fresh=await prepareRestore();if(e.target.files[0]!==file)return;selected=parsed;guard=fresh;
+        const p=document.createElement('p');p.textContent='تاريخ النسخة: '+new Date(parsed.savedAt).toLocaleString('ar-KW',{timeZone:'Asia/Kuwait'})+(parsed.center?' — '+parsed.center:'');$('dqRestorePreview').append(p);
+        const table=document.createElement('table');table.style.cssText='width:100%;border-collapse:collapse';
+        const header=table.insertRow();for(const title of ['القسم','الحالي','في النسخة']){const c=document.createElement('th');c.textContent=title;header.append(c)}
+        for(const [k,list]of Object.entries(parsed.changes)){const row=table.insertRow();for(const v of [labels[k]||({'darquran_daily_classes_20261028_v1':'الفصول','daily_reserve_deleted_20261029':'سجل حذف الأرشيف','daily_reserve_snapshot_20261029':'لقطة الاحتياط'})[k]||k,(value(k)||[]).length,list.length]){const td=row.insertCell();td.textContent=v;td.style.cssText='padding:6px;border:1px solid #bbb'}}
+        if(parsed.leaves){const row=table.insertRow();for(const v of ['سجلات ملخص الإجازات',Object.values(JSON.parse(localStorage.getItem(ledgerKey)||'{"records":{}}').records).filter(x=>!x.deleted).length,Object.values(parsed.leaves.records).filter(x=>!x.deleted).length])row.insertCell().textContent=v;}
+        $('dqRestorePreview').append(table);message(parsed.legacy?'هذه نسخة قديمة بلا معرف مركز؛ تأكدي من محتواها وتاريخها قبل المتابعة.':'فُحصت النسخة. نزّلي نسخة الأمان أولًا ثم أكّدي الاستعادة.');$('dqRestoreSafety').disabled=false;
+      }catch(error){message(error instanceof SyntaxError?'تعذر قراءة الملف: ليس JSON صحيحًا.':error.message||'تعذر فحص النسخة.');}
+    };
+    $('dqRestoreSafety').onclick=()=>{if(!selected||restoreFingerprint()!==guard.local){message('تغيرت البيانات؛ اختاري النسخة مجددًا.');return}backup();safety=true;$('dqRestoreAck').disabled=false;message('نزّلت نسخة الأمان. احفظي الملف ثم ضعي علامة التأكيد.');};
+    $('dqRestoreAck').onchange=()=>{$('dqRestoreApply').disabled=!(safety&&$('dqRestoreAck').checked)};
+    $('dqRestoreApply').onclick=async()=>{
+      if(!selected||!guard||!safety||!$('dqRestoreAck').checked||working)return;
+      working=true;for(const el of d.querySelectorAll('button,input'))el.disabled=true;message('جارٍ تنفيذ الاستعادة والتحقق من الحفظ…');
+      try{const confirmed=await executeRestore(selected,guard);message(confirmed?'اكتملت الاستعادة وتأكد الحفظ السحابي.':'حُفظ طلب الاستعادة على الجهاز، ولم يكتمل التأكيد السحابي بعد. أبقي النافذة مفتوحة وراجعي حالة الحفظ؛ أي تعارض سيظهر للمراجعة.');$('dqRestorePreview').replaceChildren();selected=null;}
+      catch(error){message(error.message||'تعذر تنفيذ الاستعادة.');}
+      finally{working=false;$('dqRestoreClose').disabled=false;}
+    };
+    d.showModal();
+  };
+
   // One writer per browser origin. The browser releases the lock on tab close/crash.
   // Other devices remain independent and use revision checks plus three-way merges.
   if(navigator.locks){navigator.locks.request('dq-schedule-writer-20261029',async()=>{writer=true;ready=false;try{const p=pending();for(const k of Object.keys(p))if(SYNC_KEYS.includes(k))nativeSet.call(localStorage,k,JSON.stringify(p[k].value));// Rehydrate even an empty journal when a read-only tab acquires the writer lock.
@@ -2066,11 +2172,11 @@ rows=loadRows();subjects=loadArray(SUBJECTS_KEY,subjects);admins=loadArray(ADMIN
     el.style.cssText='display:block;color:#17324d;direction:rtl;line-height:1.8;position:sticky;top:0;z-index:1000;padding:12px;text-align:center;background:'+(ok?'#e8f6ec':'#fff3cd');
     el.replaceChildren(document.createTextNode(msg+' '));
     const btn=document.createElement('button');btn.textContent='تنزيل نسخة بيانات الجهاز';btn.onclick=backup;el.append(btn);
+    if(role()==='admin'){const restore=document.createElement('button');restore.textContent='استعادة نسخة احتياطية';restore.dataset.restoreAdmin='true';restore.onclick=window.dqOpenRestore20261106;el.append(restore);}
     if(conflict&&writer){const resolve=document.createElement('button');resolve.textContent='مراجعة تعارض الحفظ';resolve.onclick=resolveConflict;el.append(resolve);}
   }
   function backup(){
-    const data={};SYNC_KEYS.forEach(k=>data[k]=value(k));
-    const blob=new Blob([JSON.stringify({format:'dq-safety-backup-20261028',savedAt:new Date().toISOString(),data,pending:pending(),conflictDecisions:review,beforeRemote:JSON.parse(localStorage.getItem(BACKUP)||'null'),lastCloud:lastRemote,leaveLedger:JSON.parse(localStorage.getItem('dq_leave_ledger_20261017_v1')||'null'),leaveLedgerBlockedDrafts:JSON.parse(localStorage.getItem('dq_leave_ledger_20261017_v1:blocked-drafts')||'[]')},null,2)],{type:'application/json'});
+    const blob=new Blob([JSON.stringify(backupPayload(),null,2)],{type:'application/json'});
     const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='schedule-data-'+Date.now()+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),60000);
   }
   Storage.prototype.setItem=function(k,v){
@@ -2196,7 +2302,7 @@ rows=loadRows();subjects=loadArray(SUBJECTS_KEY,subjects);admins=loadArray(ADMIN
       }else{saveReview({});ready=true;applyData(data);}
       // Rendering can archive completed records; those writes must be journaled, too.
       if(Object.keys(pending()).length){status('محفوظ على هذا الجهاز — جارٍ تأكيد الحفظ السحابي.');schedule();}
-      else {const stamp=confirmedAt&&!isNaN(Date.parse(confirmedAt))?new Intl.DateTimeFormat('ar-KW',{timeZone:'Asia/Kuwait',year:'numeric',month:'long',day:'numeric',hour:'2-digit',minute:'2-digit'}).format(new Date(confirmedAt)):'غير متاح';status('تم تأكيد الحفظ السحابي للجدول والأرشيف والحصر ✓ — آخر حفظ لهذه البيانات: '+stamp+' — إصدار البرنامج: ٥ نوفمبر ٢٠٢٦',true);}
+      else {const stamp=confirmedAt&&!isNaN(Date.parse(confirmedAt))?new Intl.DateTimeFormat('ar-KW',{timeZone:'Asia/Kuwait',year:'numeric',month:'long',day:'numeric',hour:'2-digit',minute:'2-digit'}).format(new Date(confirmedAt)):'غير متاح';status('تم تأكيد الحفظ السحابي للجدول والأرشيف والحصر ✓ — آخر حفظ لهذه البيانات: '+stamp+' — إصدار البرنامج: ٦ نوفمبر ٢٠٢٦',true);}
     }catch(e){
       if(e.name==='QuotaExceededError'){ready=false;status('مساحة حفظ المتصفح غير كافية. أوقفنا التعديل؛ نزّلي نسخة البيانات قبل المتابعة.');return;}
       if(e.message==='MISSING_CLOUD_DATA'){ready=false;status('لم نجد بيانات سحابية مكتملة. أوقفنا التعديل لحماية البيانات؛ لم نستبدلها بجدول قديم أو فارغ.');}
@@ -4160,6 +4266,23 @@ async function exportReport(details,pdf){if(!canAccess())return;try{const r=repo
 
  if(typeof html2canvas==='undefined'||!window.jspdf?.jsPDF)throw Error('تعذر تحميل أداة PDF');const doc=new window.jspdf.jsPDF({orientation:'landscape',unit:'mm',format:'a3',compress:true}),pages=[];for(let i=0;i<Math.max(1,r.rows.length);i+=10)pages.push(r.rows.slice(i,i+10));for(let i=0;i<pages.length;i++){const measure=document.createElement('div');measure.style.cssText='position:absolute;left:-16000px;top:0;width:1500px;padding:24px;font-family:Arial;direction:rtl;background:#fff';measure.innerHTML=head+table(pages[i])+'<p>صفحة</p>';document.body.append(measure);await document.fonts.ready;const projected=measure.offsetHeight*(doc.internal.pageSize.getWidth()-16)/measure.offsetWidth;measure.remove();if(projected>doc.internal.pageSize.getHeight()-20&&pages[i].length>1){const chunk=pages[i],mid=Math.ceil(chunk.length/2);pages.splice(i,1,chunk.slice(0,mid),chunk.slice(mid));i--;}}for(let i=0;i<pages.length;i++){const host=document.createElement('div');host.style.cssText='position:absolute;left:-16000px;top:0;width:1500px;background:white;padding:24px;font-family:Arial;direction:rtl;color:#20334d;';host.innerHTML=head+table(pages[i])+`<p style="text-align:center">الأيام والساعات منفصلة · الأرصدة تخص السنة الموضحة · صفحة ${ar(i+1)} من ${ar(pages.length)}</p>`;document.body.append(host);try{await document.fonts.ready;await Promise.all([...host.querySelectorAll('img')].map(im=>im.decode().catch(()=>{})));const c=await html2canvas(host,{scale:1.5,backgroundColor:'#fff',logging:false});if(i)doc.addPage();const w=doc.internal.pageSize.getWidth()-16,hg=c.height*w/c.width;if(hg>doc.internal.pageSize.getHeight()-16)throw Error('تجاوز محتوى الصفحة مساحة التصدير؛ قللي الفترة أو طول الملاحظات.');doc.addImage(c.toDataURL('image/jpeg',.96),'JPEG',8,8,w,hg)}finally{host.remove()}}applyPdfWatermark20261025(doc);doc.save(filename+'.pdf');
  }catch(e){alert(e.message||'تعذر التصدير.')}}
+window.dqLeaveBackup20261106={
+ refresh:sync,
+ clean:()=>ready&&!busy&&!dirty&&!leaveConflicts.length&&localStorage.getItem(KEY+':pending')!=='yes',
+ prepare(saved){
+  if(role()!=='admin'||!ownsLeaveStorage()||!this.clean())throw Error('ملخص الإجازات ليس جاهزًا للاستعادة.');
+  const prior=read(),next={records:{},profiles:{}},bases={records:{},profiles:{}},recordIds=[],profileIds=[];
+  const maxStamp=Math.max(Date.now(),...Object.values(prior.records||{}).concat(Object.values(prior.profiles||{})).map(x=>Date.parse(x.updated||'')||0));
+  const stamp=new Date(maxStamp+1).toISOString();
+  // Old identities remain tombstoned, so a stale device cannot undo restoration.
+  for(const [id,r]of Object.entries(prior.records||{})){next.records[id]={...r,deleted:true,updated:stamp};bases.records[id]=r;recordIds.push(id)}
+  for(const r of Object.values(saved.records||{}))if(!r.deleted){const id=uid();next.records[id]={...r,id,updated:stamp};bases.records[id]=null;recordIds.push(id)}
+  for(const id of new Set([...Object.keys(prior.profiles||{}),...Object.keys(saved.profiles||{})])){next.profiles[id]={...(saved.profiles[id]||{date:today(),annual:null,emergency:null,short:null,long:null}),updated:stamp};bases.profiles[id]=prior.profiles?.[id]??null;profileIds.push(id)}
+  return {[KEY]:leaveJSON(next),[KEY+':pending']:'yes',[pendingBaseKey]:leaveJSON(bases),[changedKey]:leaveJSON(recordIds),[profileChangedKey]:leaveJSON(profileIds)};
+ },
+ adopt(){state=read();dirty=localStorage.getItem(KEY+':pending')==='yes';changedRecords=new Set(jsonRead(changedKey,[]));changedProfiles=new Set(jsonRead(profileChangedKey,[]));leaveConflicts=[];lastRenderedInput='';render();}
+};
+
 window.leaveLedgerCore2026={dates,amount,stats,merge,get rules(){return activeLeaveTypeRules()},records,people,report,academicCalendar,holidayOverlaps};
 setup();
 })();
@@ -4902,4 +5025,8 @@ html{scrollbar-gutter:stable;-webkit-text-size-adjust:100%;text-size-adjust:100%
  });
  window.addEventListener('afterprint',()=>{if(printing){printing=false;renderSchedule()}});
 })();
+</script>
+
+<script id="restore-home-button-20261106">
+(function(){function install(){let b=document.getElementById('dqRestoreHome20261106');if(!b){b=document.createElement('button');b.id='dqRestoreHome20261106';b.className='action no-print';b.textContent='استعادة نسخة احتياطية';b.onclick=window.dqOpenRestore20261106;document.querySelector('#home .welcome')?.append(b)}b.hidden=role()!=='admin';document.querySelectorAll('[data-restore-admin]').forEach(x=>x.hidden=role()!=='admin');}const prev=window.applyRole;window.applyRole=function(){const r=prev.apply(this,arguments);install();return r};install();})();
 </script>
