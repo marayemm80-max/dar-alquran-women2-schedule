@@ -242,7 +242,7 @@ function scheduleExportColors20261023(records){
  const body=document.createElement('tbody');table.append(body);
  const departments=[['القرآن','quran'],['التفسير','tafsir'],['الحديث','hadith'],['العقيدة','aqida'],['السيرة','seera'],['الفقه','fiqh'],['اللغة العربية','arabic']];
  const days=['sun','mon','tue','wed','thu'];
- records.forEach((r,i)=>{const tr=document.createElement('tr');const existing=[...source.querySelectorAll('tbody tr')].find(t=>t.cells[1]?.textContent.trim()===r.name.trim());
+ records.forEach((r,i)=>{const tr=document.createElement('tr');const existing=[...source.querySelectorAll('tbody tr')].find(t=>t.cells[1]?.textContent.trim()===toArabicDigits2026(r.name).trim());
  const dep=departments.find(x=>String(r.dept||'').includes(x[0]));
  [i+1,r.name,r.dept,r.connection,...(r.slots||Array(20).fill('')),dqTotal20261105(r)].forEach((v,c)=>{const td=document.createElement('td');td.textContent=v??'';
  if(existing?.cells[c]){td.className=existing.cells[c].className;td.style.cssText=existing.cells[c].style.cssText;}
@@ -807,7 +807,7 @@ function normalizeClassKey2026(value){
     const found=scheduleClassMatches20261028(value).find(match=>match.key!=='courses');
     if(found)return found.key;
   }
-  const t=String(value||"").trim().replace(/\s+/g," ");
+  const t=String(value||"").trim().replace(/\s+/g," ").replace(/[٠-٩۰-۹]/g,d=>(d.charCodeAt(0)&15));
   if(!t) return "";
   // نلتقط رمز الفصل مثل: 1م1، 3م2، 5م1، 2م، 3ت حتى لو اختلف اسم المادة.
   const compact=t.replace(/\s+/g,"");
@@ -837,9 +837,9 @@ function conflictMessage2026(conflict,si){
 function editSlot(ri,si){
   if(dragState || !requireEdit()) return;
   const old=rows[ri].slots[si]||"";
-  const v=prompt("المادة / بيان الحصة:",old);
+  const v=prompt("المادة / بيان الحصة (مثال: القرآن الكريم ١م٢)",toArabicDigits2026(old));
   if(v===null) return;
-  const nv=v.trim();
+  const nv=toArabicDigits2026(v.trim());
   const conflict=findScheduleConflict2026(ri,si,nv);
   if(conflict){
     const day=DAYS[Math.floor(si/4)]||"";
@@ -1193,7 +1193,7 @@ async function exportRows(rr,filename){
 
   rr.forEach((r,i)=>{
     const vals=[i+1,r.name,r.dept,r.connection,...(r.slots||Array(20).fill("")),dqTotal20261105(r)];
-    const row=ws.addRow(vals);
+    const row=ws.addRow(vals.map(toArabicDigits2026));
     row.height=34;
     for(let c=1;c<=25;c++){
       const cell=row.getCell(c);
@@ -1485,17 +1485,17 @@ async function pdfSchedule2026(selectedRows=rows){
   host.style.cssText='position:fixed;left:-20000px;top:0;width:1580px;background:#fff;z-index:-1;';
   document.body.appendChild(host);
   function pageHtml(rr,offset){
-    let h=`<div class="pdfpage"><div class="pdfhead"><img src="${safe(dqBrand20261105().leftLogo||logoLeft)}"><div class="pdftitle">${safe(dqBrand20261105().exportTitle)}<br>${safe(dqBrand20261105().center)} للعام الدراسي ${safe(window.dqAcademicYearLabel20261029(exportAcademicYearStart))}م</div><img src="${safe(dqBrand20261105().rightLogo||logoRight)}"></div>`;
+    let h=`<div class="pdfpage"><div class="pdfhead"><div class="pdf-left-brand"><img src="${safe(dqBrand20261105().leftLogo||logoLeft)}"><div class="pdf-academic-year">العام الدراسي <bdi>${safe(toArabicDigits2026(window.dqAcademicYearLabel20261029(exportAcademicYearStart)))}</bdi> م</div></div><div class="pdftitle">${safe(toArabicDigits2026(dqBrand20261105().exportTitle))}<br>${safe(toArabicDigits2026(dqBrand20261105().center))}</div><img src="${safe(dqBrand20261105().rightLogo||logoRight)}"></div>`;
     h+='<div class="pdfbody"><table class="pdftable"><thead><tr><th rowspan="3">م</th><th rowspan="3" class="nm">الاسم</th><th rowspan="3">القسم</th><th rowspan="3">نوع<br>الارتباط</th><th colspan="20">أيام الأسبوع</th><th rowspan="3">إجمالي<br>نصاب<br>الحصص</th></tr><tr>';
     DAYS.forEach((d,i)=>h+=`<th colspan="4" class="${dayClasses[i]}">${d}<div class="time">توقيت الحصة</div></th>`); h+='</tr><tr>';
     DAYS.forEach((d,i)=>PERIODS.forEach(p=>h+=`<th class="${dayClasses[i]}">${p}</th>`)); h+='</tr></thead><tbody>';
-    rr.forEach((r,i)=>{h+=`<tr><td>${offset+i+1}</td><td class="nm">${safe(r.name)}</td><td>${safe(r.dept)}</td><td>${safe(r.connection)}</td>`; const slots=Array.isArray(r.slots)?r.slots:Array(20).fill(''); for(let j=0;j<20;j++)h+=`<td class="${dayClasses[Math.floor(j/4)]}">${safe(slots[j]||'')}</td>`; h+=`<td>${safe(dqTotal20261105(r))}</td></tr>`;});
+    rr.forEach((r,i)=>{h+=`<tr><td>${toArabicDigits2026(offset+i+1)}</td><td class="nm">${safe(toArabicDigits2026(r.name))}</td><td>${safe(toArabicDigits2026(r.dept))}</td><td>${safe(toArabicDigits2026(r.connection))}</td>`; const slots=Array.isArray(r.slots)?r.slots:Array(20).fill(''); for(let j=0;j<20;j++)h+=`<td class="${dayClasses[Math.floor(j/4)]}">${safe(toArabicDigits2026(slots[j]||''))}</td>`; h+=`<td>${safe(toArabicDigits2026(dqTotal20261105(r)))}</td></tr>`;});
     h+='</tbody></table></div>';
-    h+=`<div class="pdffoot"><div class="sign">${safe(dqBrand20261105().signTitle)}<br><b>${safe(dqBrand20261105().signName)}</b></div><div class="notes">${safe(dqBrand20261105().notes).replace(/\n/g,"<br>")}</div></div></div>`;
+    h+=`<div class="pdffoot"><div class="sign">${safe(dqBrand20261105().signTitle)}<br><b>${safe(dqBrand20261105().signName)}</b></div><div class="notes">${safe(toArabicDigits2026(dqBrand20261105().notes)).replace(/\n/g,"<br>")}</div></div></div>`;
     return h;
   }
   const style=document.createElement('style');
-  style.textContent=`.schedule-pdf-export-20261028 .pdfpage{position:relative;box-sizing:border-box;width:1580px;height:1117px;display:flex;flex-direction:column;background:#fff;padding:18px 42px 42px;font-family:Tahoma,Arial,sans-serif;direction:rtl;color:#000;overflow:hidden}.schedule-pdf-export-20261028 .pdfhead{min-height:150px;flex:0 0 auto;display:grid;grid-template-columns:210px 1fr 210px;align-items:start;direction:ltr}.schedule-pdf-export-20261028 .pdfhead img{width:150px;max-height:125px;object-fit:contain;justify-self:center}.schedule-pdf-export-20261028 .pdftitle{direction:rtl;text-align:center;font-size:26px;font-weight:700;line-height:1.4;padding-top:14px}.schedule-pdf-export-20261028 .pdfbody{flex:1 1 auto;min-height:0}.schedule-pdf-export-20261028 .pdftable{width:100%;margin:0;border-collapse:collapse;table-layout:fixed;font-size:10px;direction:rtl}.schedule-pdf-export-20261028 .pdftable th,.schedule-pdf-export-20261028 .pdftable td{border:1px solid #111;text-align:center;vertical-align:middle;padding:2px;height:31px;line-height:1.15;white-space:normal;overflow-wrap:anywhere}.schedule-pdf-export-20261028 .pdftable th{font-weight:700}.schedule-pdf-export-20261028 .pdftable .nm{width:180px}.schedule-pdf-export-20261028 .pdftable .leave{width:90px;overflow-wrap:anywhere}.schedule-pdf-export-20261028 .pdftable th:first-child{width:34px}.schedule-pdf-export-20261028 .pdftable th:nth-child(3){width:90px}.schedule-pdf-export-20261028 .pdftable th:nth-child(4){width:65px}.schedule-pdf-export-20261028 .pdftable th:last-child{width:52px}.schedule-pdf-export-20261028 .pdftable .sun{background:#f7e8bd}.schedule-pdf-export-20261028 .pdftable .mon{background:#d7e5f1}.schedule-pdf-export-20261028 .pdftable .tue{background:#dcebd4}.schedule-pdf-export-20261028 .pdftable .wed{background:#f1d7c8}.schedule-pdf-export-20261028 .pdftable .thu{background:#d9e0ea}.schedule-pdf-export-20261028 .time{font-size:8px;margin-top:3px}.schedule-pdf-export-20261028 .pdffoot{position:static;flex:0 0 auto;display:flex;gap:24px;justify-content:space-between;align-items:flex-start;direction:ltr;margin-top:${dqFooterGapPixels20261105()}px;padding:0 8px}.schedule-pdf-export-20261028 .sign{direction:rtl;text-align:center;font-size:20px;line-height:2}.schedule-pdf-export-20261028 .sign b{font-size:23px}.schedule-pdf-export-20261028 .notes{direction:rtl;text-align:right;font-size:12px;line-height:1.7;max-width:690px}.schedule-pdf-export-20261028 .notes b{color:#c00}.schedule-pdf-export-20261028 .notes span{display:block;margin-top:7px}`;
+  style.textContent=`.schedule-pdf-export-20261028 .pdfpage{position:relative;box-sizing:border-box;width:1580px;height:1117px;display:flex;flex-direction:column;background:#fff;padding:18px 42px 42px;font-family:Tahoma,Arial,sans-serif;direction:rtl;color:#000;overflow:hidden}.schedule-pdf-export-20261028 .pdfhead{min-height:150px;flex:0 0 auto;display:grid;grid-template-columns:210px 1fr 210px;align-items:start;direction:ltr}.schedule-pdf-export-20261028 .pdfhead img{width:150px;max-height:125px;object-fit:contain;justify-self:center}.schedule-pdf-export-20261028 .pdf-left-brand{display:grid;justify-items:center;row-gap:3px}.schedule-pdf-export-20261028 .pdf-academic-year{direction:rtl;text-align:center;font-size:11pt;font-weight:400;line-height:1.2}.schedule-pdf-export-20261028 .pdftitle{direction:rtl;text-align:center;font-size:26px;font-weight:700;line-height:1.4;padding-top:14px}.schedule-pdf-export-20261028 .pdfbody{flex:1 1 auto;min-height:0}.schedule-pdf-export-20261028 .pdftable{width:100%;margin:0;border-collapse:collapse;table-layout:fixed;font-size:10px;direction:rtl}.schedule-pdf-export-20261028 .pdftable th,.schedule-pdf-export-20261028 .pdftable td{border:1px solid #111;text-align:center;vertical-align:middle;padding:2px;height:31px;line-height:1.15;white-space:normal;overflow-wrap:anywhere}.schedule-pdf-export-20261028 .pdftable th{font-weight:700}.schedule-pdf-export-20261028 .pdftable .nm{width:180px}.schedule-pdf-export-20261028 .pdftable .leave{width:90px;overflow-wrap:anywhere}.schedule-pdf-export-20261028 .pdftable th:first-child{width:34px}.schedule-pdf-export-20261028 .pdftable th:nth-child(3){width:90px}.schedule-pdf-export-20261028 .pdftable th:nth-child(4){width:65px}.schedule-pdf-export-20261028 .pdftable th:last-child{width:52px}.schedule-pdf-export-20261028 .pdftable .sun{background:#f7e8bd}.schedule-pdf-export-20261028 .pdftable .mon{background:#d7e5f1}.schedule-pdf-export-20261028 .pdftable .tue{background:#dcebd4}.schedule-pdf-export-20261028 .pdftable .wed{background:#f1d7c8}.schedule-pdf-export-20261028 .pdftable .thu{background:#d9e0ea}.schedule-pdf-export-20261028 .time{font-size:8px;margin-top:3px}.schedule-pdf-export-20261028 .pdffoot{position:static;flex:0 0 auto;display:flex;gap:24px;justify-content:space-between;align-items:flex-start;direction:ltr;margin-top:${dqFooterGapPixels20261105()}px;padding:0 8px}.schedule-pdf-export-20261028 .sign{direction:rtl;text-align:center;font-size:20px;line-height:2}.schedule-pdf-export-20261028 .sign b{font-size:23px}.schedule-pdf-export-20261028 .notes{direction:rtl;text-align:right;font-size:12px;line-height:1.7;max-width:690px}.schedule-pdf-export-20261028 .notes b{color:#c00}.schedule-pdf-export-20261028 .notes span{display:block;margin-top:7px}`;
   host.appendChild(style);
   try{
     const {jsPDF}=window.jspdf; const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a3',compress:true});
@@ -1629,7 +1629,7 @@ function updateScheduleTable20261028(table,html){
   const select=document.getElementById('dailyClassSelect2026');if(!select)return;
   const list=dailyClassDefinitions20261028(),signature=JSON.stringify(list.map(d=>[d.value,d.label]));
   const current=preferred??select.value;
-  if(select.dataset.classOptions!==signature){select.replaceChildren(...list.map(d=>new Option(d.label,d.value)));select.dataset.classOptions=signature;}
+  if(select.dataset.classOptions!==signature){select.replaceChildren(...list.map(d=>new Option(toArabicDigits2026(d.label),d.value)));select.dataset.classOptions=signature;}
   select.value=list.some(d=>d.value===current)?current:list[0].value;
   const form=document.getElementById('dailyClassAddForm20261028');if(form)form.hidden=!canEdit('daily');
   const actions=document.getElementById('dailyClassActions20261028');if(actions)actions.hidden=!canEdit('daily')||!dailyClassDefinition20261028(select.value)?.custom;
@@ -1669,7 +1669,7 @@ function updateScheduleTable20261028(table,html){
   const definition=selectedCustom();if(!definition)return;
   editingValue=definition.value;
   const form=document.getElementById('dailyClassEditForm20261028'),input=document.getElementById('dailyClassEditName20261028');
-  form.hidden=false;input.value=definition.label;message('');input.focus();input.select();
+  form.hidden=false;input.value=toArabicDigits2026(definition.label);message('');input.focus();input.select();
  };
  window.saveDailyClassName20261028=function(event){
   event?.preventDefault();if(!requireScopeEdit2026('daily'))return;
@@ -1764,7 +1764,7 @@ function updateScheduleTable20261028(table,html){
     h+='<th class="no-print" colspan="3"><input class="filter-input" data-filter-key="className" style="width:96%" value="'+esc(FILTERS.className)+'" placeholder="فرز الفصل بالاسم أو الرمز" oninput="setScheduleFilter2026(\'className\',this.value)"></th>';
     DAYS.forEach((d,i)=>PERIODS.forEach(p=>h+=`<th class="period ${DAY_CLASSES[i]}">${p}</th>`));
     h+='<th class="no-print"><button onclick="clearFilters2026()">مسح الفرز</button></th></tr></thead><tbody>';
-    let visibleNo=0; rows.forEach((r,ri)=>{ if(!matches(r))return; visibleNo++; h+=`<tr><td>${visibleNo}</td><td class="edit name" onclick="openTeacherModal(${ri})">${esc(r.name)}</td><td class="edit" onclick="openTeacherModal(${ri})">${esc(r.dept)}</td><td class="edit" onclick="openTeacherModal(${ri})">${esc(r.connection)}</td>`; const slots=Array.isArray(r.slots)?r.slots:Array(20).fill(''); const wantedClass=normalizeClass2026(FILTERS.className); for(let si=0;si<20;si++){const raw=slots[si]||'',v=(!wantedClass||lessonClasses2026(raw).includes(wantedClass))?raw:'',di=Math.floor(si/4),draggable=canEdit()&&v?'true':'false';h+=`<td class="slot ${DAY_CLASSES[di]}" draggable="${draggable}" data-r="${ri}" data-s="${si}" onclick="editSlot(${ri},${si})" ondragstart="dragStart(event,${ri},${si})" ondragover="dragOver(event)" ondragleave="event.currentTarget.classList.remove('over')" ondrop="dropSlot(event,${ri},${si})" ondragend="dragEnd(event)">${esc(v)}</td>`;} h+=`<td class="edit" onclick="openTeacherModal(${ri})">${esc(dqTotal20261105(r))}</td><td class="no-print edit-control"><button onclick="openTeacherModal(${ri})">✏️ تعديل</button> <button class="danger" onclick="removeTeacher(${ri})">حذف</button></td></tr>`;});
+    let visibleNo=0; rows.forEach((r,ri)=>{ if(!matches(r))return; visibleNo++; h+=`<tr><td>${toArabicDigits2026(visibleNo)}</td><td class="edit name" onclick="openTeacherModal(${ri})">${esc(toArabicDigits2026(r.name))}</td><td class="edit" onclick="openTeacherModal(${ri})">${esc(toArabicDigits2026(r.dept))}</td><td class="edit" onclick="openTeacherModal(${ri})">${esc(toArabicDigits2026(r.connection))}</td>`; const slots=Array.isArray(r.slots)?r.slots:Array(20).fill(''); const wantedClass=normalizeClass2026(FILTERS.className); for(let si=0;si<20;si++){const raw=slots[si]||'',v=(!wantedClass||lessonClasses2026(raw).includes(wantedClass))?raw:'',di=Math.floor(si/4),draggable=canEdit()&&v?'true':'false';h+=`<td class="slot ${DAY_CLASSES[di]}" draggable="${draggable}" data-r="${ri}" data-s="${si}" onclick="editSlot(${ri},${si})" ondragstart="dragStart(event,${ri},${si})" ondragover="dragOver(event)" ondragleave="event.currentTarget.classList.remove('over')" ondrop="dropSlot(event,${ri},${si})" ondragend="dragEnd(event)">${esc(toArabicDigits2026(v))}</td>`;} h+=`<td class="edit" onclick="openTeacherModal(${ri})">${esc(toArabicDigits2026(dqTotal20261105(r)))}</td><td class="no-print edit-control"><button onclick="openTeacherModal(${ri})">✏️ تعديل</button> <button class="danger" onclick="removeTeacher(${ri})">حذف</button></td></tr>`;});
     updateScheduleTable20261028(scheduleGrid,h);
     document.querySelectorAll('.edit-control').forEach(el=>el.style.display=canEdit()?'':'none');
   };
@@ -1850,7 +1850,7 @@ function updateScheduleTable20261028(table,html){
 <script id="syncPermissionVisualScript2026">
 (function(){
  const AR='٠١٢٣٤٥٦٧٨٩';
- window.toArabicDigits2026=function(v){return String(v??'').replace(/\d/g,d=>AR[d]);};
+ window.toArabicDigits2026=function(v){return String(v??'').replace(/[0-9۰-۹]/g,d=>AR[d.charCodeAt(0)&15]);};
  function deptClass2026(d){d=String(d||'');if(d.includes('القرآن'))return'dept-quran-2026';if(d.includes('التفسير'))return'dept-tafsir-2026';if(d.includes('الحديث'))return'dept-hadith-2026';if(d.includes('العقيدة'))return'dept-aqida-2026';if(d.includes('السيرة'))return'dept-seera-2026';if(d.includes('الفقه'))return'dept-fiqh-2026';if(d.includes('اللغة العربية'))return'dept-arabic-2026';return'';}
  window.userScopes2026=function(){const a=currentAccount();if(!a)return[];if(a.role==='admin')return['schedule','teachers','reserve'];return Array.isArray(a.scopes)?a.scopes:['schedule','teachers','reserve'];};
  window.hasScope2026=function(scope){return role()==='admin'||userScopes2026().includes(scope);};
@@ -2480,14 +2480,14 @@ window.pdfSimpleSection2026=async function(kind){
         h+=`<tr><th>${esc(p)}</th>`;
         DAYS.forEach((d,di)=>{
           const v=valueAt2026(di*4+pi,"courses");
-          h+=`<td>${v?esc(v):'<span class="daily-empty-2026">—</span>'}</td>`;
+          h+=`<td>${v?esc(toArabicDigits2026(v)):'<span class="daily-empty-2026">—</span>'}</td>`;
         });
         h+="</tr>";
       });
       h+="</tbody>";
       table.innerHTML=h;
     }else{
-      sub.textContent="للفصل: "+(definition?.label||key);
+      sub.textContent="للفصل: "+toArabicDigits2026(definition?.label||key);
       let h="<thead><tr><th>اليوم / الحصة</th>";
       PERIODS.forEach(p=>h+=`<th>${esc(p)}</th>`);
       h+="</tr></thead><tbody>";
@@ -2497,7 +2497,7 @@ window.pdfSimpleSection2026=async function(kind){
         const vals=week[di];
         if(!showEmptyDays&&!vals.some(Boolean))return;
         h+=`<tr><th>${esc(d)}</th>`;
-        vals.forEach(v=>h+=`<td>${v?esc(v):'<span class="daily-empty-2026">—</span>'}</td>`);
+        vals.forEach(v=>h+=`<td>${v?esc(toArabicDigits2026(v)):'<span class="daily-empty-2026">—</span>'}</td>`);
         h+="</tr>";
       });
       h+="</tbody>";
